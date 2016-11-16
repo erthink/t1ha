@@ -15,7 +15,25 @@ by [Positive Technologies](https://www.ptsecurity.ru)
 Please see [t1ha.cc](t1ha.cc#L96) for implementation details.
 
 
-### ACKNOWLEDGEMENT:
+### Acknowledgement:
 The **t1ha** was originally developed by Leonid Yuriev for The 1Hippeus project.
 
 _1Hippeus_ - zerocopy messaging in the spirit of Sparta!
+
+
+### Benchmarking & Testing
+```
+git clone https://github.com/leo-yuriev/t1ha.git
+cd t1ha
+git checkout smhasher-rurban.t1ha
+cmake .
+make
+./SMHasher City64
+./SMHasher metrohash64_1
+./SMHasher mum
+./SMHasher xxHash64
+
+...
+
+./SMHasher t1ha
+```

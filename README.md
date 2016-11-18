@@ -21,9 +21,8 @@ _1Hippeus_ - zerocopy messaging in the spirit of Sparta!
 
 ## Benchmarking & Testing
 ```
-git clone https://github.com/leo-yuriev/t1ha.git
-cd t1ha
-git checkout smhasher-rurban.t1ha
+git clone https://github.com/rurban/smhasher
+cd smhasher
 cmake .
 make
 ./SMHasher City64

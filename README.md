@@ -10,10 +10,10 @@ by [Positive Technologies](https://www.ptsecurity.ru)
   3. Not suitable for cryptography.
 
 
-Please see [t1ha.cc](t1ha.c#L171) for implementation details.
+Please see [t1ha.c](t1ha.c#L171) for implementation details.
 
 
-### Acknowledgement:
+#### Acknowledgement:
 The **t1ha** was originally developed by Leonid Yuriev for The 1Hippeus project.
 
 _1Hippeus_ - zerocopy messaging in the spirit of Sparta!

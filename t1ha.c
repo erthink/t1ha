@@ -210,8 +210,11 @@ uint64_t t1ha(const void *data, size_t len, uint64_t seed) {
     b ^= p5 * (c + rot(d, s1));
   }
 
-  if (left > 1 && unlikely(need_align))
-    v = (const uint64_t *)memcpy(&align, data, left);
+  if (unlikely(need_align)) {
+    v = (const uint64_t *)data;
+    if (left > 1)
+      v = (const uint64_t *)memcpy(&align, v, left);
+  }
 
   switch (left) {
   case sizeof(uint64_t) * 3 + 1 ... sizeof(uint64_t) * 4:

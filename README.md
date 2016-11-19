@@ -7,17 +7,17 @@ by [Positive Technologies](https://www.ptsecurity.com).
 ### Briefly, it is a 64-bit Hash Function:
   1. Created for 64-bit little-endian platforms, in predominantly for x86_64,
      but without penalties could runs on any 64-bit CPU.
-  2. In most cases up to 15% faster than City64, xxHash, mum-hash, metro-hash and others.
+  2. In most cases up to 15% faster than City64, xxHash, mum-hash, metro-hash
+     and all others which are not use specific hardware tricks.
   3. Not suitable for cryptography.
 
 
-Please see [t1ha.c](t1ha.c#L171) for implementation details.
+Please see [t1ha.c](t1ha.c#L172) for implementation details.
 
 
 #### Acknowledgement:
-The _t1ha_ was originally developed by Leonid Yuriev for The 1Hippeus project.
-
-_1Hippeus_ - zerocopy messaging in the spirit of Sparta!
+The _t1ha_ was originally developed by Leonid Yuriev (Леонид Юрьев)
+for _The 1Hippeus project - zerocopy messaging in the spirit of Sparta!_
 
 
 ### Requirements and Portability:

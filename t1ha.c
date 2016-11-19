@@ -142,8 +142,10 @@ static __inline uint64_t mix(uint64_t v, uint64_t p) {
 
 #ifdef __SIZEOF_INT128__
 
+/* xor high and low parts of full 128-bit product */
 static __inline uint64_t mux(uint64_t v, uint64_t p) {
   __uint128_t r = (__uint128_t)v * (__uint128_t)p;
+  /* modern GCC could nicely optimize this */
   return r ^ (r >> 64);
 }
 
@@ -159,11 +161,17 @@ static __inline unsigned add_with_carry(uint64_t *sum, uint64_t addend) {
 }
 
 static uint64_t mux(uint64_t v, uint64_t p) {
+  /* performs 64x64 to 128 bit multiplication */
   uint64_t ll = mul_32x32_64(v, p);
   uint64_t lh = mul_32x32_64(v >> 32, p);
   uint64_t hl = mul_32x32_64(p >> 32, v);
-  uint64_t hh = mul_32x32_64(v >> 32, p >> 32) + (lh >> 32) + (hl >> 32) +
-                add_with_carry(&ll, lh << 32) + add_with_carry(&ll, hl << 32);
+  uint64_t hh =
+      mul_32x32_64(v >> 32, p >> 32) + (lh >> 32) + (hl >> 32) +
+      /* Few simplification are possible here for 32-bit architectures,
+       * but thus we would lost compatibility with the original 64-bit
+       * version.  Think is very bad idea, because then 32-bit t1ha will
+       * still (relatively) very slowly and well yet not compatible. */
+      add_with_carry(&ll, lh << 32) + add_with_carry(&ll, hl << 32);
   return hh ^ ll;
 }
 

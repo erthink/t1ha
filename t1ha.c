@@ -184,9 +184,9 @@ uint64_t t1ha(const void *data, size_t len, uint64_t seed) {
 
     do {
       if (unlikely(need_align)) {
-        memcpy(&align, data, (sizeof(align) > left) ? left : sizeof(align));
+        v = (const uint64_t *)memcpy(
+            &align, data, (sizeof(align) > left) ? left : sizeof(align));
         data = (const uint64_t *)data + 4;
-        v = align;
       }
 
       uint64_t w0 = fetch64(v + 0);
@@ -209,11 +209,8 @@ uint64_t t1ha(const void *data, size_t len, uint64_t seed) {
     b ^= p5 * (c + rot(d, s1));
   }
 
-  if (left > 1 && unlikely(need_align)) {
-    memcpy(&align, data, (sizeof(align) > left) ? left : sizeof(align));
-    data = (const uint64_t *)data + 4;
-    v = align;
-  }
+  if (left > 1 && unlikely(need_align))
+    v = (const uint64_t *)memcpy(&align, data, left);
 
   switch (left) {
   case sizeof(uint64_t) * 3 + 1 ... sizeof(uint64_t) * 4:

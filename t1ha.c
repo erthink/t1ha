@@ -134,9 +134,9 @@ static __inline uint64_t rot(uint64_t v, unsigned s) {
 }
 
 /* xor-mul-xor mixer */
-static __inline uint64_t mix(uint64_t a, uint64_t b, uint64_t p) {
-  uint64_t m = (a ^ b) * p;
-  return m ^ rot(m, s0);
+static __inline uint64_t mix(uint64_t v, uint64_t p) {
+  v *= p;
+  return v ^ rot(v, s0);
 }
 
 #ifdef __SIZEOF_INT128__
@@ -225,7 +225,7 @@ uint64_t t1ha(const void *data, size_t len, uint64_t seed) {
   case 1 ... sizeof(uint64_t):
     a += mux(fetch_tail(v, left), p1);
   case 0:
-    return mux(rot(a + b, s1), p4) + mix(b, a, p0);
+    return mux(rot(a + b, s1), p4) + mix(a ^ b, p0);
   default:
     __builtin_unreachable();
   }

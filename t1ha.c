@@ -41,10 +41,6 @@
 #include "t1ha.h"
 #include <string.h>
 
-#if !defined(__GNUC__) || (__GNUC__ < 4)
-#error Sorry, t1ha requires modern GCC compiler (gcc 4.4 or compatible).
-#endif
-
 #if !defined(__BYTE_ORDER__) || !defined(__ORDER_LITTLE_ENDIAN__) ||           \
     !defined(__ORDER_BIG_ENDIAN__)
 #error __BYTE_ORDER__ should be defined.
@@ -58,8 +54,31 @@
 #endif
 #endif
 
+#if defined(__GNUC__) && (__GNUC__ > 3)
 #define likely(cond) __builtin_expect(!!(cond), 1)
 #define unlikely(cond) __builtin_expect(!!(cond), 0)
+#else /* __GNUC__ */
+#define likely(cond) (cond)
+#define unlikely(cond) (cond)
+#define __builtin_unreachable() for (;;)
+
+static __inline uint64_t __builtin_bswap64(uint64_t v) {
+  return v << 56 | v >> 56 | ((v << 40) & 0x00ff000000000000ull) |
+         ((v << 24) & 0x0000ff0000000000ull) |
+         ((v << 8) & 0x000000ff00000000ull) |
+         ((v >> 8) & 0x00000000ff000000ull) |
+         ((v >> 24) & 0x0000000000ff0000ull) |
+         ((v >> 40) & 0x000000000000ff00ull);
+}
+
+static __inline uint32_t __builtin_bswap32(uint32_t v) {
+  return v << 24 | v >> 24 | ((v << 8) & 0x00ff0000) | ((v >> 8) & 0x0000ff00);
+}
+
+static __inline uint16_t __builtin_bswap16(uint16_t v) {
+  return v << 8 | v >> 8;
+}
+#endif /* __GNUC__ */
 
 static __inline uint64_t fetch64(const void *v) {
 #if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
@@ -224,7 +243,10 @@ uint64_t t1ha(const void *data, size_t len, uint64_t seed) {
       v = (const uint64_t *)memcpy(&align, v, left);
   }
 
+#if defined(__GNUC__) && (__GNUC__ > 3)
   switch (left) {
+  default:
+    __builtin_unreachable();
   case sizeof(uint64_t) * 3 + 1 ... sizeof(uint64_t) * 4:
     b += mux(fetch64(v++), p4);
   case sizeof(uint64_t) * 2 + 1 ... sizeof(uint64_t) * 3:
@@ -234,8 +256,17 @@ uint64_t t1ha(const void *data, size_t len, uint64_t seed) {
   case 1 ... sizeof(uint64_t):
     a += mux(fetch_tail(v, left), p1);
   case 0:
-    return mux(rot(a + b, s1), p4) + mix(a ^ b, p0);
-  default:
-    __builtin_unreachable();
+    break;
   }
+#else  /* __GNUC__ */
+  if (left > sizeof(uint64_t) * 3)
+    b += mux(fetch64(v++), p4);
+  if (left > sizeof(uint64_t) * 2)
+    a += mux(fetch64(v++), p3);
+  if (left > sizeof(uint64_t))
+    b += mux(fetch64(v++), p2);
+  if (left > 0)
+    a += mux(fetch_tail(v, left), p1);
+#endif /* __GNUC__ */
+  return mux(rot(a + b, s1), p4) + mix(a ^ b, p0);
 }

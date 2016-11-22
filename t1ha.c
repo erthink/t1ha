@@ -46,6 +46,11 @@
 #error __BYTE_ORDER__ should be defined.
 #endif
 
+#if __BYTE_ORDER__ != __ORDER_LITTLE_ENDIAN__ &&                               \
+    __BYTE_ORDER__ != __ORDER_BIG_ENDIAN__
+#error Unsupported byte order.
+#endif
+
 #if !defined(UNALIGNED_OK)
 #if defined(__i386) || defined(__x86_64) || defined(_M_IX86)
 #define UNALIGNED_OK 1
@@ -83,30 +88,24 @@ static __inline uint16_t __builtin_bswap16(uint16_t v) {
 static __inline uint64_t fetch64(const void *v) {
 #if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
   return *(const uint64_t *)v;
-#elif __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
-  return __builtin_bswap64(*(const uint64_t *)v);
 #else
-#error Unsupported byte order.
+  return __builtin_bswap64(*(const uint64_t *)v);
 #endif
 }
 
 static __inline uint64_t fetch32(const void *v) {
 #if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
   return *(const uint32_t *)v;
-#elif __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
-  return __builtin_bswap32(*(const uint32_t *)v);
 #else
-#error Unsupported byte order.
+  return __builtin_bswap32(*(const uint32_t *)v);
 #endif
 }
 
 static __inline uint64_t fetch16(const void *v) {
 #if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
   return *(const uint16_t *)v;
-#elif __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
-  return __builtin_bswap16(*(const uint16_t *)v);
 #else
-#error Unsupported byte order.
+  return __builtin_bswap16(*(const uint16_t *)v);
 #endif
 }
 

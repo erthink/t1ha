@@ -211,8 +211,7 @@ uint64_t t1ha(const void *data, size_t len, uint64_t seed) {
 
     do {
       if (unlikely(need_align)) {
-        v = (const uint64_t *)memcpy(
-            &align, data, (sizeof(align) > left) ? left : sizeof(align));
+        v = (const uint64_t *)memcpy(&align, data, 32);
         data = (const uint64_t *)data + 4;
       }
 

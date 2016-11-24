@@ -111,7 +111,7 @@ static __inline uint64_t fetch16(const void *v) {
 
 static __inline uint64_t fetch_tail(const void *v, size_t tail) {
   const uint8_t *_ = (const uint8_t *)v;
-  switch (tail % sizeof(uint64_t)) {
+  switch (tail & 7) {
   case 1:
     return _[0];
   case 2:
@@ -149,7 +149,7 @@ static const unsigned s2 = 31;
 
 /* cyclic rotation */
 static __inline uint64_t rot(uint64_t v, unsigned s) {
-  return (v >> s) | (v << (sizeof(v) * 8 - s));
+  return (v >> s) | (v << (64 - s));
 }
 
 /* xor-mul-xor mixer */
@@ -196,24 +196,20 @@ static uint64_t mux(uint64_t v, uint64_t p) {
 #endif /* __SIZEOF_INT128__ */
 
 uint64_t t1ha(const void *data, size_t len, uint64_t seed) {
-  uint64_t left = len;
   uint64_t a = seed;
   uint64_t b = len;
 
-  const int need_align =
-      ((uintptr_t)data) % sizeof(uint64_t) != 0 && !UNALIGNED_OK;
-  const uint64_t *v = (const uint64_t *)data;
+  const int need_align = (((uintptr_t)data) & 7) != 0 && !UNALIGNED_OK;
   uint64_t align[4];
 
-  if (left > sizeof(uint64_t) * 4) {
+  if (unlikely(len > 32)) {
     uint64_t c = rot(len, s1) + seed;
     uint64_t d = len ^ rot(seed, s1);
-
+    const void *detent = (const uint8_t *)data + len - 31;
     do {
-      if (unlikely(need_align)) {
-        v = (const uint64_t *)memcpy(&align, data, 32);
-        data = (const uint64_t *)data + 4;
-      }
+      const uint64_t *v = (const uint64_t *)data;
+      if (unlikely(need_align))
+        v = (const uint64_t *)memcpy(&align, v, 32);
 
       uint64_t w0 = fetch64(v + 0);
       uint64_t w1 = fetch64(v + 1);
@@ -226,45 +222,49 @@ uint64_t t1ha(const void *data, size_t len, uint64_t seed) {
       d -= b ^ rot(w1, s2);
       a ^= p1 * (d02 + w3);
       b ^= p0 * (c13 + w2);
-
-      v += 4;
-      left -= sizeof(uint64_t) * 4;
-    } while (left >= sizeof(uint64_t) * 4);
+      data = (const uint64_t *)data + 4;
+    } while (likely(data < detent));
 
     a ^= p6 * (rot(c, s1) + d);
     b ^= p5 * (c + rot(d, s1));
+    len &= 31;
   }
 
-  if (unlikely(need_align)) {
-    v = (const uint64_t *)data;
-    if (left > 1)
-      v = (const uint64_t *)memcpy(&align, v, left);
-  }
+  const uint64_t *v = (const uint64_t *)data;
+  if (unlikely(need_align) && len > 1)
+    v = (const uint64_t *)memcpy(&align, v, len);
 
-#if defined(__GNUC__) && (__GNUC__ > 3)
-  switch (left) {
+  switch (len) {
   default:
-    __builtin_unreachable();
-  case sizeof(uint64_t) * 3 + 1 ... sizeof(uint64_t) * 4:
     b += mux(fetch64(v++), p4);
-  case sizeof(uint64_t) * 2 + 1 ... sizeof(uint64_t) * 3:
+  case 24:
+  case 23:
+  case 22:
+  case 21:
+  case 20:
+  case 19:
+  case 18:
+  case 17:
     a += mux(fetch64(v++), p3);
-  case sizeof(uint64_t) + 1 ... sizeof(uint64_t) * 2:
+  case 16:
+  case 15:
+  case 14:
+  case 13:
+  case 12:
+  case 11:
+  case 10:
+  case 9:
     b += mux(fetch64(v++), p2);
-  case 1 ... sizeof(uint64_t):
-    a += mux(fetch_tail(v, left), p1);
+  case 8:
+  case 7:
+  case 6:
+  case 5:
+  case 4:
+  case 3:
+  case 2:
+  case 1:
+    a += mux(fetch_tail(v, len), p1);
   case 0:
-    break;
+    return mux(rot(a + b, s1), p4) + mix(a ^ b, p0);
   }
-#else  /* __GNUC__ */
-  if (left > sizeof(uint64_t) * 3)
-    b += mux(fetch64(v++), p4);
-  if (left > sizeof(uint64_t) * 2)
-    a += mux(fetch64(v++), p3);
-  if (left > sizeof(uint64_t))
-    b += mux(fetch64(v++), p2);
-  if (left > 0)
-    a += mux(fetch_tail(v, left), p1);
-#endif /* __GNUC__ */
-  return mux(rot(a + b, s1), p4) + mix(a ^ b, p0);
 }

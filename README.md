@@ -29,7 +29,7 @@ for _The 1Hippeus project - zerocopy messaging in the spirit of Sparta!_
        - but unfortunately _t1ha_ could be dramatically slowly
          on architectures without native 64-bit operations.
   3. This implementation of _t1ha_ requires modern GNU C compatible compiler,
-     includes Clang/LLVM.
+     includes Clang/LLVM; or MSVC++ 14.0 (Visual Studio 2015).
 
 
 ## Benchmarking and Testing

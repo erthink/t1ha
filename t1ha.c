@@ -190,28 +190,59 @@ static __inline uint64_t fetch16(const void *v) {
 #endif
 }
 
-static __inline uint64_t fetch_tail(const void *v, size_t tail) {
-  const uint8_t *_ = (const uint8_t *)v;
+static __inline uint64_t tail64(const void *v, size_t tail) {
+  const uint8_t *p = (const uint8_t *)v;
+  uint64_t r = 0;
   switch (tail & 7) {
-  case 1:
-    return _[0];
-  case 2:
-    return fetch16(_);
-  case 3:
-    return fetch16(_) | (_[2] << 16);
-  case 4:
-    return fetch32(_);
-  case 5:
-    return fetch32(_) | ((uint64_t)_[4] << 32);
-  case 6:
-    return fetch32(_) | (fetch16(_ + 4) << 32);
-  case 7:
-    return fetch32(_) | (fetch16(_ + 4) << 32) | ((uint64_t)_[6] << 48);
+#if UNALIGNED_OK && __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
+  /* For most CPUs this code is better when not needed
+   * copying for alignment or byte reordering. */
   case 0:
-    return fetch64(_);
-  default:
-    unreachable();
+    return fetch64(p);
+  case 7:
+    r = p[6] << 8;
+  case 6:
+    r += p[5];
+    r <<= 8;
+  case 5:
+    r += p[4];
+    r <<= 32;
+  case 4:
+    return r + fetch32(p);
+  case 3:
+    r = p[2] << 16;
+  case 2:
+    return r + fetch16(p);
+  case 1:
+    return p[0];
+#else
+  /* For most CPUs this code is better than a
+   * copying for alignment and/or byte reordering. */
+  case 0:
+    r = p[7] << 8;
+  case 7:
+    r += p[6];
+    r <<= 8;
+  case 6:
+    r += p[5];
+    r <<= 8;
+  case 5:
+    r += p[4];
+    r <<= 8;
+  case 4:
+    r += p[3];
+    r <<= 8;
+  case 3:
+    r += p[2];
+    r <<= 8;
+  case 2:
+    r += p[1];
+    r <<= 8;
+  case 1:
+    return r + p[0];
+#endif
   }
+  unreachable();
 }
 
 /* 'magic' primes */
@@ -309,7 +340,7 @@ uint64_t t1ha(const void *data, size_t len, uint64_t seed) {
   }
 
   const uint64_t *v = (const uint64_t *)data;
-  if (unlikely(need_align) && len > 1)
+  if (unlikely(need_align) && len > 8)
     v = (const uint64_t *)memcpy(&align, v, len);
 
   switch (len) {
@@ -341,7 +372,7 @@ uint64_t t1ha(const void *data, size_t len, uint64_t seed) {
   case 3:
   case 2:
   case 1:
-    a += mux64(fetch_tail(v, len), p1);
+    a += mux64(tail64(v, len), p1);
   case 0:
     return mux64(rot64(a + b, s1), p4) + mix(a ^ b, p0);
   }

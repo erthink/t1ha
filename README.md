@@ -12,7 +12,7 @@ by [Positive Technologies](https://www.ptsecurity.com).
   3. Not suitable for cryptography.
 
 
-Please see [t1ha.c](t1ha.c#L172) for implementation details.
+Please see [t1ha.c](t1ha.c) for implementation details.
 
 
 #### Acknowledgement:

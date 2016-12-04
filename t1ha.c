@@ -755,3 +755,69 @@ uint64_t t1ha_32be(const void *data, size_t len, uint64_t seed) {
     return remix32(a, b);
   }
 }
+
+/***************************************************************************/
+
+#if defined(__SSE4_2__) && (defined(__x86_64__) || defined(_M_X64))
+
+uint64_t t1ha_ia32crc(const void *data, size_t len, uint64_t seed) {
+  uint64_t a = seed;
+  uint64_t b = len;
+  const uint64_t *v = (const uint64_t *)data;
+
+  if (unlikely(len > 32)) {
+    const void *detent = (const uint8_t *)data + len - 31;
+    uint32_t x = b;
+    uint32_t y = a;
+    uint32_t z = ~a ^ b;
+
+    do {
+      uint32_t t = a + x;
+      a = rot64(a, 17) + p0 * v[0];
+      x += _mm_crc32_u64(y, v[1]);
+      y += _mm_crc32_u64(z, v[2]);
+      z += _mm_crc32_u64(t, v[3]);
+      v += 4;
+    } while (likely(detent > (const void *)v));
+
+    a ^= x * p5 + y * p6 + z;
+    b = x + y * p5 + z * p6;
+    len &= 31;
+  }
+
+  switch (len) {
+  default:
+    b += mux64(*v++, p4);
+  case 24:
+  case 23:
+  case 22:
+  case 21:
+  case 20:
+  case 19:
+  case 18:
+  case 17:
+    a += mux64(*v++, p3);
+  case 16:
+  case 15:
+  case 14:
+  case 13:
+  case 12:
+  case 11:
+  case 10:
+  case 9:
+    b += mux64(*v++, p2);
+  case 8:
+  case 7:
+  case 6:
+  case 5:
+  case 4:
+  case 3:
+  case 2:
+  case 1:
+    a += mux64(tail64_le(v, len), p1);
+  case 0:
+    return mux64(rot64(a + b, s1), p4) + mix(a ^ b, p0);
+  }
+}
+
+#endif /* __SSE4_2__ && __x86_64__ */

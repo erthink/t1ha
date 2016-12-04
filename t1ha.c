@@ -75,7 +75,20 @@
 #endif
 #endif
 
-#if defined(__GNUC__) && (__GNUC__ > 3)
+#ifndef __clang__
+#define __has_builtin(x) (0)
+#endif
+
+#ifndef __GNUC_PREREQ
+#if defined(__GNUC__) && defined(__GNUC_MINOR__)
+#define __GNUC_PREREQ(maj, min)                                                \
+  ((__GNUC__ << 16) + __GNUC_MINOR__ >= ((maj) << 16) + (min))
+#else
+#define __GNUC_PREREQ(maj, min) 0
+#endif
+#endif
+
+#if __GNUC_PREREQ(4, 4) || defined(__clang__)
 
 #if defined(__i386) || defined(__x86_64)
 #include <x86intrin.h>
@@ -85,7 +98,9 @@
 #define unreachable() __builtin_unreachable()
 #define bswap64(v) __builtin_bswap64(v)
 #define bswap32(v) __builtin_bswap32(v)
+#if __GNUC_PREREQ(4, 8) || __has_builtin(__builtin_bswap16)
 #define bswap16(v) __builtin_bswap16(v)
+#endif
 
 #elif defined(_MSC_VER)
 

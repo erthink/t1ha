@@ -46,7 +46,25 @@
 extern "C" {
 #endif
 
+/* The main generic version of "Fast Positive Hash".
+ *  - returns same result on all architectures and CPUs.
+ *  - created for 64-bit little-endian platforms,
+ *    in other cases may runs slowly. */
 uint64_t t1ha(const void *data, size_t len, uint64_t seed);
+
+/* The big-endian version.
+ *  - runs faster on 64-bit big-endian platforms,
+ *    in other cases may runs slowly.
+ *  - returns same result on all architectures and CPUs,
+ *    but it is differs from t1ha(). */
+uint64_t t1ha_64be(const void *data, size_t len, uint64_t seed);
+
+/* Just alternative nick for generic t1ha.
+ * 't1ha_64le' mean that is for 64-bit little-endian platforms. */
+static __inline uint64_t t1ha_64le(const void *data, size_t len,
+                                   uint64_t seed) {
+  return t1ha(data, len, seed);
+}
 
 #ifdef __cplusplus
 }

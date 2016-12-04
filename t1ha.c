@@ -377,3 +377,154 @@ uint64_t t1ha(const void *data, size_t len, uint64_t seed) {
     return mux64(rot64(a + b, s1), p4) + mix(a ^ b, p0);
   }
 }
+
+/***************************************************************************/
+
+static __inline uint64_t fetch64_be(const void *v) {
+#if __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
+  return *(const uint64_t *)v;
+#else
+  return bswap64(*(const uint64_t *)v);
+#endif
+}
+
+static __inline uint64_t fetch32_be(const void *v) {
+#if __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
+  return *(const uint32_t *)v;
+#else
+  return bswap32(*(const uint32_t *)v);
+#endif
+}
+
+static __inline uint64_t fetch16_be(const void *v) {
+#if __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
+  return *(const uint16_t *)v;
+#else
+  return bswap16(*(const uint16_t *)v);
+#endif
+}
+
+static __inline uint64_t tail64_be(const void *v, size_t tail) {
+  const uint8_t *p = (const uint8_t *)v;
+  switch (tail & 7) {
+#if UNALIGNED_OK && __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
+  /* For most CPUs this code is better when not needed
+   * copying for alignment or byte reordering. */
+  case 1:
+    return p[0];
+  case 2:
+    return fetch16_be(p);
+  case 3:
+    return fetch16_be(p) << 8 | p[2];
+  case 4:
+    return fetch32_be(p);
+  case 5:
+    return fetch32_be(p) << 8 | p[4];
+  case 6:
+    return fetch32_be(p) << 16 | fetch16_be(p + 4);
+  case 7:
+    return fetch32_be(p) << 24 | fetch16_be(p + 4) << 8 | p[6];
+  case 0:
+    return fetch64_be(p);
+#else
+  /* For most CPUs this code is better than a
+   * copying for alignment and/or byte reordering. */
+  case 1:
+    return p[0];
+  case 2:
+    return p[1] | p[0] << 8;
+  case 3:
+    return p[2] | p[1] << 8 | p[0] << 16;
+  case 4:
+    return p[3] | p[2] << 8 | p[1] << 16 | (uint64_t)p[0] << 24;
+  case 5:
+    return p[4] | p[3] << 8 | p[2] << 16 | (uint64_t)p[1] << 24 |
+           (uint64_t)p[0] << 32;
+  case 6:
+    return p[5] | p[4] << 8 | p[3] << 16 | (uint64_t)p[2] << 24 |
+           (uint64_t)p[1] << 32 | (uint64_t)p[0] << 40;
+  case 7:
+    return p[6] | p[5] << 8 | p[4] << 16 | (uint64_t)p[3] << 24 |
+           (uint64_t)p[2] << 32 | (uint64_t)p[1] << 40 | (uint64_t)p[0] << 48;
+  case 0:
+    return p[7] | p[6] << 8 | p[5] << 16 | (uint64_t)p[4] << 24 |
+           (uint64_t)p[3] << 32 | (uint64_t)p[2] << 40 | (uint64_t)p[1] << 48 |
+           (uint64_t)p[0] << 56;
+#endif
+  }
+  unreachable();
+}
+
+uint64_t t1ha_64be(const void *data, size_t len, uint64_t seed) {
+  uint64_t a = seed;
+  uint64_t b = len;
+
+  const int need_align = (((uintptr_t)data) & 7) != 0 && !UNALIGNED_OK;
+  uint64_t align[4];
+
+  if (unlikely(len > 32)) {
+    uint64_t c = rot64(len, s1) + seed;
+    uint64_t d = len ^ rot64(seed, s1);
+    const void *detent = (const uint8_t *)data + len - 31;
+    do {
+      const uint64_t *v = (const uint64_t *)data;
+      if (unlikely(need_align))
+        v = (const uint64_t *)memcpy(&align, v, 32);
+
+      uint64_t w0 = fetch64_be(v + 0);
+      uint64_t w1 = fetch64_be(v + 1);
+      uint64_t w2 = fetch64_be(v + 2);
+      uint64_t w3 = fetch64_be(v + 3);
+
+      uint64_t d02 = w0 ^ rot64(w2 + d, s1);
+      uint64_t c13 = w1 ^ rot64(w3 + c, s1);
+      c += a ^ rot64(w0, s0);
+      d -= b ^ rot64(w1, s2);
+      a ^= p1 * (d02 + w3);
+      b ^= p0 * (c13 + w2);
+      data = (const uint64_t *)data + 4;
+    } while (likely(data < detent));
+
+    a ^= p6 * (rot64(c, s1) + d);
+    b ^= p5 * (c + rot64(d, s1));
+    len &= 31;
+  }
+
+  const uint64_t *v = (const uint64_t *)data;
+  if (unlikely(need_align) && len > 8)
+    v = (const uint64_t *)memcpy(&align, v, len);
+
+  switch (len) {
+  default:
+    b += mux64(fetch64_be(v++), p4);
+  case 24:
+  case 23:
+  case 22:
+  case 21:
+  case 20:
+  case 19:
+  case 18:
+  case 17:
+    a += mux64(fetch64_be(v++), p3);
+  case 16:
+  case 15:
+  case 14:
+  case 13:
+  case 12:
+  case 11:
+  case 10:
+  case 9:
+    b += mux64(fetch64_be(v++), p2);
+  case 8:
+  case 7:
+  case 6:
+  case 5:
+  case 4:
+  case 3:
+  case 2:
+  case 1:
+    a += mux64(tail64_be(v, len), p1);
+  case 0:
+    return mux64(rot64(a + b, s1), p4) + mix(a ^ b, p0);
+  }
+}

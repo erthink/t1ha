@@ -66,6 +66,9 @@ static __inline uint64_t t1ha_64le(const void *data, size_t len,
   return t1ha(data, len, seed);
 }
 
+uint64_t t1ha_32le(const void *data, size_t len, uint64_t seed);
+uint64_t t1ha_32be(const void *data, size_t len, uint64_t seed);
+
 #ifdef __cplusplus
 }
 #endif

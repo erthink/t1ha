@@ -76,8 +76,11 @@
 #endif
 #endif
 
-#ifndef __clang__
+#ifndef __has_builtin
 #define __has_builtin(x) (0)
+#endif
+#ifndef __has_attribute
+#define __has_attribute(x) (0)
 #endif
 
 #ifndef __GNUC_PREREQ
@@ -101,6 +104,9 @@
 #define bswap32(v) __builtin_bswap32(v)
 #if __GNUC_PREREQ(4, 8) || __has_builtin(__builtin_bswap16)
 #define bswap16(v) __builtin_bswap16(v)
+#endif
+#if __GNUC_PREREQ(4, 3) || __has_attribute(unused)
+#define maybe_unused __attribute__((unused))
 #endif
 
 #elif defined(_MSC_VER)
@@ -130,16 +136,22 @@
 #define mul_32x32_64(a, b) _arm_umull(a, b)
 #endif
 
-#else /* Compiler */
-
-#define likely(cond) (cond)
-#define unlikely(cond) (cond)
-#define unreachable()                                                          \
-  do                                                                           \
-    for (;;)                                                                   \
-      ;                                                                        \
-  while (0)
 #endif /* Compiler */
+
+#ifndef likely
+#define likely(cond) (cond)
+#endif
+#ifndef unlikely
+#define unlikely(cond) (cond)
+#endif
+#ifndef maybe_unused
+#define maybe_unused
+#endif
+#ifndef unreachable
+#define unreachable()                                                          \
+  do {                                                                         \
+  } while (1)
+#endif
 
 #ifndef bswap64
 static __inline uint64_t bswap64(uint64_t v) {
@@ -281,7 +293,8 @@ static __inline uint64_t mix(uint64_t v, uint64_t p) {
   return v ^ rot64(v, s0);
 }
 
-static __inline unsigned add_with_carry(uint64_t *sum, uint64_t addend) {
+static maybe_unused __inline unsigned add_with_carry(uint64_t *sum,
+                                                     uint64_t addend) {
   *sum += addend;
   return *sum < addend;
 }
@@ -396,7 +409,7 @@ uint64_t t1ha(const void *data, size_t len, uint64_t seed) {
 
 /***************************************************************************/
 
-static __inline uint64_t fetch64_be(const void *v) {
+static maybe_unused __inline uint64_t fetch64_be(const void *v) {
 #if __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
   return *(const uint64_t *)v;
 #else
@@ -404,7 +417,7 @@ static __inline uint64_t fetch64_be(const void *v) {
 #endif
 }
 
-static __inline uint32_t fetch32_be(const void *v) {
+static maybe_unused __inline uint32_t fetch32_be(const void *v) {
 #if __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
   return *(const uint32_t *)v;
 #else
@@ -412,7 +425,7 @@ static __inline uint32_t fetch32_be(const void *v) {
 #endif
 }
 
-static __inline uint16_t fetch16_be(const void *v) {
+static maybe_unused __inline uint16_t fetch16_be(const void *v) {
 #if __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
   return *(const uint16_t *)v;
 #else
@@ -420,7 +433,7 @@ static __inline uint16_t fetch16_be(const void *v) {
 #endif
 }
 
-static __inline uint64_t tail64_be(const void *v, size_t tail) {
+static maybe_unused __inline uint64_t tail64_be(const void *v, size_t tail) {
   const uint8_t *p = (const uint8_t *)v;
   switch (tail & 7) {
 #if UNALIGNED_OK && __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__

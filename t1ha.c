@@ -49,7 +49,8 @@
     defined(__THUMBEL__) || defined(__AARCH64EL__) || defined(__MIPSEL__) ||   \
     defined(_MIPSEL) || defined(__MIPSEL) || defined(__i386) ||                \
     defined(__x86_64) || defined(_M_IX86) || defined(_M_X64) ||                \
-    defined(i386) || defined(_X86_) || defined(__i386__) || defined(_X86_64_)
+    defined(i386) || defined(_X86_) || defined(__i386__) ||                    \
+    defined(_X86_64_) || defined(_M_ARM)
 #define __BYTE_ORDER__ __ORDER_LITTLE_ENDIAN__
 #elif defined(__BIG_ENDIAN__) || defined(__ARMEB__) || defined(__THUMBEB__) || \
     defined(__AARCH64EB__) || defined(__MIPSEB__) || defined(_MIPSEB) ||       \
@@ -189,7 +190,7 @@ static __inline uint64_t fetch64_le(const void *v) {
 #endif
 }
 
-static __inline uint64_t fetch32_le(const void *v) {
+static __inline uint32_t fetch32_le(const void *v) {
 #if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
   return *(const uint32_t *)v;
 #else
@@ -197,7 +198,7 @@ static __inline uint64_t fetch32_le(const void *v) {
 #endif
 }
 
-static __inline uint64_t fetch16_le(const void *v) {
+static __inline uint16_t fetch16_le(const void *v) {
 #if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
   return *(const uint16_t *)v;
 #else
@@ -215,7 +216,7 @@ static __inline uint64_t tail64_le(const void *v, size_t tail) {
   case 0:
     return fetch64_le(p);
   case 7:
-    r = p[6] << 8;
+    r = (uint64_t)p[6] << 8;
   case 6:
     r += p[5];
     r <<= 8;
@@ -225,7 +226,7 @@ static __inline uint64_t tail64_le(const void *v, size_t tail) {
   case 4:
     return r + fetch32_le(p);
   case 3:
-    r = p[2] << 16;
+    r = (uint64_t)p[2] << 16;
   case 2:
     return r + fetch16_le(p);
   case 1:
@@ -403,7 +404,7 @@ static __inline uint64_t fetch64_be(const void *v) {
 #endif
 }
 
-static __inline uint64_t fetch32_be(const void *v) {
+static __inline uint32_t fetch32_be(const void *v) {
 #if __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
   return *(const uint32_t *)v;
 #else
@@ -411,7 +412,7 @@ static __inline uint64_t fetch32_be(const void *v) {
 #endif
 }
 
-static __inline uint64_t fetch16_be(const void *v) {
+static __inline uint16_t fetch16_be(const void *v) {
 #if __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
   return *(const uint16_t *)v;
 #else
@@ -430,15 +431,16 @@ static __inline uint64_t tail64_be(const void *v, size_t tail) {
   case 2:
     return fetch16_be(p);
   case 3:
-    return fetch16_be(p) << 8 | p[2];
+    return (uint32_t)fetch16_be(p) << 8 | p[2];
   case 4:
     return fetch32_be(p);
   case 5:
-    return fetch32_be(p) << 8 | p[4];
+    return (uint64_t)fetch32_be(p) << 8 | p[4];
   case 6:
-    return fetch32_be(p) << 16 | fetch16_be(p + 4);
+    return (uint64_t)fetch32_be(p) << 16 | fetch16_be(p + 4);
   case 7:
-    return fetch32_be(p) << 24 | fetch16_be(p + 4) << 8 | p[6];
+    return (uint64_t)fetch32_be(p) << 24 | (uint32_t)fetch16_be(p + 4) << 8 |
+           p[6];
   case 0:
     return fetch64_be(p);
 #else
@@ -447,24 +449,26 @@ static __inline uint64_t tail64_be(const void *v, size_t tail) {
   case 1:
     return p[0];
   case 2:
-    return p[1] | p[0] << 8;
+    return p[1] | (uint32_t)p[0] << 8;
   case 3:
-    return p[2] | p[1] << 8 | p[0] << 16;
+    return p[2] | (uint32_t)p[1] << 8 | (uint32_t)p[0] << 16;
   case 4:
-    return p[3] | p[2] << 8 | p[1] << 16 | (uint64_t)p[0] << 24;
+    return p[3] | (uint32_t)p[2] << 8 | (uint32_t)p[1] << 16 |
+           (uint32_t)p[0] << 24;
   case 5:
-    return p[4] | p[3] << 8 | p[2] << 16 | (uint64_t)p[1] << 24 |
-           (uint64_t)p[0] << 32;
+    return p[4] | (uint32_t)p[3] << 8 | (uint32_t)p[2] << 16 |
+           (uint32_t)p[1] << 24 | (uint64_t)p[0] << 32;
   case 6:
-    return p[5] | p[4] << 8 | p[3] << 16 | (uint64_t)p[2] << 24 |
-           (uint64_t)p[1] << 32 | (uint64_t)p[0] << 40;
+    return p[5] | (uint32_t)p[4] << 8 | (uint32_t)p[3] << 16 |
+           (uint32_t)p[2] << 24 | (uint64_t)p[1] << 32 | (uint64_t)p[0] << 40;
   case 7:
-    return p[6] | p[5] << 8 | p[4] << 16 | (uint64_t)p[3] << 24 |
-           (uint64_t)p[2] << 32 | (uint64_t)p[1] << 40 | (uint64_t)p[0] << 48;
+    return p[6] | (uint32_t)p[5] << 8 | (uint32_t)p[4] << 16 |
+           (uint32_t)p[3] << 24 | (uint64_t)p[2] << 32 | (uint64_t)p[1] << 40 |
+           (uint64_t)p[0] << 48;
   case 0:
-    return p[7] | p[6] << 8 | p[5] << 16 | (uint64_t)p[4] << 24 |
-           (uint64_t)p[3] << 32 | (uint64_t)p[2] << 40 | (uint64_t)p[1] << 48 |
-           (uint64_t)p[0] << 56;
+    return p[7] | (uint32_t)p[6] << 8 | (uint32_t)p[5] << 16 |
+           (uint32_t)p[4] << 24 | (uint64_t)p[3] << 32 | (uint64_t)p[2] << 40 |
+           (uint64_t)p[1] << 48 | (uint64_t)p[0] << 56;
 #endif
   }
   unreachable();
@@ -556,7 +560,7 @@ static __inline uint32_t tail32_le(const void *v, size_t tail) {
   case 0:
     return fetch32_le(p);
   case 3:
-    r = p[2] << 16;
+    r = (uint32_t)p[2] << 16;
   case 2:
     return r + fetch16_le(p);
   case 1:
@@ -600,11 +604,12 @@ static __inline uint32_t tail32_be(const void *v, size_t tail) {
   case 1:
     return p[0];
   case 2:
-    return p[1] | p[0] << 8;
+    return p[1] | (uint32_t)p[0] << 8;
   case 3:
-    return p[2] | p[1] << 8 | p[0] << 16;
+    return p[2] | (uint32_t)p[1] << 8 | (uint32_t)p[0] << 16;
   case 0:
-    return p[3] | p[2] << 8 | p[1] << 16 | (uint32_t)p[0] << 24;
+    return p[3] | (uint32_t)p[2] << 8 | (uint32_t)p[1] << 16 |
+           (uint32_t)p[0] << 24;
 #endif
   }
   unreachable();
@@ -634,8 +639,8 @@ static const uint32_t q5 = 0xCA2DA6FB;
 static const uint32_t q6 = 0xC4BB3575;
 
 uint64_t t1ha_32le(const void *data, size_t len, uint64_t seed) {
-  uint32_t a = rot32(len, s1) + seed;
-  uint32_t b = len ^ (seed >> 32);
+  uint32_t a = rot32((uint32_t)len, s1) + (uint32_t)seed;
+  uint32_t b = (uint32_t)len ^ (uint32_t)(seed >> 32);
 
   const int need_align = (((uintptr_t)data) & 3) != 0 && !UNALIGNED_OK;
   uint32_t align[4];
@@ -703,8 +708,8 @@ uint64_t t1ha_32le(const void *data, size_t len, uint64_t seed) {
 }
 
 uint64_t t1ha_32be(const void *data, size_t len, uint64_t seed) {
-  uint32_t a = rot32(len, s1) + seed;
-  uint32_t b = len ^ (seed >> 32);
+  uint32_t a = rot32((uint32_t)len, s1) + (uint32_t)seed;
+  uint32_t b = (uint32_t)len ^ (uint32_t)(seed >> 32);
 
   const int need_align = (((uintptr_t)data) & 3) != 0 && !UNALIGNED_OK;
   uint32_t align[4];

@@ -5,20 +5,16 @@ sudo: false
 dist: trusty
 cache: bundler
 notifications:
-  email: false
+        email: false
 
 # Build matrix (2x compiler, 1x confopts)
 compiler:
-  - gcc
-  - clang
+        - gcc
+        - clang
 
-# Extend build matrix
-matrix:
-  include:
-    - os: linux
-      compiler: gcc
-    - os: osx
-      compiler: clang
+os:
+        - linux
+        - osx
 
 script:
-  - make
+        - make

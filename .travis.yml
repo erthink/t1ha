@@ -1,0 +1,20 @@
+# Config
+
+language: cpp
+sudo: false
+dist: trusty
+cache: bundler
+notifications:
+        email: false
+
+# Build matrix (2x compiler, 1x confopts)
+compiler:
+        - gcc
+        - clang
+
+os:
+        - linux
+        - osx
+
+script:
+        - make

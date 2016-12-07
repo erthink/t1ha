@@ -3,6 +3,7 @@ t1ha
 Fast Positive Hash, aka "Позитивный Хэш"
 by [Positive Technologies](https://www.ptsecurity.com).
 
+[![Build Status](https://travis-ci.org/leo-yuriev/t1ha.svg?branch=devel)](https://travis-ci.org/leo-yuriev/t1ha)
 
 ### Briefly, it is a 64-bit Hash Function:
   1. Created for 64-bit little-endian platforms, in predominantly for x86_64,

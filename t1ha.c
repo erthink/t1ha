@@ -854,3 +854,18 @@ uint64_t t1ha_ia32crc(const void *data, size_t len, uint64_t seed) {
 }
 
 #endif /* __SSE4_2__ && __x86_64__ */
+
+uint64_t t1ha_local(const void *data, size_t len, uint64_t seed) {
+#if (defined(__SSE4_2__) && defined(__x86_64__)) || defined(_M_X64)
+  /* TODO: check sse4.2 ability by cpuid */
+  return t1ha_ia32crc(data, len, seed);
+#elif __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
+  if (sizeof(long) >= 8)
+    return t1ha_64be(data, len, seed);
+  return t1ha_32be(data, len, seed);
+#else
+  if (sizeof(long) >= 8)
+    return t1ha_64le(data, len, seed);
+  return t1ha_32le(data, len, seed);
+#endif
+}

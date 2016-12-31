@@ -38,8 +38,10 @@
  * for The 1Hippeus project - zerocopy messaging in the spirit of Sparta!
  */
 
-#include "t1ha.h"
+#define _GNU_SOURCE
 #include <string.h>
+
+#include "t1ha.h"
 
 #if !defined(__BYTE_ORDER__) || !defined(__ORDER_LITTLE_ENDIAN__) ||           \
     !defined(__ORDER_BIG_ENDIAN__)
@@ -792,6 +794,7 @@ uint64_t t1ha_32be(const void *data, size_t len, uint64_t seed) {
 /***************************************************************************/
 
 #if (defined(__SSE4_2__) && defined(__x86_64__)) || defined(_M_X64)
+#include <nmmintrin.h>
 
 uint64_t t1ha_ia32crc(const void *data, size_t len, uint64_t seed) {
   uint64_t a = seed;
@@ -854,6 +857,124 @@ uint64_t t1ha_ia32crc(const void *data, size_t len, uint64_t seed) {
 }
 
 #endif /* __SSE4_2__ && __x86_64__ */
+
+/***************************************************************************/
+
+#if defined(__AES__) || defined(_M_X64)
+#include <emmintrin.h>
+#include <wmmintrin.h>
+
+uint64_t t1ha_ia32aes(const void *data, size_t len, uint64_t seed) {
+  uint64_t a = seed;
+  uint64_t b = len;
+
+  if (unlikely(len > 32)) {
+    __m128i x = _mm_set_epi64x(a, b);
+    __m128i y = _mm_aesenc_si128(x, _mm_set_epi64x(p0, p1));
+
+    const __m128i *__restrict v = (const __m128i *)data;
+    const __m128i *__restrict const detent =
+        (const __m128i *)((const uint8_t *)data + len - 127);
+
+    while (v < detent) {
+      __m128i v0 = _mm_loadu_si128(v + 0);
+      __m128i v1 = _mm_loadu_si128(v + 1);
+      __m128i v2 = _mm_loadu_si128(v + 2);
+      __m128i v3 = _mm_loadu_si128(v + 3);
+      __m128i v4 = _mm_loadu_si128(v + 4);
+      __m128i v5 = _mm_loadu_si128(v + 5);
+      __m128i v6 = _mm_loadu_si128(v + 6);
+      __m128i v7 = _mm_loadu_si128(v + 7);
+
+      __m128i v0y = _mm_aesenc_si128(v0, y);
+      __m128i v2x6 = _mm_aesenc_si128(v2, x ^ v6);
+      __m128i v45_67 = _mm_aesenc_si128(v4, v5) ^ _mm_add_epi64(v6, v7);
+
+      __m128i v0y7_1 = _mm_aesdec_si128(_mm_sub_epi64(v7, v0y), v1);
+      __m128i v2x6_3 = _mm_aesenc_si128(v2x6, v3);
+
+      x = _mm_aesenc_si128(v45_67, _mm_add_epi64(x, y));
+      y = _mm_aesenc_si128(v2x6_3, v0y7_1 ^ v5);
+      v += 8;
+    }
+
+    if (len & 64) {
+      __m128i v0y = _mm_add_epi64(y, _mm_loadu_si128(v++));
+      __m128i v1x = _mm_sub_epi64(x, _mm_loadu_si128(v++));
+      x = _mm_aesdec_si128(x, v0y);
+      y = _mm_aesdec_si128(y, v1x);
+
+      __m128i v2y = _mm_add_epi64(y, _mm_loadu_si128(v++));
+      __m128i v3x = _mm_sub_epi64(x, _mm_loadu_si128(v++));
+      x = _mm_aesdec_si128(x, v2y);
+      y = _mm_aesdec_si128(y, v3x);
+    }
+
+    if (len & 32) {
+      __m128i v0y = _mm_add_epi64(y, _mm_loadu_si128(v++));
+      __m128i v1x = _mm_sub_epi64(x, _mm_loadu_si128(v++));
+      x = _mm_aesdec_si128(x, v0y);
+      y = _mm_aesdec_si128(y, v1x);
+    }
+
+    if (len & 16) {
+      y = _mm_add_epi64(x, y);
+      x = _mm_aesdec_si128(x, _mm_loadu_si128(v++));
+    }
+
+    x = _mm_add_epi64(_mm_aesdec_si128(x, _mm_aesenc_si128(y, x)), y);
+#if defined(__x86_64__) || defined(_M_X64)
+    a = _mm_extract_epi64(x, 0);
+    b = _mm_extract_epi64(x, 1);
+#else
+    a = (uint32_t)_mm_extract_epi32(x, 0) |
+        (uint64_t)_mm_extract_epi32(x, 1) << 32;
+    b = (uint32_t)_mm_extract_epi32(x, 2) |
+        (uint64_t)_mm_extract_epi32(x, 3) << 32;
+#endif
+    data = v;
+    len &= 15;
+  }
+
+  const uint64_t *v = (const uint64_t *)data;
+  switch (len) {
+  default:
+    b += mux64(*v++, p4);
+  case 24:
+  case 23:
+  case 22:
+  case 21:
+  case 20:
+  case 19:
+  case 18:
+  case 17:
+    a += mux64(*v++, p3);
+  case 16:
+  case 15:
+  case 14:
+  case 13:
+  case 12:
+  case 11:
+  case 10:
+  case 9:
+    b += mux64(*v++, p2);
+  case 8:
+  case 7:
+  case 6:
+  case 5:
+  case 4:
+  case 3:
+  case 2:
+  case 1:
+    a += mux64(tail64_le(v, len), p1);
+  case 0:
+    return mux64(rot64(a + b, s1), p4) + mix(a ^ b, p0);
+  }
+}
+
+#endif /* __AES__ */
+
+/***************************************************************************/
 
 uint64_t t1ha_local(const void *data, size_t len, uint64_t seed) {
 #if (defined(__SSE4_2__) && defined(__x86_64__)) || defined(_M_X64)

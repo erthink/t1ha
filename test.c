@@ -189,7 +189,7 @@ static const uint64_t refval_32be[80] = {
   0xA485F44080CDAB50, 0x07485C1AB5D2831D, 0x4AF2E5B8CA8EA0D7, 0x5918F4ED3485462E
 };
 
-#if defined(__AES__) || defined(_M_X64)
+#if defined(__AES__) || defined(_M_X64) || defined(_M_IX86)
 static const uint64_t refval_ia32aes[80] = {
   0x6A580668D6048674, 0x8400EAA9D99A9005, 0xE3AB9C06FAF4D023, 0x6AF1C60874C95442,
   0xB3557E561A6C5D82, 0x0AE73C696F3D37C0, 0x5EF25F7062324941, 0x9B784F3B4CE6AF33,
@@ -225,7 +225,7 @@ int main(int argc, const char *argv[]) {
 #if (defined(__SSE4_2__) && defined(__x86_64__)) || defined(_M_X64)
   failed |= test("t1ha_ia32crc", t1ha_ia32crc, refval_ia32crc);
 #endif /* __SSE4_2__ && __x86_64__ */
-#if defined(__AES__) || defined(_M_X64)
+#if defined(__AES__) || defined(_M_X64) || defined(_M_IX86)
   failed |= test("t1ha_ia32aes", t1ha_ia32aes, refval_ia32aes);
 #endif /* __AES__ */
   return failed ? EXIT_FAILURE : EXIT_SUCCESS;

@@ -80,7 +80,7 @@ uint64_t t1ha_32be(const void *data, size_t len, uint64_t seed);
 uint64_t t1ha_ia32crc(const void *data, size_t len, uint64_t seed);
 #endif /* __SSE4_2__ && __x86_64__ */
 
-#if defined(__AES__) || defined(_M_X64)
+#if defined(__AES__) || defined(_M_X64) || defined(_M_IX86)
 /* Machine specific hash, which uses AES hardware acceleration.
  * Available only on modern x86 CPUs with AES-NI extension. */
 uint64_t t1ha_ia32aes(const void *data, size_t len, uint64_t seed);

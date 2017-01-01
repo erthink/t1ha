@@ -38,10 +38,8 @@
  * for The 1Hippeus project - zerocopy messaging in the spirit of Sparta!
  */
 
-#define _GNU_SOURCE
-#include <string.h>
-
 #include "t1ha.h"
+#include <string.h>
 
 #if !defined(__BYTE_ORDER__) || !defined(__ORDER_LITTLE_ENDIAN__) ||           \
     !defined(__ORDER_BIG_ENDIAN__)
@@ -803,16 +801,16 @@ uint64_t t1ha_ia32crc(const void *data, size_t len, uint64_t seed) {
 
   if (unlikely(len > 32)) {
     const void *detent = (const uint8_t *)data + len - 31;
-    uint32_t x = b;
-    uint32_t y = a;
-    uint32_t z = ~a ^ b;
+    uint32_t x = (uint32_t)b;
+    uint32_t y = (uint32_t)a;
+    uint32_t z = (uint32_t)(~a ^ b);
 
     do {
-      uint32_t t = a + x;
+      uint32_t t = (uint32_t)a + x;
       a = rot64(a, 17) + p0 * v[0];
-      x += _mm_crc32_u64(y, v[1]);
-      y += _mm_crc32_u64(z, v[2]);
-      z += _mm_crc32_u64(t, v[3]);
+      x += (uint32_t)_mm_crc32_u64(y, v[1]);
+      y += (uint32_t)_mm_crc32_u64(z, v[2]);
+      z += (uint32_t)_mm_crc32_u64(t, v[3]);
       v += 4;
     } while (likely(detent > (const void *)v));
 
@@ -860,7 +858,7 @@ uint64_t t1ha_ia32crc(const void *data, size_t len, uint64_t seed) {
 
 /***************************************************************************/
 
-#if defined(__AES__) || defined(_M_X64)
+#if defined(__AES__) || defined(_M_X64) || defined(_M_IX86)
 #include <emmintrin.h>
 #include <wmmintrin.h>
 
@@ -887,14 +885,15 @@ uint64_t t1ha_ia32aes(const void *data, size_t len, uint64_t seed) {
       __m128i v7 = _mm_loadu_si128(v + 7);
 
       __m128i v0y = _mm_aesenc_si128(v0, y);
-      __m128i v2x6 = _mm_aesenc_si128(v2, x ^ v6);
-      __m128i v45_67 = _mm_aesenc_si128(v4, v5) ^ _mm_add_epi64(v6, v7);
+      __m128i v2x6 = _mm_aesenc_si128(v2, _mm_xor_si128(x, v6));
+      __m128i v45_67 =
+          _mm_xor_si128(_mm_aesenc_si128(v4, v5), _mm_add_epi64(v6, v7));
 
       __m128i v0y7_1 = _mm_aesdec_si128(_mm_sub_epi64(v7, v0y), v1);
       __m128i v2x6_3 = _mm_aesenc_si128(v2x6, v3);
 
       x = _mm_aesenc_si128(v45_67, _mm_add_epi64(x, y));
-      y = _mm_aesenc_si128(v2x6_3, v0y7_1 ^ v5);
+      y = _mm_aesenc_si128(v2x6_3, _mm_xor_si128(v0y7_1, v5));
       v += 8;
     }
 

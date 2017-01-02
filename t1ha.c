@@ -817,7 +817,6 @@ uint64_t t1ha_ia32crc(const void *data, size_t len, uint64_t seed) {
     a ^= x * p5 + y * p6 + z;
     b = x + y * p5 + z * p6;
     len &= 31;
-    _mm_empty();
   }
 
   switch (len) {
@@ -930,7 +929,9 @@ uint64_t t1ha_ia32aes(const void *data, size_t len, uint64_t seed) {
     b |= (uint64_t)_mm_cvtsi128_si32(_mm_shuffle_epi32(x, 1)) << 32;
 #endif
 #endif
+#if !defined(__x86_64__) && !defined(_M_X64)
     _mm_empty();
+#endif
   }
 
   const uint64_t *v = (const uint64_t *)data;

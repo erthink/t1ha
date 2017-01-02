@@ -877,8 +877,8 @@ uint64_t t1ha_ia32aes(const void *data, size_t len, uint64_t seed) {
     data = detent;
 
     if (len & 16) {
-      x = _mm_add_epi64(y, x);
-      y = _mm_aesdec_si128(y, _mm_loadu_si128(v++));
+      x = _mm_add_epi64(x, _mm_loadu_si128(v++));
+      y = _mm_aesenc_si128(x, y);
     }
     len &= 15;
 

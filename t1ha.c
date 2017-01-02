@@ -871,55 +871,42 @@ uint64_t t1ha_ia32aes(const void *data, size_t len, uint64_t seed) {
     __m128i x = _mm_set_epi64x(a, b);
     __m128i y = _mm_aesenc_si128(x, _mm_set_epi64x(p0, p1));
 
-    const __m128i *__restrict v = (const __m128i *)data;
-    const __m128i *__restrict const detent =
-        (const __m128i *)((const uint8_t *)data + len - 127);
-
-    while (v < detent) {
-      __m128i v0 = _mm_loadu_si128(v + 0);
-      __m128i v1 = _mm_loadu_si128(v + 1);
-      __m128i v2 = _mm_loadu_si128(v + 2);
-      __m128i v3 = _mm_loadu_si128(v + 3);
-      __m128i v4 = _mm_loadu_si128(v + 4);
-      __m128i v5 = _mm_loadu_si128(v + 5);
-      __m128i v6 = _mm_loadu_si128(v + 6);
-      __m128i v7 = _mm_loadu_si128(v + 7);
-
-      __m128i v0y = _mm_aesenc_si128(v0, y);
-      __m128i v2x6 = _mm_aesenc_si128(v2, _mm_xor_si128(x, v6));
-      __m128i v45_67 =
-          _mm_xor_si128(_mm_aesenc_si128(v4, v5), _mm_add_epi64(v6, v7));
-
-      __m128i v0y7_1 = _mm_aesdec_si128(_mm_sub_epi64(v7, v0y), v1);
-      __m128i v2x6_3 = _mm_aesenc_si128(v2x6, v3);
-
-      x = _mm_aesenc_si128(v45_67, _mm_add_epi64(x, y));
-      y = _mm_aesenc_si128(v2x6_3, _mm_xor_si128(v0y7_1, v5));
-      v += 8;
-    }
-
-    if (len & 64) {
-      __m128i v0y = _mm_add_epi64(y, _mm_loadu_si128(v++));
-      __m128i v1x = _mm_sub_epi64(x, _mm_loadu_si128(v++));
-      x = _mm_aesdec_si128(x, v0y);
-      y = _mm_aesdec_si128(y, v1x);
-
-      __m128i v2y = _mm_add_epi64(y, _mm_loadu_si128(v++));
-      __m128i v3x = _mm_sub_epi64(x, _mm_loadu_si128(v++));
-      x = _mm_aesdec_si128(x, v2y);
-      y = _mm_aesdec_si128(y, v3x);
-    }
-
-    if (len & 32) {
-      __m128i v0y = _mm_add_epi64(y, _mm_loadu_si128(v++));
-      __m128i v1x = _mm_sub_epi64(x, _mm_loadu_si128(v++));
-      x = _mm_aesdec_si128(x, v0y);
-      y = _mm_aesdec_si128(y, v1x);
-    }
+    const __m128i *v = (const __m128i *)data;
+    const __m128i *const detent =
+        (const __m128i *)((const uint8_t *)data + (len & ~15ul));
+    data = detent;
 
     if (len & 16) {
-      y = _mm_add_epi64(x, y);
-      x = _mm_aesdec_si128(x, _mm_loadu_si128(v++));
+      x = _mm_add_epi64(y, x);
+      y = _mm_aesdec_si128(y, _mm_loadu_si128(v++));
+    }
+    len &= 15;
+
+    if (v + 7 < detent) {
+      __m128i salt = y;
+      do {
+        __m128i t = _mm_aesenc_si128(_mm_loadu_si128(v++), salt);
+        t = _mm_aesdec_si128(t, _mm_loadu_si128(v++));
+        t = _mm_aesdec_si128(t, _mm_loadu_si128(v++));
+        t = _mm_aesdec_si128(t, _mm_loadu_si128(v++));
+
+        t = _mm_aesdec_si128(t, _mm_loadu_si128(v++));
+        t = _mm_aesdec_si128(t, _mm_loadu_si128(v++));
+        t = _mm_aesdec_si128(t, _mm_loadu_si128(v++));
+        t = _mm_aesdec_si128(t, _mm_loadu_si128(v++));
+
+        salt = _mm_add_epi64(salt, _mm_set_epi64x(p2, p3));
+        t = _mm_aesenc_si128(x, t);
+        x = _mm_add_epi64(y, x);
+        y = t;
+      } while (v + 7 < detent);
+    }
+
+    while (v < detent) {
+      __m128i v0y = _mm_add_epi64(y, _mm_loadu_si128(v++));
+      __m128i v1x = _mm_sub_epi64(x, _mm_loadu_si128(v++));
+      x = _mm_aesdec_si128(x, v0y);
+      y = _mm_aesdec_si128(y, v1x);
     }
 
     x = _mm_add_epi64(_mm_aesdec_si128(x, _mm_aesenc_si128(y, x)), y);
@@ -943,8 +930,6 @@ uint64_t t1ha_ia32aes(const void *data, size_t len, uint64_t seed) {
     b |= (uint64_t)_mm_cvtsi128_si32(_mm_shuffle_epi32(x, 1)) << 32;
 #endif
 #endif
-    data = v;
-    len &= 15;
     _mm_empty();
   }
 

@@ -82,7 +82,7 @@ int test(const char *title, uint64_t (*hash)(const void *, size_t, uint64_t),
   }
 
   uint8_t pattern_long[512];
-  for (int i = 0; i < sizeof(pattern_long); ++i)
+  for (size_t i = 0; i < sizeof(pattern_long); ++i)
     pattern_long[i] = i;
   for (int i = 0; i <= 7; i++) {
     snprintf(caption, sizeof(caption), "long-%05u", 128 + i * 17);
@@ -241,6 +241,8 @@ static const uint64_t refval_ia32aes[80] = {
 /* clang-format on */
 
 int main(int argc, const char *argv[]) {
+  (void)argc;
+  (void)argv;
   int failed = 0;
   failed |= test("t1ha_64le", t1ha_64le, refval_64le);
   failed |= test("t1ha_64be", t1ha_64be, refval_64be);

@@ -42,6 +42,19 @@
 #include <stddef.h>
 #include <stdint.h>
 
+#ifndef __has_attribute
+#define __has_attribute(x) (0)
+#endif
+
+#ifndef __GNUC_PREREQ
+#if defined(__GNUC__) && defined(__GNUC_MINOR__)
+#define __GNUC_PREREQ(maj, min)                                                \
+  ((__GNUC__ << 16) + __GNUC_MINOR__ >= ((maj) << 16) + (min))
+#else
+#define __GNUC_PREREQ(maj, min) 0
+#endif
+#endif
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -74,13 +87,17 @@ static __inline uint64_t t1ha_64le(const void *data, size_t len,
 uint64_t t1ha_32le(const void *data, size_t len, uint64_t seed);
 uint64_t t1ha_32be(const void *data, size_t len, uint64_t seed);
 
-#if (defined(__SSE4_2__) && defined(__x86_64__)) || defined(_M_X64)
+#if ((__SSE4_2__ || __GNUC_PREREQ(4, 4) || __has_attribute(target)) &&         \
+     defined(__x86_64__)) ||                                                   \
+    defined(_M_X64) || defined(_X86_64_)
 /* Machine specific hash, which uses CRC32c hardware acceleration.
  * Available only on modern x86 CPUs with support for SSE 4.2. */
 uint64_t t1ha_ia32crc(const void *data, size_t len, uint64_t seed);
-#endif /* __SSE4_2__ && __x86_64__ */
+#endif
 
-#if defined(__AES__) || defined(_M_X64) || defined(_M_IX86)
+#if ((__AES__ || __GNUC_PREREQ(4, 4) || __has_attribute(target)) &&            \
+     (defined(__x86_64__) || defined(__i386__))) ||                            \
+    defined(_M_X64) || defined(_M_IX86)
 /* Machine specific hash, which uses AES hardware acceleration.
  * Available only on modern x86 CPUs with AES-NI extension. */
 uint64_t t1ha_ia32aes(const void *data, size_t len, uint64_t seed);
@@ -93,7 +110,15 @@ uint64_t t1ha_ia32aes(const void *data, size_t len, uint64_t seed);
  * when someone (CPU, BIOS, OS, compiler, source code) was changed.
  * Briefly, such hash-results and their derivatives, should
  * not be persist or transferred over a network. */
+#if defined(__ELF__) && (__GNUC_PREREQ(4, 6) || __has_attribute(ifunc))
 uint64_t t1ha_local(const void *data, size_t len, uint64_t seed);
+#else
+extern uint64_t (*t1ha_local_ptr)(const void *data, size_t len, uint64_t seed);
+static __inline uint64_t t1ha_local(const void *data, size_t len,
+                                    uint64_t seed) {
+  return t1ha_local_ptr(data, len, seed);
+}
+#endif
 
 #ifdef __cplusplus
 }

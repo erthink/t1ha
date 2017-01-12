@@ -1,5 +1,7 @@
 CC ?= cc
-CFLAGS ?= -std=c99 -Wextra -Werror -O
+# LY: -march=native is a workaround for a GCC 4.x bug,
+# which was fixed in 5.0 and later.
+CFLAGS ?= -std=c99 -march=native -Wextra -Werror -O
 
 check: test
 	./test

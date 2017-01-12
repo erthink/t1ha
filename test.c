@@ -283,10 +283,10 @@ int main(int argc, const char *argv[]) {
     defined(i386) || defined(_X86_) || defined(__i386__) || defined(_X86_64_)
   uint32_t features = x86_cpu_features();
 #if defined(__x86_64__) || defined(_M_X64) || defined(_X86_64_)
-  if (features & (1l << 25))
+  if (features & (1l << 20))
     failed |= test("t1ha_ia32crc", t1ha_ia32crc, refval_ia32crc);
 #endif /* x86_64 */
-  if (features & (1l << 20))
+  if (features & (1l << 25))
     failed |= test("t1ha_ia32aes", t1ha_ia32aes, refval_ia32aes);
 #endif /* Any x86 */
   return failed ? EXIT_FAILURE : EXIT_SUCCESS;

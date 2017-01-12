@@ -83,7 +83,7 @@ int test(const char *title, uint64_t (*hash)(const void *, size_t, uint64_t),
 
   uint8_t pattern_long[512];
   for (size_t i = 0; i < sizeof(pattern_long); ++i)
-    pattern_long[i] = i;
+    pattern_long[i] = (uint8_t)i;
   for (int i = 0; i <= 7; i++) {
     snprintf(caption, sizeof(caption), "long-%05u", 128 + i * 17);
     failed |= probe(hash, caption, *reference_values++, pattern_long + i,

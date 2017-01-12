@@ -1,5 +1,5 @@
 CC ?= cc
-CFLAGS ?= -std=c99 -march=native -Wextra -Werror -O
+CFLAGS ?= -std=c99 -Wextra -Werror -O
 
 check: test
 	./test

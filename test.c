@@ -119,7 +119,7 @@ static const uint64_t refval_64le[80] = {
   0xA7603B5AF07A0B1E, 0x41CD044C0E5A4EE3, 0xF64D2F86E813BF33, 0xFF9FDB99305EB06A
 };
 
-#if (defined(__SSE4_2__) && defined(__x86_64__)) || defined(_M_X64)
+#if defined(__x86_64__) || defined(_M_X64) || defined(_X86_64_)
 static const uint64_t refval_ia32crc[80] = {
   0x6A580668D6048674, 0xCE3E385BA6F8EBCF, 0xE3AB9C06FAF4D023, 0x6AF1C60874C95442,
   0xB3557E561A6C5D82, 0x0AE73C696F3D37C0, 0x5EF25F7062324941, 0x9B784F3B4CE6AF33,
@@ -142,7 +142,7 @@ static const uint64_t refval_ia32crc[80] = {
   0xDAC1C8994C1DE686, 0xA5A8E69F9E4B29CF, 0x62E1F3F348BF5FCE, 0x4629C08C151935CE,
   0x3E83F9602ABBBE47, 0xDC512CFD16BF6534, 0xC19D6A998A95B5D0, 0x30DF867B45690A31
 };
-#endif /* __SSE4_2__ && __x86_64__ */
+#endif /* __x86_64__ */
 
 static const uint64_t refval_64be[80] = {
   0x6A580668D6048674, 0xDECC975A0E3B8177, 0xE3AB9C06FAF4D023, 0xE401FA8F1B6AF969,
@@ -213,7 +213,8 @@ static const uint64_t refval_32be[80] = {
   0xA485F44080CDAB50, 0x07485C1AB5D2831D, 0x4AF2E5B8CA8EA0D7, 0x5918F4ED3485462E
 };
 
-#if defined(__AES__) || defined(_M_X64) || defined(_M_IX86)
+#if defined(__x86_64__) || defined(_M_IX86) || defined(_M_X64) ||              \
+    defined(i386) || defined(_X86_) || defined(__i386__) || defined(_X86_64_)
 static const uint64_t refval_ia32aes[80] = {
   0x6A580668D6048674, 0x8400EAA9D99A9005, 0xE3AB9C06FAF4D023, 0x6AF1C60874C95442,
   0xB3557E561A6C5D82, 0x0AE73C696F3D37C0, 0x5EF25F7062324941, 0x9B784F3B4CE6AF33,
@@ -236,9 +237,38 @@ static const uint64_t refval_ia32aes[80] = {
   0xE53736761CD11758, 0xEB60C15D45991CC8, 0x2C4CE10BBA1F6330, 0x02F5B484E4AA8805,
   0xD671ED579D6185CF, 0x125700F2EFD42D3F, 0x0F8746461407741F, 0xC8878D76F1C0FCB6
 };
-#endif /* __AES__ */
+#endif /* Any x86 */
 /* *INDENT-ON* */
 /* clang-format on */
+
+#if defined(__x86_64__) || defined(_M_IX86) || defined(_M_X64) ||              \
+    defined(i386) || defined(_X86_) || defined(__i386__) || defined(_X86_64_)
+
+#ifdef __GNUC__
+#include <cpuid.h>
+#elif defined(_MSC_VER)
+#include <intrin.h>
+#endif
+
+static uint32_t x86_cpu_features(void) {
+#ifdef __GNUC__
+  uint32_t eax, ebx, ecx, edx;
+  if (__get_cpuid_max(0, NULL) < 1)
+    return 0;
+  __cpuid_count(1, 0, eax, ebx, ecx, edx);
+  return ecx;
+#elif defined(_MSC_VER)
+  int info[4];
+  __cpuid(info, 0);
+  if (info[0] < 1)
+    return 0;
+  __cpuidex(info, 1, 0);
+  return info[2];
+#else
+  return 0;
+#endif
+}
+#endif
 
 int main(int argc, const char *argv[]) {
   (void)argc;
@@ -248,11 +278,16 @@ int main(int argc, const char *argv[]) {
   failed |= test("t1ha_64be", t1ha_64be, refval_64be);
   failed |= test("t1ha_32le", t1ha_32le, refval_32le);
   failed |= test("t1ha_32be", t1ha_32be, refval_32be);
-#if (defined(__SSE4_2__) && defined(__x86_64__)) || defined(_M_X64)
-  failed |= test("t1ha_ia32crc", t1ha_ia32crc, refval_ia32crc);
-#endif /* __SSE4_2__ && __x86_64__ */
-#if defined(__AES__) || defined(_M_X64) || defined(_M_IX86)
-  failed |= test("t1ha_ia32aes", t1ha_ia32aes, refval_ia32aes);
-#endif /* __AES__ */
+
+#if defined(__x86_64__) || defined(_M_IX86) || defined(_M_X64) ||              \
+    defined(i386) || defined(_X86_) || defined(__i386__) || defined(_X86_64_)
+  uint32_t features = x86_cpu_features();
+#if defined(__x86_64__) || defined(_M_X64) || defined(_X86_64_)
+  if (features & (1l << 25))
+    failed |= test("t1ha_ia32crc", t1ha_ia32crc, refval_ia32crc);
+#endif /* x86_64 */
+  if (features & (1l << 20))
+    failed |= test("t1ha_ia32aes", t1ha_ia32aes, refval_ia32aes);
+#endif /* Any x86 */
   return failed ? EXIT_FAILURE : EXIT_SUCCESS;
 }

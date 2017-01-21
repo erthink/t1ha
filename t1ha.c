@@ -113,6 +113,7 @@
 #define bswap16(v) _byteswap_ushort(v)
 #define rot64(v, s) _rotr64(v, s)
 #define rot32(v, s) _rotr(v, s)
+#define __inline __forceinline
 
 #if defined(_M_ARM64) || defined(_M_X64)
 #pragma intrinsic(_umul128)

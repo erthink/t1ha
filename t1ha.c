@@ -100,6 +100,10 @@
 
 #elif defined(_MSC_VER)
 
+#if _MSC_FULL_VER < 190024215
+#error Please use Visual Studio 2015 (MSVC 19.0) or never.
+#endif
+
 #pragma warning(disable:4710) /* C4710: C4710: 'mux64': function not inlined */
 #pragma warning(disable:4711) /* C4711: function 'x86_cpu_features' selected for automatic inline expansion */
 

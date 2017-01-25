@@ -31,7 +31,7 @@ for _The 1Hippeus project - zerocopy messaging in the spirit of Sparta!_
        - but unfortunately _t1ha_ could be dramatically slowly
          on architectures without native 64-bit operations.
   3. This implementation of _t1ha_ requires modern GNU C compatible compiler,
-     includes Clang/LLVM; or MSVC++ 14.0 (Visual Studio 2015).
+     includes Clang/LLVM and Visual Studio 2015 (MSVC 19).
 
 
 ## Benchmarking and Testing
@@ -54,4 +54,4 @@ make
 ./SMHasher t1ha
 ```
 
-For properly performance please use at least GCC 5.4 or Clang 3.8.
+For properly performance please use at least GCC 5.4 or Clang 3.8, at the worst Visual Studio 2015 (MSVC 19).

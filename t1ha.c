@@ -100,6 +100,10 @@
 
 #elif defined(_MSC_VER)
 
+#if _MSC_FULL_VER < 190024215
+#error Please use Visual Studio 2015 (MSVC 19.0) or never.
+#endif
+
 #pragma warning(disable:4710) /* C4710: C4710: 'mux64': function not inlined */
 #pragma warning(disable:4711) /* C4711: function 'x86_cpu_features' selected for automatic inline expansion */
 
@@ -113,6 +117,7 @@
 #define bswap16(v) _byteswap_ushort(v)
 #define rot64(v, s) _rotr64(v, s)
 #define rot32(v, s) _rotr(v, s)
+#define __inline __forceinline
 
 #if defined(_M_ARM64) || defined(_M_X64)
 #pragma intrinsic(_umul128)

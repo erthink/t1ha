@@ -88,7 +88,9 @@
 #endif
 #define likely(cond) __builtin_expect(!!(cond), 1)
 #define unlikely(cond) __builtin_expect(!!(cond), 0)
+#if __GNUC_PREREQ(4, 5) || defined(__clang__)
 #define unreachable() __builtin_unreachable()
+#endif
 #define bswap64(v) __builtin_bswap64(v)
 #define bswap32(v) __builtin_bswap32(v)
 #if __GNUC_PREREQ(4, 8) || __has_builtin(__builtin_bswap16)

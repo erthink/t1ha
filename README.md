@@ -7,12 +7,16 @@ by [Positive Technologies](https://www.ptsecurity.com).
 [![Build Status](https://travis-ci.org/leo-yuriev/t1ha.svg?branch=master)](https://travis-ci.org/leo-yuriev/t1ha)
 
 ### Briefly, it is a 64-bit Hash Function:
-  1. Created for 64-bit little-endian platforms, in predominantly for x86_64,
-     but without penalties could runs on any 64-bit CPU.
+  1. Created for 64-bit little-endian platforms, predominantly for x86_64,
+     but portable and without penalties could run on any 64-bit CPU.
   2. In most cases up to 15% faster than City64, xxHash, mum-hash, metro-hash
-     and all others which are not use specific hardware tricks.
+     and all others portable hash-functions (which are not uses specific hardware tricks).
   3. Not suitable for cryptography.
 
+### Design goals
+  1. Speed with the reasonable quality.
+  2. Effective on modern 64-bit CPUs, but not in a hardware.
+  3. Strong as possible, but without penalties in speed.
 
 Please see [t1ha.c](t1ha.c) for implementation details.
 
@@ -24,20 +28,23 @@ for _The 1Hippeus project - zerocopy messaging in the spirit of Sparta!_
 
 ### Requirements and Portability:
   1. _t1ha_ designed for modern 64-bit architectures.
-     But on the other hand, _t1ha_ doesn't uses any one tricks nor
-     instructions specific to any particular architecture:
+     But on the other hand, _t1ha_ doesn't require
+     instructions specific to a particular architecture:
        - therefore t1ha could be used on any CPU for
-         which GCC provides support 64-bit arithmetics.
+         which compiler provides support 64-bit arithmetic.
        - but unfortunately _t1ha_ could be dramatically slowly
          on architectures without native 64-bit operations.
-  3. This implementation of _t1ha_ requires modern GNU C compatible compiler,
-     includes Clang/LLVM and Visual Studio 2015 (MSVC 19).
+  2. This implementation of _t1ha_ requires modern GNU C compatible compiler,
+     includes Clang/LLVM, and Visual Studio 2015 (MSVC 19) at the worst case.
 
 
 ## Benchmarking and Testing
-[_SMHasher_](https://github.com/aappleby/smhasher/wiki) is a wellknown test suite designed to test the distribution, collision, and performance properties of non-cryptographic hash functions.
+[_SMHasher_](https://github.com/aappleby/smhasher/wiki) is a wellknown
+test suite designed to test the distribution, collision,
+and performance properties of non-cryptographic hash functions.
 
-_Reini Urban_ provides [extended version/fork of SMHasher](https://github.com/rurban/smhasher) which integrates a lot of modern hash functions, including _t1ha_.
+_Reini Urban_ provides [extended version/fork of SMHasher](https://github.com/rurban/smhasher)
+which integrates a lot of modern hash functions, including _t1ha_.
 
 So, **the quality and speed of _t1ha_ can be easily checked with the following scenario:**
 
@@ -54,7 +61,8 @@ make
 ./SMHasher t1ha
 ```
 
-For properly performance please use at least GCC 5.4 or Clang 3.8, at the worst Visual Studio 2015 (MSVC 19).
+For properly performance please use at least GCC 5.4 or Clang 3.8,
+at the worst Visual Studio 2015 (MSVC 19).
 
 ### Scores
 

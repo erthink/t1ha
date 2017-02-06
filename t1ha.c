@@ -110,7 +110,11 @@
 #elif defined(_MSC_VER)
 
 #if _MSC_FULL_VER < 190024215
-#error Please use Visual Studio 2015 (MSVC 19.0) or never.
+#if _MSC_FULL_VER < 180040629 && defined(_M_IX86)
+#error Please use Visual Studio 2015 (MSVC 19.0) or newer for 32-bit target.
+#else
+#warning It is recommended to use Visual Studio 2015 (MSVC 19.0) or newer.
+#endif
 #endif
 
 #pragma warning(                                                               \

@@ -40,7 +40,10 @@
 
 #include "t1ha.h"
 #include <string.h>    /* for memcpy() */
+
+#if !defined(_MSC_VER) || (_MSC_VER > 1800)
 #include <sys/param.h> /* for endianness */
+#endif
 
 #if !defined(__BYTE_ORDER__) || !defined(__ORDER_LITTLE_ENDIAN__) ||           \
     !defined(__ORDER_BIG_ENDIAN__)

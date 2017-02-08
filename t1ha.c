@@ -39,14 +39,13 @@
  */
 
 #include "t1ha.h"
-#include <string.h>    /* for memcpy() */
-
-#if !defined(_MSC_VER) || (_MSC_VER > 1800)
-#include <sys/param.h> /* for endianness */
-#endif
+#include <string.h> /* for memcpy() */
 
 #if !defined(__BYTE_ORDER__) || !defined(__ORDER_LITTLE_ENDIAN__) ||           \
     !defined(__ORDER_BIG_ENDIAN__)
+#ifndef _MSC_VER
+#include <sys/param.h> /* for endianness */
+#endif
 #if defined(__BYTE_ORDER) && defined(__LITTLE_ENDIAN) && defined(__BIG_ENDIAN)
 #define __ORDER_LITTLE_ENDIAN__ __LITTLE_ENDIAN
 #define __ORDER_BIG_ENDIAN__ __BIG_ENDIAN
@@ -114,9 +113,10 @@
 
 #if _MSC_FULL_VER < 190024215
 #if _MSC_FULL_VER < 180040629 && defined(_M_IX86)
-#error Please use Visual Studio 2015 (MSVC 19.0) or newer for 32-bit target.
+#error Please use Visual Studio 2015 (MSC 19.0) or newer for 32-bit target.
 #else
-#warning It is recommended to use Visual Studio 2015 (MSVC 19.0) or newer.
+#pragma message(                                                               \
+    "It is recommended to use Visual Studio 2015 (MSC 19.0) or newer.")
 #endif
 #endif
 

@@ -89,14 +89,6 @@ static __inline uint64_t t1ha_64le(const void *data, size_t len,
 uint64_t t1ha_32le(const void *data, size_t len, uint64_t seed);
 uint64_t t1ha_32be(const void *data, size_t len, uint64_t seed);
 
-#if (defined(__x86_64__) && (defined(__SSE4_2__) || __GNUC_PREREQ(4, 4) ||     \
-                             __has_attribute(target))) ||                      \
-    defined(_M_X64) || defined(_X86_64_)
-/* Machine specific hash, which uses CRC32c hardware acceleration.
- * Available only on modern x86 CPUs with support for SSE 4.2. */
-uint64_t t1ha_ia32crc(const void *data, size_t len, uint64_t seed);
-#endif
-
 #if ((defined(__AES__) || __GNUC_PREREQ(4, 4) || __has_attribute(target)) &&   \
      (defined(__x86_64__) || defined(__i386__))) ||                            \
     defined(_M_X64) || defined(_M_IX86)

@@ -807,79 +807,6 @@ uint64_t t1ha_32be(const void *data, size_t len, uint64_t seed) {
 
 /***************************************************************************/
 
-#if (defined(__x86_64__) && (defined(__SSE4_2__) || __GNUC_PREREQ(4, 4) ||     \
-                             __has_attribute(target))) ||                      \
-    defined(_M_X64) || defined(_X86_64_)
-#include <nmmintrin.h>
-
-uint64_t
-#if __GNUC_PREREQ(4, 4) || __has_attribute(target)
-    __attribute__((target("sse4.2")))
-#endif
-    t1ha_ia32crc(const void *data, size_t len, uint64_t seed) {
-  uint64_t a = seed;
-  uint64_t b = len;
-  const uint64_t *v = (const uint64_t *)data;
-
-  if (unlikely(len > 32)) {
-    const void *detent = (const uint8_t *)data + len - 31;
-    uint32_t x = (uint32_t)b;
-    uint32_t y = (uint32_t)a;
-    uint32_t z = (uint32_t)(~a ^ b);
-
-    do {
-      uint32_t t = (uint32_t)a + x;
-      a = rot64(a, 17) + p0 * v[0];
-      x += (uint32_t)_mm_crc32_u64(y, v[1]);
-      y += (uint32_t)_mm_crc32_u64(z, v[2]);
-      z += (uint32_t)_mm_crc32_u64(t, v[3]);
-      v += 4;
-    } while (likely(detent > (const void *)v));
-
-    a ^= x * p5 + y * p6 + z;
-    b = x + y * p5 + z * p6;
-    len &= 31;
-  }
-
-  switch (len) {
-  default:
-    b += mux64(*v++, p4);
-  case 24:
-  case 23:
-  case 22:
-  case 21:
-  case 20:
-  case 19:
-  case 18:
-  case 17:
-    a += mux64(*v++, p3);
-  case 16:
-  case 15:
-  case 14:
-  case 13:
-  case 12:
-  case 11:
-  case 10:
-  case 9:
-    b += mux64(*v++, p2);
-  case 8:
-  case 7:
-  case 6:
-  case 5:
-  case 4:
-  case 3:
-  case 2:
-  case 1:
-    a += mux64(tail64_le(v, len), p1);
-  case 0:
-    return mux64(rot64(a + b, s1), p4) + mix(a ^ b, p0);
-  }
-}
-
-#endif /* __x86_64__ */
-
-/***************************************************************************/
-
 #if defined(__x86_64__) || defined(_M_IX86) || defined(_M_X64) ||              \
     defined(i386) || defined(_X86_) || defined(__i386__) || defined(_X86_64_)
 static uint32_t x86_cpu_features(void) {
@@ -1158,12 +1085,6 @@ static uint64_t (*t1ha_local_resolve(void))(const void *, size_t, uint64_t) {
   uint32_t features = x86_cpu_features();
   if (features & (1l << 25))
     return t1ha_ia32aes;
-
-#if defined(__x86_64) || defined(_M_X64) || defined(_X86_64_)
-  if (features & (1l << 20))
-    return t1ha_ia32crc;
-#endif
-
 #endif /* x86 */
 
 #if __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__

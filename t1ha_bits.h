@@ -191,24 +191,6 @@ static __inline uint32_t bswap32(uint32_t v) {
 static __inline uint16_t bswap16(uint16_t v) { return v << 8 | v >> 8; }
 #endif /* bswap16 */
 
-#ifndef rot64
-static __inline uint64_t rot64(uint64_t v, unsigned s) {
-  return (v >> s) | (v << (64 - s));
-}
-#endif /* rot64 */
-
-#ifndef rot32
-static __inline uint32_t rot32(uint32_t v, unsigned s) {
-  return (v >> s) | (v << (32 - s));
-}
-#endif /* rot32 */
-
-#ifndef mul_32x32_64
-static __inline uint64_t mul_32x32_64(uint32_t a, uint32_t b) {
-  return a * (uint64_t)b;
-}
-#endif /* mul_32x32_64 */
-
 /***************************************************************************/
 
 static __inline uint64_t fetch64_le(const void *v) {
@@ -370,6 +352,24 @@ static maybe_unused __inline uint64_t tail64_be(const void *v, size_t tail) {
 
 /***************************************************************************/
 
+#ifndef rot64
+static __inline uint64_t rot64(uint64_t v, unsigned s) {
+  return (v >> s) | (v << (64 - s));
+}
+#endif /* rot64 */
+
+#ifndef rot32
+static __inline uint32_t rot32(uint32_t v, unsigned s) {
+  return (v >> s) | (v << (32 - s));
+}
+#endif /* rot32 */
+
+#ifndef mul_32x32_64
+static __inline uint64_t mul_32x32_64(uint32_t a, uint32_t b) {
+  return a * (uint64_t)b;
+}
+#endif /* mul_32x32_64 */
+
 static maybe_unused __inline unsigned add_with_carry(uint64_t *sum,
                                                      uint64_t addend) {
   *sum += addend;
@@ -408,4 +408,26 @@ static __inline uint64_t mux64(uint64_t v, uint64_t p) {
       add_with_carry(&ll, lh << 32) + add_with_carry(&ll, hl << 32);
   return hh ^ ll;
 #endif
+}
+
+/***************************************************************************/
+
+/* 'magic' primes */
+static const uint64_t p0 = 17048867929148541611ull;
+static const uint64_t p1 = 9386433910765580089ull;
+static const uint64_t p2 = 15343884574428479051ull;
+static const uint64_t p3 = 13662985319504319857ull;
+static const uint64_t p4 = 11242949449147999147ull;
+static const uint64_t p5 = 13862205317416547141ull;
+static const uint64_t p6 = 14653293970879851569ull;
+
+/* rotations */
+static const unsigned s0 = 41;
+static const unsigned s1 = 17;
+static const unsigned s2 = 31;
+
+/* xor-mul-xor mixer */
+static __inline uint64_t mix(uint64_t v, uint64_t p) {
+  v *= p;
+  return v ^ rot64(v, s0);
 }

@@ -85,7 +85,6 @@ crc64_hw        	|      7308.06	|    28.37 | poor (insecure, 100% bias, collisio
 crc32_hw        	|      5577.64	|    29.10 | poor (insecure, 100% bias, collisions, distrib), non-portable (SSE4.2)
 NOP_OAAT_read64 	|      1991.31	|    30.46 | poor (100% bias, 2.17x collisions)
 Crap8           	|      2743.80	|    32.50 | poor (2.42% bias, collisions, 2% distrib)
-**t1ha_crc**        	|     19535.64	|    32.72 | non-portable (SSE4.2)
 **t1ha_aes**        	|     34636.42	|    33.03 | non-portable (AES-NI)
 **t1ha**            	|     12228.80  |    35.55 |
 MUM             	|     10246.20	|    37.25 | non-portable (different result, machine specific)
@@ -160,7 +159,6 @@ metrohash128crc_1	|     21322.80	|    70.33 | _seems weak_ (likely cyclic collis
 metrohash64crc_1	|     21319.23	|    52.36 | _seems weak_ (cyclic collisions), non-portable (SSE4.2)
 metrohash128crc_2	|     20990.70	|    70.40 | _seems weak_ (likely cyclic collisions), non-portable (SSE4.2)
 metrohash64crc_2	|     20582.76	|    51.39 | _seems weak_ (likely cyclic collisions), non-portable (SSE4.2)
-**t1ha_crc**        	|     19535.64	|    32.72 | non-portable (SSE4.2)
 CityCrc128      	|     14821.82	|    62.38 | non-portable (SSE4.2)
 FNV1a_YoshimitsuTRIAD	|     13000.49	|    24.96 | poor (100% bias, collisions, distrib)
 farmhash128_c   	|     12709.06	|    96.42 | non-portable (SSE4.1)

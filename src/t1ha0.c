@@ -40,7 +40,7 @@
  * for The 1Hippeus project - zerocopy messaging in the spirit of Sparta!
  */
 
-#include "t1ha.h"
+#include "../t1ha.h"
 #include "t1ha_bits.h"
 
 static __inline uint32_t tail32_le(const void *v, size_t tail) {

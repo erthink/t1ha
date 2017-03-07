@@ -40,7 +40,7 @@
  * for The 1Hippeus project - zerocopy messaging in the spirit of Sparta!
  */
 
-#include "t1ha.h"
+#include "../t1ha.h"
 #include "t1ha_bits.h"
 
 uint64_t t1ha1_le(const void *data, size_t len, uint64_t seed) {

@@ -358,17 +358,13 @@ static __inline uint64_t rot64(uint64_t v, unsigned s) {
 }
 #endif /* rot64 */
 
-#ifndef rot32
-static __inline uint32_t rot32(uint32_t v, unsigned s) {
-  return (v >> s) | (v << (32 - s));
-}
-#endif /* rot32 */
-
 #ifndef mul_32x32_64
 static __inline uint64_t mul_32x32_64(uint32_t a, uint32_t b) {
   return a * (uint64_t)b;
 }
 #endif /* mul_32x32_64 */
+
+#ifndef mul_64x64_128
 
 static maybe_unused __inline unsigned add_with_carry(uint64_t *sum,
                                                      uint64_t addend) {
@@ -376,39 +372,41 @@ static maybe_unused __inline unsigned add_with_carry(uint64_t *sum,
   return *sum < addend;
 }
 
-/* xor high and low parts of full 128-bit product */
-static __inline uint64_t mux64(uint64_t v, uint64_t p) {
-#ifdef __SIZEOF_INT128__
-  __uint128_t r = (__uint128_t)v * (__uint128_t)p;
+static maybe_unused __inline uint64_t mul_64x64_128(uint64_t a, uint64_t b,
+                                                    uint64_t *h) {
+#if defined(__SIZEOF_INT128__) ||                                              \
+    (defined(_INTEGRAL_MAX_BITS) && _INTEGRAL_MAX_BITS >= 128)
+  __uint128_t r = (__uint128_t)a * (__uint128_t)b;
   /* modern GCC could nicely optimize this */
-  return r ^ (r >> 64);
-#elif defined(_INTEGRAL_MAX_BITS) && _INTEGRAL_MAX_BITS >= 128
-  __uint128 r = (__uint128)v * (__uint128)p;
-  return r ^ (r >> 64);
-#elif defined(mul_64x64_128)
-  uint64_t l, h;
-  l = mul_64x64_128(v, p, &h);
-  return l ^ h;
+  *h = r >> 64;
+  return r;
 #elif defined(mul_64x64_high)
-  uint64_t l, h;
-  l = v * p;
-  h = mul_64x64_high(v, p);
-  return l ^ h;
+  *h = mul_64x64_high(a, b);
+  return a * b;
 #else
   /* performs 64x64 to 128 bit multiplication */
-  uint64_t ll = mul_32x32_64((uint32_t)v, (uint32_t)p);
-  uint64_t lh = mul_32x32_64(v >> 32, (uint32_t)p);
-  uint64_t hl = mul_32x32_64(p >> 32, (uint32_t)v);
-  uint64_t hh =
-      mul_32x32_64(v >> 32, p >> 32) + (lh >> 32) + (hl >> 32) +
-      /* Few simplification are possible here for 32-bit architectures,
-       * but thus we would lost compatibility with the original 64-bit
-       * version.  Think is very bad idea, because then 32-bit t1ha will
-       * still (relatively) very slowly and well yet not compatible. */
-      add_with_carry(&ll, lh << 32) + add_with_carry(&ll, hl << 32);
-  return hh ^ ll;
+  uint64_t ll = mul_32x32_64((uint32_t)a, (uint32_t)b);
+  uint64_t lh = mul_32x32_64(a >> 32, (uint32_t)b);
+  uint64_t hl = mul_32x32_64((uint32_t)a, b >> 32);
+  *h = mul_32x32_64(a >> 32, b >> 32) + (lh >> 32) + (hl >> 32) +
+       /* Few simplification are possible here for 32-bit architectures,
+        * but thus we would lost compatibility with the original 64-bit
+        * version.  Think is very bad idea, because then 32-bit t1ha will
+        * still (relatively) very slowly and well yet not compatible. */
+       add_with_carry(&ll, lh << 32) + add_with_carry(&ll, hl << 32);
+  return ll;
 #endif
 }
+
+#endif /* mul_64x64_128() */
+
+#ifndef mul_64x64_high
+static maybe_unused __inline uint64_t mul_64x64_high(uint64_t a, uint64_t b) {
+  uint64_t h;
+  mul_64x64_128(a, b, &h);
+  return h;
+}
+#endif /* mul_64x64_high */
 
 /***************************************************************************/
 
@@ -426,8 +424,15 @@ static const unsigned s0 = 41;
 static const unsigned s1 = 17;
 static const unsigned s2 = 31;
 
+/* xor high and low parts of full 128-bit product */
+static maybe_unused __inline uint64_t mux64(uint64_t v, uint64_t p) {
+  uint64_t l, h;
+  l = mul_64x64_128(v, p, &h);
+  return l ^ h;
+}
+
 /* xor-mul-xor mixer */
-static __inline uint64_t mix(uint64_t v, uint64_t p) {
+static maybe_unused __inline uint64_t mix64(uint64_t v, uint64_t p) {
   v *= p;
   return v ^ rot64(v, s0);
 }

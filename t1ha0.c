@@ -110,6 +110,12 @@ static __inline uint32_t tail32_be(const void *v, size_t tail) {
 
 /***************************************************************************/
 
+#ifndef rot32
+static maybe_unused __inline uint32_t rot32(uint32_t v, unsigned s) {
+  return (v >> s) | (v << (32 - s));
+}
+#endif /* rot32 */
+
 static __inline uint64_t remix32(uint32_t a, uint32_t b) {
   a ^= rot32(b, 13);
   uint64_t l = a | (uint64_t)b << 32;
@@ -418,7 +424,7 @@ t1ha_ia32aes_avx(const void *data, size_t len, uint64_t seed) {
   case 1:
     a += mux64(tail64_le(v, len), p1);
   case 0:
-    return mux64(rot64(a + b, s1), p4) + mix(a ^ b, p0);
+    return mux64(rot64(a + b, s1), p4) + mix64(a ^ b, p0);
   }
 }
 
@@ -536,7 +542,7 @@ uint64_t
   case 1:
     a += mux64(tail64_le(v, len), p1);
   case 0:
-    return mux64(rot64(a + b, s1), p4) + mix(a ^ b, p0);
+    return mux64(rot64(a + b, s1), p4) + mix64(a ^ b, p0);
   }
 }
 

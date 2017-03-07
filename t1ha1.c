@@ -113,7 +113,7 @@ uint64_t t1ha1_le(const void *data, size_t len, uint64_t seed) {
   case 1:
     a += mux64(tail64_le(v, len), p1);
   case 0:
-    return mux64(rot64(a + b, s1), p4) + mix(a ^ b, p0);
+    return mux64(rot64(a + b, s1), p4) + mix64(a ^ b, p0);
   }
 }
 
@@ -187,6 +187,6 @@ uint64_t t1ha1_be(const void *data, size_t len, uint64_t seed) {
   case 1:
     a += mux64(tail64_be(v, len), p1);
   case 0:
-    return mux64(rot64(a + b, s1), p4) + mix(a ^ b, p0);
+    return mux64(rot64(a + b, s1), p4) + mix64(a ^ b, p0);
   }
 }

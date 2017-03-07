@@ -249,16 +249,16 @@ int main(int argc, const char *argv[]) {
   (void)argc;
   (void)argv;
   int failed = 0;
-  failed |= test("t1ha_64le", t1ha_64le, refval_64le);
-  failed |= test("t1ha_64be", t1ha_64be, refval_64be);
-  failed |= test("t1ha_32le", t1ha_32le, refval_32le);
-  failed |= test("t1ha_32be", t1ha_32be, refval_32be);
+  failed |= test("t1ha_64le", t1ha1_le, refval_64le);
+  failed |= test("t1ha_64be", t1ha1_be, refval_64be);
+  failed |= test("t1ha_32le", _t1ha_32le, refval_32le);
+  failed |= test("t1ha_32be", _t1ha_32be, refval_32be);
 
 #if defined(__x86_64__) || defined(_M_IX86) || defined(_M_X64) ||              \
     defined(i386) || defined(_X86_) || defined(__i386__) || defined(_X86_64_)
   uint32_t features = x86_cpu_features();
   if (features & (1l << 25))
-    failed |= test("t1ha_ia32aes", t1ha_ia32aes, refval_ia32aes);
+    failed |= test("t1ha_ia32aes", _t1ha_ia32aes, refval_ia32aes);
 #endif /* Any x86 */
   return failed ? EXIT_FAILURE : EXIT_SUCCESS;
 }

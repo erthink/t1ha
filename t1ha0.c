@@ -133,7 +133,7 @@ static const uint32_t q4 = 0x86F0FD61;
 static const uint32_t q5 = 0xCA2DA6FB;
 static const uint32_t q6 = 0xC4BB3575;
 
-uint64_t t1ha_32le(const void *data, size_t len, uint64_t seed) {
+uint64_t _t1ha_32le(const void *data, size_t len, uint64_t seed) {
   uint32_t a = rot32((uint32_t)len, s1) + (uint32_t)seed;
   uint32_t b = (uint32_t)len ^ (uint32_t)(seed >> 32);
 
@@ -202,7 +202,7 @@ uint64_t t1ha_32le(const void *data, size_t len, uint64_t seed) {
   }
 }
 
-uint64_t t1ha_32be(const void *data, size_t len, uint64_t seed) {
+uint64_t _t1ha_32be(const void *data, size_t len, uint64_t seed) {
   uint32_t a = rot32((uint32_t)len, s1) + (uint32_t)seed;
   uint32_t b = (uint32_t)len ^ (uint32_t)(seed >> 32);
 
@@ -303,7 +303,7 @@ static uint32_t x86_cpu_features(void) {
 
 #if defined(__x86_64__) && defined(__ELF__) &&                                 \
     (__GNUC_PREREQ(4, 6) || __has_attribute(ifunc)) && __has_attribute(target)
-uint64_t t1ha_ia32aes(const void *data, size_t len, uint64_t seed)
+uint64_t _t1ha_ia32aes(const void *data, size_t len, uint64_t seed)
     __attribute__((ifunc("t1ha_aes_resolve")));
 
 static uint64_t t1ha_ia32aes_avx(const void *data, size_t len, uint64_t seed);
@@ -434,7 +434,7 @@ uint64_t
 #if __GNUC_PREREQ(4, 4) || __has_attribute(target)
     __attribute__((target("aes")))
 #endif
-    t1ha_ia32aes(const void *data, size_t len, uint64_t seed) {
+    _t1ha_ia32aes(const void *data, size_t len, uint64_t seed) {
 #endif
   uint64_t a = seed;
   uint64_t b = len;
@@ -544,42 +544,42 @@ uint64_t
 
 /***************************************************************************/
 
-static uint64_t (*t1ha_local_resolve(void))(const void *, size_t, uint64_t) {
+static uint64_t (*t1ha0_resolve(void))(const void *, size_t, uint64_t) {
 #if defined(__x86_64) || defined(_M_IX86) || defined(_M_X64) ||                \
     defined(i386) || defined(_X86_) || defined(__i386__) || defined(_X86_64_)
 
   uint32_t features = x86_cpu_features();
   if (features & (1l << 25))
-    return t1ha_ia32aes;
+    return _t1ha_ia32aes;
 #endif /* x86 */
 
 #if __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
-  return (sizeof(long) >= 8) ? t1ha_64be : t1ha_32be;
+  return (sizeof(long) >= 8) ? t1ha1_be : _t1ha_32be;
 #else
-  return (sizeof(long) >= 8) ? t1ha_64le : t1ha_32le;
+  return (sizeof(long) >= 8) ? t1ha1_le : _t1ha_32le;
 #endif
 }
 
 #if defined(__ELF__) && (__GNUC_PREREQ(4, 6) || __has_attribute(ifunc))
 
-uint64_t t1ha_local(const void *data, size_t len, uint64_t seed)
-    __attribute__((ifunc("t1ha_local_resolve")));
+uint64_t t1ha0(const void *data, size_t len, uint64_t seed)
+    __attribute__((ifunc("t1ha0_resolve")));
 
 #elif __GNUC_PREREQ(4, 0) || __has_attribute(constructor)
 
-uint64_t (*t1ha_local_ptr)(const void *, size_t, uint64_t);
+uint64_t (*_t1ha0_ptr)(const void *, size_t, uint64_t);
 
-static void __attribute__((constructor)) t1ha_local_init(void) {
-  t1ha_local_ptr = t1ha_local_resolve();
+static void __attribute__((constructor)) t1ha0_init(void) {
+  _t1ha0_ptr = t1ha0_resolve();
 }
 
 #else /* ELF && ifunc */
 
-static uint64_t t1ha_local_proxy(const void *data, size_t len, uint64_t seed) {
-  t1ha_local_ptr = t1ha_local_resolve();
-  return t1ha_local_ptr(data, len, seed);
+static uint64_t t1ha0_proxy(const void *data, size_t len, uint64_t seed) {
+  _t1ha0_ptr = t1ha0_resolve();
+  return _t1ha0_ptr(data, len, seed);
 }
 
-uint64_t (*t1ha_local_ptr)(const void *, size_t, uint64_t) = t1ha_local_proxy;
+uint64_t (*_t1ha0_ptr)(const void *, size_t, uint64_t) = t1ha0_proxy;
 
 #endif

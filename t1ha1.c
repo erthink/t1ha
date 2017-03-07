@@ -43,7 +43,7 @@
 #include "t1ha.h"
 #include "t1ha_bits.h"
 
-uint64_t t1ha(const void *data, size_t len, uint64_t seed) {
+uint64_t t1ha1_le(const void *data, size_t len, uint64_t seed) {
   uint64_t a = seed;
   uint64_t b = len;
 
@@ -117,7 +117,7 @@ uint64_t t1ha(const void *data, size_t len, uint64_t seed) {
   }
 }
 
-uint64_t t1ha_64be(const void *data, size_t len, uint64_t seed) {
+uint64_t t1ha1_be(const void *data, size_t len, uint64_t seed) {
   uint64_t a = seed;
   uint64_t b = len;
 

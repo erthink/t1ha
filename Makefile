@@ -11,19 +11,19 @@ check: test
 all: check32 check64
 
 test: $(SOURCES)
-	$(CC) $(CFLAGS) -o $@ t1ha1.c t1ha0.c test.c
+	$(CC) $(CFLAGS) -DT1HA_TESTING -o $@ t1ha1.c t1ha0.c test.c
 
 clean:
 	rm -f test test32 test64
 
 test32: $(SOURCES)
-	$(CC) $(CFLAGS) -m32 -o $@ t1ha1.c t1ha0.c test.c
+	$(CC) $(CFLAGS) -DT1HA_TESTING -m32 -o $@ t1ha1.c t1ha0.c test.c
 
 check32: test32
 	./test32
 
 test64: $(SOURCES)
-	$(CC) $(CFLAGS) -m64 -o $@ t1ha1.c t1ha0.c test.c
+	$(CC) $(CFLAGS) -DT1HA_TESTING -m64 -o $@ t1ha1.c t1ha0.c test.c
 
 check64: test64
 	./test64

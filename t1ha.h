@@ -61,58 +61,64 @@
 extern "C" {
 #endif
 
-/* The main generic version of "Fast Positive Hash".
- *  - returns same result on all architectures and CPUs.
- *  - created for 64-bit little-endian platforms,
- *    in other cases may runs slowly. */
-uint64_t t1ha(const void *data, size_t len, uint64_t seed);
+/* The main low-endian version.
+ *  - runs faster on 64-bit low-endian platforms,
+ *    in other cases may runs slowly.
+ *  - returns same result on all architectures and CPUs,
+ *    but it is differs from t1ha(). */
+uint64_t t1ha1_le(const void *data, size_t len, uint64_t seed);
 
 /* The big-endian version.
  *  - runs faster on 64-bit big-endian platforms,
  *    in other cases may runs slowly.
  *  - returns same result on all architectures and CPUs,
  *    but it is differs from t1ha(). */
-uint64_t t1ha_64be(const void *data, size_t len, uint64_t seed);
+uint64_t t1ha1_be(const void *data, size_t len, uint64_t seed);
 
-/* Just a nickname for the generic t1ha.
- * 't1ha_64le' mean that is for 64-bit little-endian platforms. */
-static __inline uint64_t t1ha_64le(const void *data, size_t len,
-                                   uint64_t seed) {
-  return t1ha(data, len, seed);
+/* The nicname for generic version of "Fast Positive Hash".
+ *  - returns same result on all architectures and CPUs.
+ *  - created for 64-bit little-endian platforms,
+ *    in other cases may runs slowly. */
+static __inline uint64_t t1ha(const void *data, size_t len, uint64_t seed) {
+  return t1ha1_le(data, len, seed);
 }
 
-/* The alternative little/big-endian versions, which were
- * designed for a 32-bit CPUs. In comparison to the main t1ha:
- *   - much faster on 32-bit architectures.
- *   - half of speed on 64-bit architectures.
- *   - useful in case primary target platform is 32-bit. */
-uint64_t t1ha_32le(const void *data, size_t len, uint64_t seed);
-uint64_t t1ha_32be(const void *data, size_t len, uint64_t seed);
+/* t1ha0() is a facade that selects most quick-and-dirty hash
+ * for the current processor.
+ *
+ * BE CAREFUL!!!  This is means:
+ *
+ *   1. The quality of hash is a subject for tradeoffs with performance
+ *      and may be lower than t1ha1(), especially on 32-bit targets.
+ *      However, guaranteed that it passes all SMHasher tests.
+ *
+ *   2. No warranty that the hash result will be same for particular
+ *      key on another machine or another version of libt1ha.
+ *
+ *      Briefly, such hash-results and their derivatives, should be
+ *      used only in runtime, but should not be persist or transferred
+ *      over a network. */
+
+#if defined(__ELF__) && (__GNUC_PREREQ(4, 6) || __has_attribute(ifunc))
+uint64_t t1ha0(const void *data, size_t len, uint64_t seed);
+#else
+extern uint64_t (*_t1ha0_ptr)(const void *data, size_t len, uint64_t seed);
+static __inline uint64_t t1ha0(const void *data, size_t len, uint64_t seed) {
+  return _t1ha0_ptr(data, len, seed);
+}
+#endif
+
+#ifdef T1HA_TESTING
+uint64_t _t1ha_32le(const void *data, size_t len, uint64_t seed);
+uint64_t _t1ha_32be(const void *data, size_t len, uint64_t seed);
 
 #if ((defined(__AES__) || __GNUC_PREREQ(4, 4) || __has_attribute(target)) &&   \
      (defined(__x86_64__) || defined(__i386__))) ||                            \
     defined(_M_X64) || defined(_M_IX86)
-/* Machine specific hash, which uses AES hardware acceleration.
- * Available only on modern x86 CPUs with AES-NI extension. */
-uint64_t t1ha_ia32aes(const void *data, size_t len, uint64_t seed);
+uint64_t _t1ha_ia32aes(const void *data, size_t len, uint64_t seed);
 #endif /* __AES__ */
 
-/* Machine-specific facade that selects the fastest hash for
- * the current processor.
- *
- * BE CAREFUL!!! This is mean that hash result could be differ,
- * when someone (CPU, BIOS, OS, compiler, source code) was changed.
- * Briefly, such hash-results and their derivatives, should
- * not be persist or transferred over a network. */
-#if defined(__ELF__) && (__GNUC_PREREQ(4, 6) || __has_attribute(ifunc))
-uint64_t t1ha_local(const void *data, size_t len, uint64_t seed);
-#else
-extern uint64_t (*t1ha_local_ptr)(const void *data, size_t len, uint64_t seed);
-static __inline uint64_t t1ha_local(const void *data, size_t len,
-                                    uint64_t seed) {
-  return t1ha_local_ptr(data, len, seed);
-}
-#endif
+#endif /* T1HA_TESTING */
 
 #ifdef __cplusplus
 }

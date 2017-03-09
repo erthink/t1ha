@@ -431,7 +431,7 @@ t1ha_ia32aes_avx(const void *data, size_t len, uint64_t seed) {
 
 static uint64_t
 #if __GNUC_PREREQ(4, 4) || __has_attribute(target)
-    __attribute__((target("aes")))
+    __attribute__((target("aes,no-avx,no-avx2")))
 #endif
     t1ha_ia32aes_noavx(const void *data, size_t len, uint64_t seed) {
 
@@ -439,7 +439,7 @@ static uint64_t
 
 T1HA_INTERNAL uint64_t
 #if __GNUC_PREREQ(4, 4) || __has_attribute(target)
-    __attribute__((target("aes")))
+    __attribute__((target("aes,no-avx,no-avx2")))
 #endif
     _t1ha_ia32aes(const void *data, size_t len, uint64_t seed) {
 #endif

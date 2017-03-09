@@ -191,6 +191,12 @@ static __inline uint32_t bswap32(uint32_t v) {
 static __inline uint16_t bswap16(uint16_t v) { return v << 8 | v >> 8; }
 #endif /* bswap16 */
 
+#ifndef T1HA_TESTING
+#define T1HA_INTERNAL static maybe_unused
+#else
+#define T1HA_INTERNAL
+#endif /* T1HA_TESTING */
+
 /***************************************************************************/
 
 static __inline uint64_t fetch64_le(const void *v) {

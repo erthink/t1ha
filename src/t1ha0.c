@@ -40,7 +40,7 @@
  * for The 1Hippeus project - zerocopy messaging in the spirit of Sparta!
  */
 
-#include "t1ha.h"
+#include "../t1ha.h"
 #include "t1ha_bits.h"
 
 static __inline uint32_t tail32_le(const void *v, size_t tail) {
@@ -139,7 +139,7 @@ static const uint32_t q4 = 0x86F0FD61;
 static const uint32_t q5 = 0xCA2DA6FB;
 static const uint32_t q6 = 0xC4BB3575;
 
-uint64_t _t1ha_32le(const void *data, size_t len, uint64_t seed) {
+T1HA_INTERNAL uint64_t _t1ha_32le(const void *data, size_t len, uint64_t seed) {
   uint32_t a = rot32((uint32_t)len, s1) + (uint32_t)seed;
   uint32_t b = (uint32_t)len ^ (uint32_t)(seed >> 32);
 
@@ -208,7 +208,7 @@ uint64_t _t1ha_32le(const void *data, size_t len, uint64_t seed) {
   }
 }
 
-uint64_t _t1ha_32be(const void *data, size_t len, uint64_t seed) {
+T1HA_INTERNAL uint64_t _t1ha_32be(const void *data, size_t len, uint64_t seed) {
   uint32_t a = rot32((uint32_t)len, s1) + (uint32_t)seed;
   uint32_t b = (uint32_t)len ^ (uint32_t)(seed >> 32);
 
@@ -309,7 +309,8 @@ static uint32_t x86_cpu_features(void) {
 
 #if defined(__x86_64__) && defined(__ELF__) &&                                 \
     (__GNUC_PREREQ(4, 6) || __has_attribute(ifunc)) && __has_attribute(target)
-uint64_t _t1ha_ia32aes(const void *data, size_t len, uint64_t seed)
+T1HA_INTERNAL uint64_t _t1ha_ia32aes(const void *data, size_t len,
+                                     uint64_t seed)
     __attribute__((ifunc("t1ha_aes_resolve")));
 
 static uint64_t t1ha_ia32aes_avx(const void *data, size_t len, uint64_t seed);
@@ -436,7 +437,7 @@ static uint64_t
 
 #else /* ELF && ifunc */
 
-uint64_t
+T1HA_INTERNAL uint64_t
 #if __GNUC_PREREQ(4, 4) || __has_attribute(target)
     __attribute__((target("aes")))
 #endif

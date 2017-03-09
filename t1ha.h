@@ -57,6 +57,44 @@
 #endif
 #endif
 
+#ifndef __dll_export
+#if defined(_WIN32) || defined(__CYGWIN__)
+#if defined(__GNUC__) || __has_attribute(dllexport)
+#define __dll_export __attribute__((dllexport))
+#elif defined(_MSC_VER)
+#define __dll_export __declspec(dllexport)
+#else
+#define __dll_export
+#endif
+#elif defined(__GNUC__) || __has_attribute(visibility)
+#define __dll_export __attribute__((visibility("default")))
+#else
+#define __dll_export
+#endif
+#endif /* __dll_export */
+
+#ifndef __dll_import
+#if defined(_WIN32) || defined(__CYGWIN__)
+#if defined(__GNUC__) || __has_attribute(dllimport)
+#define __dll_import __attribute__((dllimport))
+#elif defined(_MSC_VER)
+#define __dll_import __declspec(dllimport)
+#else
+#define __dll_import
+#endif
+#else
+#define __dll_import
+#endif
+#endif /* __dll_import */
+
+#if defined(t1ha_EXPORTS)
+#define T1HA_API __dll_export
+#elif defined(t1ha_IMPORTS)
+#define T1HA_API __dll_import
+#else
+#define T1HA_API
+#endif /* fptu_EXPORTS */
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -66,14 +104,14 @@ extern "C" {
  *    in other cases may runs slowly.
  *  - returns same result on all architectures and CPUs,
  *    but it is differs from t1ha(). */
-uint64_t t1ha1_le(const void *data, size_t len, uint64_t seed);
+T1HA_API uint64_t t1ha1_le(const void *data, size_t len, uint64_t seed);
 
 /* The big-endian version.
  *  - runs faster on 64-bit big-endian platforms,
  *    in other cases may runs slowly.
  *  - returns same result on all architectures and CPUs,
  *    but it is differs from t1ha(). */
-uint64_t t1ha1_be(const void *data, size_t len, uint64_t seed);
+T1HA_API uint64_t t1ha1_be(const void *data, size_t len, uint64_t seed);
 
 /* The nicname for generic version of "Fast Positive Hash".
  *  - returns same result on all architectures and CPUs.
@@ -100,9 +138,10 @@ static __inline uint64_t t1ha(const void *data, size_t len, uint64_t seed) {
  *      over a network. */
 
 #if defined(__ELF__) && (__GNUC_PREREQ(4, 6) || __has_attribute(ifunc))
-uint64_t t1ha0(const void *data, size_t len, uint64_t seed);
+T1HA_API uint64_t t1ha0(const void *data, size_t len, uint64_t seed);
 #else
-extern uint64_t (*_t1ha0_ptr)(const void *data, size_t len, uint64_t seed);
+T1HA_API extern uint64_t (*_t1ha0_ptr)(const void *data, size_t len,
+                                       uint64_t seed);
 static __inline uint64_t t1ha0(const void *data, size_t len, uint64_t seed) {
   return _t1ha0_ptr(data, len, seed);
 }

@@ -564,10 +564,13 @@ static
     return _t1ha_ia32aes;
 #endif /* x86 */
 
+  return (sizeof(size_t) >= 8)
 #if __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
-  return (sizeof(long) >= 8) ? t1ha1_be : _t1ha_32be;
+             ? t1ha1_be
+             : _t1ha_32be;
 #else
-  return (sizeof(long) >= 8) ? t1ha1_le : _t1ha_32le;
+             ? t1ha1_le
+             : _t1ha_32le;
 #endif
 }
 

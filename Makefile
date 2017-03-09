@@ -1,9 +1,9 @@
 ifndef CFLAGS
 CFLAGS = -std=c99
-GCC_VERSION = $(shell $(CC) -v 2>&1 | sed -n 's/.*gcc version \([0-9]\+\.[0-9]\+\)\.[0-9]\+.*/\1/p')
-GCC_SIMD = $(shell $(CC) -v 2>&1 | sed -n 's/^Target: \(\(x86_64\)\|\(i[3-6]86\)\)-.*/yes/p')
-CLANG_VERSION = $(shell $(CC) --version 2>&1 | sed -n 's/.*clang version \([0-9]\+\.[0-9]\+\)\.[0-9]\+.*/\1/p')
-CLANG_SIMD = $(shell $(CC) --version 2>&1 | sed -n 's/^Target: \(\(x86_64\)\|\(i[3-6]86\)\)-.*/yes/p')
+GCC_VERSION = $(shell export LC_ALL=C; $(CC) -v 2>&1 | sed -n 's/.*gcc version \([0-9]\+\.[0-9]\+\)\.[0-9]\+.*/\1/p')
+GCC_SIMD = $(shell export LC_ALL=C; $(CC) -v 2>&1 | sed -n 's/^Target: \(\(x86_64\)\|\(i[3-6]86\)\)-.*/yes/p')
+CLANG_VERSION = $(shell export LC_ALL=C; $(CC) --version 2>&1 | sed -n 's/.*clang version \([0-9]\+\.[0-9]\+\)\.[0-9]\+.*/\1/p')
+CLANG_SIMD = $(shell export LC_ALL=C; $(CC) --version 2>&1 | sed -n 's/^Target: \(\(x86_64\)\|\(i[3-6]86\)\)-.*/yes/p')
 parenthesis=)
 GCC_SIMD_BUG = $(shell if [ \"$(GCC_SIMD)\" = \"yes\" ]; then case \"$(GCC_VERSION)\" in \"4.[0-8]\"$(parenthesis) echo yes;; esac; fi)
 CLANG_SIMD_BUG = $(shell if [ \"$(CLANG_SIMD)\" = \"yes\" ]; then case \"$(CLANG_VERSION)\" in \"3.[0-7]\"$(parenthesis) echo yes;; esac; fi)

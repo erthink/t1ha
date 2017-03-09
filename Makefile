@@ -4,7 +4,7 @@ CC ?= cc
 CFLAGS ?= -std=c99 -march=native
 
 CFLAGS_TEST ?= $(CFLAGS) -Wextra -Werror -O -g -DT1HA_TESTING
-CFLAGS_LIB ?= $(CFLAGS) -Wall -ffunction-sections -O3 -fPIE
+CFLAGS_LIB ?= $(CFLAGS) -Wall -ffunction-sections -O3 -fPIC
 CFLAGS_SOLIB ?= $(CFLAGS_LIB) -fvisibility=hidden -Dt1ha_EXPORTS -shared
 
 SOURCES = t1ha.h tests/main.c $(addprefix src/, t1ha1.c t1ha0.c t1ha_bits.h) Makefile

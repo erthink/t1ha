@@ -551,7 +551,11 @@ T1HA_INTERNAL uint64_t
 
 /***************************************************************************/
 
-static uint64_t (*t1ha0_resolve(void))(const void *, size_t, uint64_t) {
+static
+#if __GNUC_PREREQ(4, 0) || __has_attribute(used)
+    __attribute__((used))
+#endif
+    uint64_t (*t1ha0_resolve(void))(const void *, size_t, uint64_t) {
 #if defined(__x86_64) || defined(_M_IX86) || defined(_M_X64) ||                \
     defined(i386) || defined(_X86_) || defined(__i386__) || defined(_X86_64_)
 
@@ -567,10 +571,15 @@ static uint64_t (*t1ha0_resolve(void))(const void *, size_t, uint64_t) {
 #endif
 }
 
-#if defined(__ELF__) && (__GNUC_PREREQ(4, 6) || __has_attribute(ifunc))
+#ifdef __ELF__
 
+#if __GNUC_PREREQ(4, 6) || __has_attribute(ifunc)
 uint64_t t1ha0(const void *data, size_t len, uint64_t seed)
     __attribute__((ifunc("t1ha0_resolve")));
+#else
+__asm("\t.globl\tt1ha0\n\t.type\tt1ha0, "
+      "@gnu_indirect_function\n\t.set\tt1ha0,t1ha0_resolve");
+#endif /* ifunc */
 
 #elif __GNUC_PREREQ(4, 0) || __has_attribute(constructor)
 
@@ -580,7 +589,7 @@ static void __attribute__((constructor)) t1ha0_init(void) {
   _t1ha0_ptr = t1ha0_resolve();
 }
 
-#else /* ELF && ifunc */
+#else /* ELF */
 
 static uint64_t t1ha0_proxy(const void *data, size_t len, uint64_t seed) {
   _t1ha0_ptr = t1ha0_resolve();

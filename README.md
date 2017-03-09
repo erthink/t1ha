@@ -56,7 +56,6 @@ make
 ./SMHasher City64
 ./SMHasher metrohash64_1
 ./SMHasher xxHash64
-./SMHasher mum
 ...
 ./SMHasher t1ha
 ```
@@ -76,9 +75,9 @@ The results below were obtained on:
 #### The _SMALL KEYS_ CASE
 Order by average Cycles per Hash for 1..31 bytes (less is better).
 
-| Function          | MiB/Second | Cycles/Hash | Notes (quality, portability) |
-| :---------------- | ------------: | ----------: | :---- |
-_donothing_    	   |  15747227.36	|     6.00 | not a hash (just for reference)
+| Function              | MiB/Second | Cycles/Hash | Notes (quality, portability) |
+| :-------------------- | ------------: | -------: | :--------------------------- |
+_donothing_    	        |  15747227.36	|     6.00 | not a hash (just for reference)
 _sumhash32_       	|     43317.86	|    16.69 | not a hash (just for reference)
 FNV1a_YoshimitsuTRIAD	|     13000.49	|    24.96 | poor (100% bias, collisions, distrib)
 crc64_hw        	|      7308.06	|    28.37 | poor (insecure, 100% bias, collisions, distrib), non-portable (SSE4.2)
@@ -150,9 +149,9 @@ sha1_32a        	|       531.44	|  1222.44 |
 #### The _LARGE KEYS_ CASE
 Order by hashing speed in Mi-bytes (2^20 = 1048576) per second for 262144-byte block (more is better).
 
-| Function          | MiB/Second | Cycles/Hash | Notes (quality, portability) |
-| :---------------- | ------------: | ----------: | :---- |
-_donothing_    	   |  15747227.36	|     6.00 | not a hash (just for reference)
+| Function              | MiB/Second | Cycles/Hash | Notes (quality, portability) |
+| :-------------------- | ------------: | -------: | :--------------------------- |
+_donothing_    	        |  15747227.36	|     6.00 | not a hash (just for reference)
 _sumhash32_       	|     43317.86	|    16.69 | not a hash (just for reference)
 **t1ha_aes**        	|     34636.42	|    33.03 | non-portable (AES-NI)
 metrohash128crc_1	|     21322.80	|    70.33 | _seems weak_ (likely cyclic collisions), non-portable (SSE4.2)

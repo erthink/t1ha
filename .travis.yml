@@ -1,6 +1,6 @@
 # Config
 
-language: cpp
+language: c
 sudo: false
 dist: trusty
 cache: bundler
@@ -17,4 +17,4 @@ os:
         - osx
 
 script:
-        - make check
+        - make check all

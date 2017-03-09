@@ -55,7 +55,16 @@
 #else
 #define __GNUC_PREREQ(maj, min) 0
 #endif
+#endif /* __GNUC_PREREQ */
+
+#ifndef __CLANG_PREREQ
+#ifdef __clang__
+#define __CLANG_PREREQ(maj, min)                                               \
+  ((__clang_major__ << 16) + __clang_minor__ >= ((maj) << 16) + (min))
+#else
+#define __CLANG_PREREQ(maj, min) (0)
 #endif
+#endif /* __CLANG_PREREQ */
 
 #ifndef __dll_export
 #if defined(_WIN32) || defined(__CYGWIN__)
@@ -137,7 +146,7 @@ static __inline uint64_t t1ha(const void *data, size_t len, uint64_t seed) {
  *      used only in runtime, but should not be persist or transferred
  *      over a network. */
 
-#if defined(__ELF__) && (__GNUC_PREREQ(4, 6) || __has_attribute(ifunc))
+#ifdef __ELF__
 T1HA_API uint64_t t1ha0(const void *data, size_t len, uint64_t seed);
 #else
 T1HA_API extern uint64_t (*_t1ha0_ptr)(const void *data, size_t len,
@@ -145,7 +154,7 @@ T1HA_API extern uint64_t (*_t1ha0_ptr)(const void *data, size_t len,
 static __inline uint64_t t1ha0(const void *data, size_t len, uint64_t seed) {
   return _t1ha0_ptr(data, len, seed);
 }
-#endif
+#endif /* __ELF__ */
 
 #ifdef T1HA_TESTING
 uint64_t _t1ha_32le(const void *data, size_t len, uint64_t seed);

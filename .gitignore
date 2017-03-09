@@ -1,8 +1,13 @@
-.vs/
+libt1ha.a
+libt1ha.so
+t1ha0.o
+t1ha1.o
+t1ha-dll.VC.db
+t1ha-static.VC.db
+t1ha-test.VC.db
 t1ha.VC.db
 t1ha.VC.VC.opendb
-t1ha-static.VC.db
-t1ha-dll.VC.db
-t1ha-test.VC.db
+test
+.vs/
 Win32/
 x64/

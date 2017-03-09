@@ -55,7 +55,16 @@
 #else
 #define __GNUC_PREREQ(maj, min) 0
 #endif
+#endif /* __GNUC_PREREQ */
+
+#ifndef __CLANG_PREREQ
+#ifdef __clang__
+#define __CLANG_PREREQ(maj, min)                                               \
+  ((__clang_major__ << 16) + __clang_minor__ >= ((maj) << 16) + (min))
+#else
+#define __CLANG_PREREQ(maj, min) (0)
 #endif
+#endif /* __CLANG_PREREQ */
 
 #ifndef __dll_export
 #if defined(_WIN32) || defined(__CYGWIN__)

@@ -1,14 +1,14 @@
 ifndef CFLAGS
 CFLAGS = -std=c99
-GCC_VERSION = $(shell export LC_ALL=C; $(CC) -v 2>&1 | sed -n 's/.*gcc version \([0-9]\+\.[0-9]\+\)\.[0-9]\+.*/\1/p')
-GCC_SIMD = $(shell export LC_ALL=C; $(CC) -v 2>&1 | sed -n 's/^Target: \(\(x86_64\)\|\(i[3-6]86\)\)-.*/yes/p')
-CLANG_VERSION = $(shell export LC_ALL=C; $(CC) --version 2>&1 | sed -n 's/.*clang version \([0-9]\+\.[0-9]\+\)\.[0-9]\+.*/\1/p')
-CLANG_SIMD = $(shell export LC_ALL=C; $(CC) --version 2>&1 | sed -n 's/^Target: \(\(x86_64\)\|\(i[3-6]86\)\)-.*/yes/p')
 parenthesis=)
-GCC_SIMD_BUG = $(shell if [ \"$(GCC_SIMD)\" = \"yes\" ]; then case \"$(GCC_VERSION)\" in \"4.[0-8]\"$(parenthesis) echo yes;; esac; fi)
-CLANG_SIMD_BUG = $(shell if [ \"$(CLANG_SIMD)\" = \"yes\" ]; then case \"$(CLANG_VERSION)\" in \"3.[0-7]\"$(parenthesis) echo yes;; esac; fi)
-ifeq ($(GCC_SIMD_BUG),yes)
-# LY: -march=native is a workaround for a GCC 4.x bug, which was fixed in 4.9 and later.
+GNUCC_VERSION = $(shell (export LC_ALL=C; $(CC) -v 2>&1 | sed -n -e 's/.*gcc version \([0-9]\+\.[0-9]\+\)\.[0-9]\+.*/\1/p'; echo '?') | head -1)
+CLANG_VERSION = $(shell (export LC_ALL=C; $(CC) --version 2>&1 | sed -n -e 's/.*clang version \([0-9]\+\.[0-9]\+\)\.[0-9]\+.*/\1/p'; echo '?') | head -1)
+GNUCC_ARCHx86 = $(shell (export LC_ALL=C; test '$(GNUCC_VERSION)' != '?' && $(CC) -v 2>&1 | sed -n -e 's/^Target: \(\(x86_64\)\|\(i[3-6]86\)\)-.*/yes/p'; echo 'no') | head -1)
+CLANG_ARCHx86 = $(shell (export LC_ALL=C; test '$(CLANG_VERSION)' != '?' && $(CC) --version 2>&1 | sed -n -e 's/^Target: \(\(x86_64\)\|\(i[3-6]86\)\)-.*/yes/p'; echo 'no') | head -1)
+GNUCC_SIMD_BUG = $(shell (test '$(GNUCC_ARCHx86)' = 'yes' && case '$(GNUCC_VERSION)' in 4.[0-8]$(parenthesis) echo 'yes';; esac; echo 'no') | head -1)
+CLANG_SIMD_BUG = $(shell (test '$(CLANG_ARCHx86)' = 'yes' && case '$(CLANG_VERSION)' in 3.[0-7]$(parenthesis) echo 'yes';; esac; echo 'no') | head -1)
+ifeq ($(GNUCC_SIMD_BUG),yes)
+# LY: -march=native is a workaround for a GNUCC 4.x bug, which was fixed in 4.9 and later.
 CFLAGS += -march=native
 else
 ifeq ($(CLANG_SIMD_BUG),yes)
@@ -42,8 +42,8 @@ libt1ha.so: $(SOURCES) test
 	$(CC) $(CFLAGS_SOLIB) -o $@ src/t1ha1.c src/t1ha0.c
 
 test: $(SOURCES)
-	@echo "GCC_VERSION=$(GCC_VERSION) GCC_SIMD=$(GCC_SIMD) CLANG_VERSION=$(CLANG_VERSION) CLANG_SIMD=$(CLANG_SIMD)"
-	@echo "GCC_SIMD_BUG=$(GCC_SIMD_BUG) CLANG_SIMD_BUG=$(CLANG_SIMD_BUG)"
+	@test '$(GNUCC_VERSION)' != '?' && echo "GNUCC: Version $(GNUCC_VERSION), ARCHx86: $(GNUCC_ARCHx86); Affected by 'instructions not enabled' bug: $(GNUCC_SIMD_BUG)" || true
+	@test '$(CLANG_VERSION)' != '?' && echo "CLANG: Version $(CLANG_VERSION), ARCHx86: $(CLANG_ARCHx86); Affected by 'instructions not enabled' bug: $(CLANG_SIMD_BUG)" || true
 	$(CC) $(CFLAGS_TEST) -o $@ src/t1ha1.c src/t1ha0.c tests/main.c
 
 clean:

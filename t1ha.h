@@ -102,7 +102,7 @@
 #define T1HA_API __dll_import
 #else
 #define T1HA_API
-#endif /* fptu_EXPORTS */
+#endif /* T1HA_API */
 
 #ifdef __cplusplus
 extern "C" {

@@ -121,11 +121,19 @@
 #endif
 #endif
 
-#pragma warning(                                                               \
-    disable : 4710) /* C4710: C4710: 'mux64': function not inlined */
-#pragma warning(                                                               \
-    disable : 4711) /* C4711: function 'x86_cpu_features' selected for         \
-                       automatic inline expansion */
+#pragma warning(disable : 4514) /* C4514: 'xyz': unreferenced inline function  \
+                                   has been removed */
+#pragma warning(disable : 4710) /* C4710: 'xyz': function not inlined */
+#pragma warning(disable : 4711) /* C4711: function 'xyz' selected for          \
+                                   automatic inline expansion */
+#pragma warning(disable : 4668) /* C4668: 'xyz' is not defined as a            \
+                                   preprocessor macro,                         \
+                                   replacing with '0' for '#if/#elif' */
+#pragma warning(disable : 4255) /* C4255: '_readfsbase_u32': no function       \
+                                   prototype given: converting '()' to         \
+                                   '(void)' */
+#pragma warning(disable : 4820) /* C4820: '_heapinfo' : '4' bytes padding      \
+                                   added after data member '_useflag' */
 
 #include <intrin.h>
 #include <stdlib.h>

@@ -40,6 +40,10 @@
  * for The 1Hippeus project - zerocopy messaging in the spirit of Sparta!
  */
 
+#ifdef _MSC_VER
+#pragma warning(disable : 4464) /* relative include path contains '..' */
+#endif
+
 #include "../t1ha.h"
 #include "t1ha_bits.h"
 

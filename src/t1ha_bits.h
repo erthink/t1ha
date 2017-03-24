@@ -121,19 +121,7 @@
 #endif
 #endif
 
-#pragma warning(disable : 4514) /* C4514: 'xyz': unreferenced inline function  \
-                                   has been removed */
-#pragma warning(disable : 4710) /* C4710: 'xyz': function not inlined */
-#pragma warning(disable : 4711) /* C4711: function 'xyz' selected for          \
-                                   automatic inline expansion */
-#pragma warning(disable : 4668) /* C4668: 'xyz' is not defined as a            \
-                                   preprocessor macro,                         \
-                                   replacing with '0' for '#if/#elif' */
-#pragma warning(disable : 4255) /* C4255: '_readfsbase_u32': no function       \
-                                   prototype given: converting '()' to         \
-                                   '(void)' */
-#pragma warning(disable : 4820) /* C4820: '_heapinfo' : '4' bytes padding      \
-                                   added after data member '_useflag' */
+#pragma warning(push, 1)
 
 #include <intrin.h>
 #include <stdlib.h>
@@ -160,6 +148,14 @@
 #elif defined(_M_ARM)
 #define mul_32x32_64(a, b) _arm_umull(a, b)
 #endif
+
+#pragma warning(pop)
+
+#pragma warning(disable : 4514) /* 'xyz': unreferenced inline function         \
+                                   has been removed */
+#pragma warning(disable : 4710) /* 'xyz': function not inlined */
+#pragma warning(disable : 4711) /* function 'xyz' selected for                 \
+                                   automatic inline expansion */
 
 #endif /* Compiler */
 

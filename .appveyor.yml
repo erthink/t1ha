@@ -1,0 +1,18 @@
+version: '{build}'
+max_jobs: 1
+
+platform:
+ - Win32
+ - x64
+
+configuration:
+  - Release
+  - Debug
+
+build:
+  verbosity: minimal
+  project: t1ha.sln
+
+test_script:
+- ps: |
+    & "C:\projects\t1ha\$env:PLATFORM\$env:CONFIGURATION\t1ha-test\t1ha-test.exe"

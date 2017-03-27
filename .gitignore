@@ -9,5 +9,5 @@ t1ha.VC.db
 t1ha.VC.VC.opendb
 test
 .vs/
-Win32/
+x86/
 x64/

@@ -305,8 +305,13 @@ static uint32_t x86_cpu_features(void) {
 }
 #endif
 
-#if defined(__i386__) || defined(__x86_64__) || defined(_M_IX86) ||            \
-    defined(_M_X64) || defined(i386) || defined(_X86_) || defined(_X86_64_)
+#undef T1HA_ia32aes_AVAILABLE
+#if defined(_X86_64_) || defined(__x86_64__) || defined(_M_X64) ||             \
+    ((defined(__i386__) || defined(_M_IX86) || defined(i386) ||                \
+      defined(_X86_)) &&                                                       \
+     (!defined(_MSC_VER) || (_MSC_VER >= 1900)))
+
+#define T1HA_ia32aes_AVAILABLE
 #include <emmintrin.h>
 #include <smmintrin.h>
 #include <wmmintrin.h>
@@ -560,13 +565,12 @@ static
     __attribute__((used))
 #endif
     uint64_t (*t1ha0_resolve(void))(const void *, size_t, uint64_t) {
-#if defined(__x86_64) || defined(_M_IX86) || defined(_M_X64) ||                \
-    defined(i386) || defined(_X86_) || defined(__i386__) || defined(_X86_64_)
+#ifdef T1HA_ia32aes_AVAILABLE
 
   uint32_t features = x86_cpu_features();
   if (features & (1l << 25))
     return _t1ha_ia32aes;
-#endif /* x86 */
+#endif /* T1HA_ia32aes_AVAILABLE */
 
   return (sizeof(size_t) >= 8)
 #if __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__

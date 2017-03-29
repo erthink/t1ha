@@ -254,11 +254,13 @@ int main(int argc, const char *argv[]) {
   failed |= test("t1ha_32le", _t1ha_32le, refval_32le);
   failed |= test("t1ha_32be", _t1ha_32be, refval_32be);
 
-#if defined(__x86_64__) || defined(_M_IX86) || defined(_M_X64) ||              \
-    defined(i386) || defined(_X86_) || defined(__i386__) || defined(_X86_64_)
+#if defined(_X86_64_) || defined(__x86_64__) || defined(_M_X64) ||             \
+    ((defined(__i386__) || defined(_M_IX86) || defined(i386) ||                \
+      defined(_X86_)) &&                                                       \
+     (!defined(_MSC_VER) || (_MSC_VER >= 1900)))
   uint32_t features = x86_cpu_features();
   if (features & (1l << 25))
     failed |= test("t1ha_ia32aes", _t1ha_ia32aes, refval_ia32aes);
-#endif /* Any x86 */
+#endif /* x86 for t1ha_ia32aes */
   return failed ? EXIT_FAILURE : EXIT_SUCCESS;
 }

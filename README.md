@@ -7,37 +7,115 @@ by [Positive Technologies](https://www.ptsecurity.com).
 [![Build Status](https://travis-ci.org/leo-yuriev/t1ha.svg?branch=devel)](https://travis-ci.org/leo-yuriev/t1ha)
 [![Build status](https://ci.appveyor.com/api/projects/status/ptug5fl2ouxdo68h/branch/devel?svg=true)](https://ci.appveyor.com/project/leo-yuriev/t1ha/branch/devel)
 
-### Briefly, it is a 64-bit Hash Function:
-  1. Created for 64-bit little-endian platforms, predominantly for x86_64,
+## Briefly, it is a portable 64-bit hash function:
+  1. Intended for 64-bit little-endian platforms, predominantly for x86_64,
      but portable and without penalties could run on any 64-bit CPU.
   2. In most cases up to 15% faster than City64, xxHash, mum-hash, metro-hash
      and all others portable hash-functions (which are not uses specific hardware tricks).
-  3. Not suitable for cryptography.
+  3. Currently not suitable for cryptography.
 
-### Design goals
-  1. Speed with the reasonable quality.
-  2. Effective on modern 64-bit CPUs, but not in a hardware.
-  3. Strong as possible, but without penalties in speed.
+********************************************************************************
 
-Please see [t1ha.c](t1ha.c) for implementation details.
+# Usage
+The `t1ha` library provides several terraced hash functions
+with the dissimilar properties and for a different cases.
+
+These functions briefly described below, see [t1ha.h](t1ha.h) for more API details.
+
+Please, feel free to fill an issue or make pull request.
 
 
-#### Acknowledgement:
-The _t1ha_ was originally developed by Leonid Yuriev (Леонид Юрьев)
-for _The 1Hippeus project - zerocopy messaging in the spirit of Sparta!_
+`t1ha0` = 64 bits, "Just Only Faster"
+-------------------------------------
 
+  Provides fast-as-possible hashing for current CPU, including 32-bit
+  systems and engaging the available hardware acceleration.
+  You can rest assured that t1ha0 faster than all other fast hashes
+  (with comparable quality) so, otherwise we will extending and refine it time-to-time.
+
+  On the other hand, without warranty that the hash result will be same
+  for particular key on another machine or another version.
+  Moreover, is deliberately known that the result will be different
+  for systems with different bitness or endianness.
+  Briefly, such hash-results and their derivatives, should be
+  used only in runtime, but should not be persist or transferred
+  over a network.
+
+  Also should be noted, the quality of t1ha0() hashing is a subject
+  for tradeoffs with performance. Therefore the quality and strength
+  of t1ha0() may be lower than t1ha1(), especially on 32-bit targets,
+  but then much faster.
+  However, guaranteed that it passes all SMHasher tests.
+
+  Internally t1ha0() selects most faster implementation for current CPU,
+  for now these are includes:
+
+ | Implementation          | Platform/CPU                           |
+ | :---------------------- | :------------------------------------- |
+ | `_t1ha_ia32aes_avx()`   | x86 with AES-NI and AVX extensions     |
+ | `_t1ha_ia32aes_noavx()` | x86 with AES-NI without AVX extensions |
+ | `_t1ha_32le()`          | 32-bit little-endian                   |
+ | `_t1ha_32be()`          | 32-bit big-endian                      |
+ | `t1ha1_le()`            | 64-bit little-endian                   |
+ | `t1ha1_be()`            | 32-bit big-endian                      |
+
+
+`t1ha1` = 64 bits, fast- portable hash
+--------------------------------------
+
+  The main generic version of "Fast Positive Hash" with reasonable quality
+  for checksum, hash tables and thin fingerprinting. It is stable, e.g.
+  returns same result on all architectures and CPUs.
+
+  1. Speed with the reasonable quality of hashing.
+  2. Efficiency on modern 64-bit CPUs, but not in a hardware.
+  3. Strong as possible, until no penalties on performance.
+
+  The main version is intended for little-endian systems and will runs
+  slowly on big-endian. Therefore a dedicated big-endian version is also
+  provided, but returns the different result than the main version.
+
+
+`t1ha2` = 64 bits, little more attention for quality and strength
+-----------------------------------------------------------------
+  The next-step version of "Fast Positive Hash",
+  but not yet finished and therefore not available.
+
+
+`t1ha3` = 128 bits, fast non-cryptographic fingerprinting
+---------------------------------------------------------
+  The next-step version of "Fast Positive Hash",
+  but not yet finished and therefore not available.
+
+
+#### Planned: `t1ha4` = 128 bits, fast alternative for SipHash
+
+#### Planned: `t1ha5` = 256 bits, fast insecure fingerprinting
+
+#### Planned: `t1ha6` = 256 bits, Cryptographic
+
+#### Planned: `t1ha7` = 256 bits, Cryptographic with reasonable resistance to acceleration on GPU and FPGA.
+
+
+********************************************************************************
 
 ### Requirements and Portability:
-  1. _t1ha_ designed for modern 64-bit architectures.
+  1. _t1ha_ designed for **modern 64-bit architectures**.
      But on the other hand, _t1ha_ doesn't require
      instructions specific to a particular architecture:
        - therefore t1ha could be used on any CPU for
          which compiler provides support 64-bit arithmetic.
        - but unfortunately _t1ha_ could be dramatically slowly
          on architectures without native 64-bit operations.
-  2. This implementation of _t1ha_ requires modern GNU C compatible compiler,
-     includes Clang/LLVM, and Visual Studio 2015 (MSVC 19) at the worst case.
+  2. This implementation of _t1ha_ requires **modern GNU C compatible compiler**,
+     includes Clang/LLVM, or **Visual Studio 2015**.
 
+#### Acknowledgement:
+The _t1ha_ was originally developed by Leonid Yuriev (Леонид Юрьев)
+for _The 1Hippeus project - zerocopy messaging in the spirit of Sparta!_
+
+
+********************************************************************************
 
 ## Benchmarking and Testing
 [_SMHasher_](https://github.com/aappleby/smhasher/wiki) is a wellknown
@@ -73,7 +151,7 @@ The results below were obtained on:
  - CFLAGS: `-march=native -O3 -fPIC`;
 
 
-#### The _SMALL KEYS_ CASE
+#### The _SMALL KEYS_ case
 Order by average Cycles per Hash for 1..31 bytes (less is better).
 
 | Function              | MiB/Second | Cycles/Hash | Notes (quality, portability) |
@@ -85,8 +163,8 @@ crc64_hw        	|      7308.06	|    28.37 | poor (insecure, 100% bias, collisio
 crc32_hw        	|      5577.64	|    29.10 | poor (insecure, 100% bias, collisions, distrib), non-portable (SSE4.2)
 NOP_OAAT_read64 	|      1991.31	|    30.46 | poor (100% bias, 2.17x collisions)
 Crap8           	|      2743.80	|    32.50 | poor (2.42% bias, collisions, 2% distrib)
-**t1ha_aes**        	|     34636.42	|    33.03 | non-portable (AES-NI)
-**t1ha**            	|     12228.80  |    35.55 |
+**t1ha_aes**        	|     **34636.42**	|    **33.03** | non-portable (AES-NI)
+**t1ha**            	|     **12228.80**  |    **35.55** |
 MUM             	|     10246.20	|    37.25 | non-portable (different result, machine specific)
 Murmur2         	|      2789.89	|    38.37 | poor (1.7% bias, 81x coll, 1.7% distrib)
 t1ha_32le       	|      5958.54	|    38.54 | alien (designed for 32-bit CPU)
@@ -147,14 +225,14 @@ md5_32a         	|       433.03	|   508.98 |
 sha1_32a        	|       531.44	|  1222.44 |
 
 
-#### The _LARGE KEYS_ CASE
+#### The _LARGE KEYS_ case
 Order by hashing speed in Mi-bytes (2^20 = 1048576) per second for 262144-byte block (more is better).
 
 | Function              | MiB/Second | Cycles/Hash | Notes (quality, portability) |
 | :-------------------- | ------------: | -------: | :--------------------------- |
 _donothing_    	        |  15747227.36	|     6.00 | not a hash (just for reference)
 _sumhash32_       	|     43317.86	|    16.69 | not a hash (just for reference)
-**t1ha_aes**        	|     34636.42	|    33.03 | non-portable (AES-NI)
+**t1ha_aes**        	|     **34636.42**	|    **33.03** | non-portable (AES-NI)
 metrohash128crc_1	|     21322.80	|    70.33 | _seems weak_ (likely cyclic collisions), non-portable (SSE4.2)
 metrohash64crc_1	|     21319.23	|    52.36 | _seems weak_ (cyclic collisions), non-portable (SSE4.2)
 metrohash128crc_2	|     20990.70	|    70.40 | _seems weak_ (likely cyclic collisions), non-portable (SSE4.2)
@@ -164,7 +242,7 @@ FNV1a_YoshimitsuTRIAD	|     13000.49	|    24.96 | poor (100% bias, collisions, d
 farmhash128_c   	|     12709.06	|    96.42 | non-portable (SSE4.1)
 City128         	|     12551.54	|    60.93 |
 FarmHash128     	|     12515.98	|    77.43 | non-portable (SSE4.2)
-**t1ha**            	|     12228.80  |    35.55 |
+**t1ha**            	|     **12228.80**  |    **35.55** |
 FarmHash64      	|     12145.36	|    60.12 | non-portable (SSE4.2)
 metrohash64_2   	|     12113.12	|    46.88 | _seems weak_ (likely cyclic collisions)
 cmetrohash64_1  	|     12081.32	|    47.28 | _seems weak_ (likely cyclic collisions)

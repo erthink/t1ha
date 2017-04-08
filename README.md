@@ -14,6 +14,9 @@ by [Positive Technologies](https://www.ptsecurity.com).
      and all others portable hash-functions (which are not uses specific hardware tricks).
   3. Currently not suitable for cryptography.
 
+Also pay attention to [Erlang](https://github.com/lemenkov/erlang-t1ha)
+and [Golang](https://github.com/dgryski/go-t1ha) implementations.
+
 ********************************************************************************
 
 # Usage

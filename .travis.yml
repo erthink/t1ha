@@ -1,20 +1,14 @@
-# Config
-
 language: c
 sudo: false
 dist: trusty
-cache: bundler
-notifications:
-        email: false
 
-# Build matrix (2x compiler, 1x confopts)
 compiler:
-        - gcc
-        - clang
+  - gcc
+  - clang
 
 os:
-        - linux
-        - osx
+  - linux
+  - osx
 
 script:
-        - make
+  - make

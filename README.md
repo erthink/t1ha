@@ -63,8 +63,8 @@ Please, feel free to fill an issue or make pull request.
  | `t1ha1_be()`            | 32-bit big-endian                      |
 
 
-`t1ha1` = 64 bits, fast- portable hash
---------------------------------------
+`t1ha1` = 64 bits, fast portable hash
+-------------------------------------
 
   The main generic version of "Fast Positive Hash" with reasonable quality
   for checksum, hash tables and thin fingerprinting. It is stable, e.g.

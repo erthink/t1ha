@@ -1,0 +1,10 @@
+machine:
+  timezone:
+    Europe/Moscow
+
+database:
+  override:
+
+test:
+  override:
+    - make

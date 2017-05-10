@@ -82,6 +82,7 @@
     defined(_M_X64) || defined(i386) || defined(_X86_) || defined(__i386__) || \
     defined(_X86_64_)
 #define UNALIGNED_OK 1
+#define PAGESIZE 4096
 #else
 #define UNALIGNED_OK 0
 #endif
@@ -228,8 +229,26 @@ static __inline uint16_t fetch16_le(const void *v) {
 #endif
 }
 
+#if UNALIGNED_OK && defined(PAGESIZE) && PAGESIZE > 0
+#define can_read_underside(ptr, size)                                          \
+  ((size) <= sizeof(uintptr_t) && ((PAGESIZE - (size)) & (uintptr_t)(ptr)) != 0)
+#endif /* can_fast_read */
+
 static __inline uint64_t tail64_le(const void *v, size_t tail) {
   const uint8_t *p = (const uint8_t *)v;
+#ifdef can_read_underside
+  /* On some systems (e.g. x86) we can perform a 'oneshot' read, which
+   * is little bit faster. Thanks Marcin Żukowski <marcin.zukowski@gmail.com>
+   * for the reminder. */
+  const unsigned offset = (8 - tail) & 7;
+  const unsigned shift = offset << 3;
+  if (likely(can_read_underside(p, 8))) {
+    p -= offset;
+    return fetch64_le(p) >> shift;
+  }
+  return fetch64_le(p) & ((~UINT64_C(0)) >> shift);
+#endif /* 'oneshot' read */
+
   uint64_t r = 0;
   switch (tail & 7) {
 #if UNALIGNED_OK && __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
@@ -309,6 +328,19 @@ static maybe_unused __inline uint16_t fetch16_be(const void *v) {
 
 static maybe_unused __inline uint64_t tail64_be(const void *v, size_t tail) {
   const uint8_t *p = (const uint8_t *)v;
+#ifdef can_read_underside
+  /* On some systems we can perform a 'oneshot' read, which is little bit
+   * faster. Thanks Marcin Żukowski <marcin.zukowski@gmail.com> for the
+   * reminder. */
+  const unsigned offset = (8 - tail) & 7;
+  const unsigned shift = offset << 3;
+  if (likely(can_read_underside(p, 8))) {
+    p -= offset;
+    return fetch64_be(p) & ((~UINT64_C(0)) >> shift);
+  }
+  return fetch64_be(p) >> shift;
+#endif /* 'oneshot' read */
+
   switch (tail & 7) {
 #if UNALIGNED_OK && __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
   /* For most CPUs this code is better when not needed

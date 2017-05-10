@@ -49,6 +49,19 @@
 
 static __inline uint32_t tail32_le(const void *v, size_t tail) {
   const uint8_t *p = (const uint8_t *)v;
+#ifdef can_read_underside
+  /* On some systems (e.g. x86) we can perform a 'oneshot' read, which
+   * is little bit faster. Thanks Marcin Żukowski <marcin.zukowski@gmail.com>
+   * for the reminder. */
+  const unsigned offset = (4 - tail) & 3;
+  const unsigned shift = offset << 3;
+  if (likely(can_read_underside(p, 4))) {
+    p -= offset;
+    return fetch32_le(p) >> shift;
+  }
+  return fetch32_le(p) & ((~UINT32_C(0)) >> shift);
+#endif /* 'oneshot' read */
+
   uint32_t r = 0;
   switch (tail & 3) {
 #if UNALIGNED_OK && __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
@@ -83,6 +96,19 @@ static __inline uint32_t tail32_le(const void *v, size_t tail) {
 
 static __inline uint32_t tail32_be(const void *v, size_t tail) {
   const uint8_t *p = (const uint8_t *)v;
+#ifdef can_read_underside
+  /* On some systems we can perform a 'oneshot' read, which is little bit
+   * faster. Thanks Marcin Żukowski <marcin.zukowski@gmail.com> for the
+   * reminder. */
+  const unsigned offset = (4 - tail) & 3;
+  const unsigned shift = offset << 3;
+  if (likely(can_read_underside(p, 4))) {
+    p -= offset;
+    return fetch32_be(p) & ((~UINT32_C(0)) >> shift);
+  }
+  return fetch32_be(p) >> shift;
+#endif /* 'oneshot' read */
+
   switch (tail & 3) {
 #if UNALIGNED_OK && __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
   /* For most CPUs this code is better when not needed

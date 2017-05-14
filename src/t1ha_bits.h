@@ -178,18 +178,19 @@
 
 #ifndef bswap64
 static __inline uint64_t bswap64(uint64_t v) {
-  return v << 56 | v >> 56 | ((v << 40) & 0x00ff000000000000ull) |
-         ((v << 24) & 0x0000ff0000000000ull) |
-         ((v << 8) & 0x000000ff00000000ull) |
-         ((v >> 8) & 0x00000000ff000000ull) |
-         ((v >> 24) & 0x0000000000ff0000ull) |
-         ((v >> 40) & 0x000000000000ff00ull);
+  return v << 56 | v >> 56 | ((v << 40) & UINT64_C(0x00ff000000000000)) |
+         ((v << 24) & UINT64_C(0x0000ff0000000000)) |
+         ((v << 8) & UINT64_C(0x000000ff00000000)) |
+         ((v >> 8) & UINT64_C(0x00000000ff000000)) |
+         ((v >> 24) & UINT64_C(0x0000000000ff0000)) |
+         ((v >> 40) & UINT64_C(0x000000000000ff00));
 }
 #endif /* bswap64 */
 
 #ifndef bswap32
 static __inline uint32_t bswap32(uint32_t v) {
-  return v << 24 | v >> 24 | ((v << 8) & 0x00ff0000) | ((v >> 8) & 0x0000ff00);
+  return v << 24 | v >> 24 | ((v << 8) & UINT32_C(0x00ff0000)) |
+         ((v >> 8) & UINT32_C(0x0000ff00));
 }
 #endif /* bswap32 */
 
@@ -454,13 +455,13 @@ static maybe_unused __inline uint64_t mul_64x64_high(uint64_t a, uint64_t b) {
 /***************************************************************************/
 
 /* 'magic' primes */
-static const uint64_t p0 = 17048867929148541611ull;
-static const uint64_t p1 = 9386433910765580089ull;
-static const uint64_t p2 = 15343884574428479051ull;
-static const uint64_t p3 = 13662985319504319857ull;
-static const uint64_t p4 = 11242949449147999147ull;
-static const uint64_t p5 = 13862205317416547141ull;
-static const uint64_t p6 = 14653293970879851569ull;
+static const uint64_t p0 = UINT64_C(17048867929148541611);
+static const uint64_t p1 = UINT64_C(9386433910765580089);
+static const uint64_t p2 = UINT64_C(15343884574428479051);
+static const uint64_t p3 = UINT64_C(13662985319504319857);
+static const uint64_t p4 = UINT64_C(11242949449147999147);
+static const uint64_t p5 = UINT64_C(13862205317416547141);
+static const uint64_t p6 = UINT64_C(14653293970879851569);
 
 /* rotations */
 static const unsigned s0 = 41;

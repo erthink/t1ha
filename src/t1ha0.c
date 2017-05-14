@@ -161,13 +161,13 @@ static __inline void mixup32(uint32_t *a, uint32_t *b, uint32_t v, uint32_t p) {
 }
 
 /* 32-bit 'magic' primes */
-static const uint32_t q0 = 0x92D78269;
-static const uint32_t q1 = 0xCA9B4735;
-static const uint32_t q2 = 0xA4ABA1C3;
-static const uint32_t q3 = 0xF6499843;
-static const uint32_t q4 = 0x86F0FD61;
-static const uint32_t q5 = 0xCA2DA6FB;
-static const uint32_t q6 = 0xC4BB3575;
+static const uint32_t q0 = UINT32_C(0x92D78269);
+static const uint32_t q1 = UINT32_C(0xCA9B4735);
+static const uint32_t q2 = UINT32_C(0xA4ABA1C3);
+static const uint32_t q3 = UINT32_C(0xF6499843);
+static const uint32_t q4 = UINT32_C(0x86F0FD61);
+static const uint32_t q5 = UINT32_C(0xCA2DA6FB);
+static const uint32_t q6 = UINT32_C(0xC4BB3575);
 
 T1HA_INTERNAL uint64_t _t1ha_32le(const void *data, size_t len, uint64_t seed) {
   uint32_t a = rot32((uint32_t)len, s1) + (uint32_t)seed;
@@ -353,7 +353,7 @@ static uint64_t t1ha_ia32aes_noavx(const void *data, size_t len, uint64_t seed);
 
 static uint64_t (*t1ha_aes_resolve(void))(const void *, size_t, uint64_t) {
   uint32_t features = x86_cpu_features();
-  if ((features & 0x01A000000) == 0x01A000000)
+  if ((features & UINT32_C(0x01A000000)) == UINT32_C(0x01A000000))
     return t1ha_ia32aes_avx;
   return t1ha_ia32aes_noavx;
 }
@@ -594,7 +594,7 @@ static
 #ifdef T1HA_ia32aes_AVAILABLE
 
   uint32_t features = x86_cpu_features();
-  if (features & (1l << 25))
+  if (features & (UINT32_C(1) << 25))
     return _t1ha_ia32aes;
 #endif /* T1HA_ia32aes_AVAILABLE */
 

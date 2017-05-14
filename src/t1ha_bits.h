@@ -455,13 +455,13 @@ static maybe_unused __inline uint64_t mul_64x64_high(uint64_t a, uint64_t b) {
 /***************************************************************************/
 
 /* 'magic' primes */
-static const uint64_t p0 = UINT64_C(17048867929148541611);
-static const uint64_t p1 = UINT64_C(9386433910765580089);
-static const uint64_t p2 = UINT64_C(15343884574428479051);
-static const uint64_t p3 = UINT64_C(13662985319504319857);
-static const uint64_t p4 = UINT64_C(11242949449147999147);
-static const uint64_t p5 = UINT64_C(13862205317416547141);
-static const uint64_t p6 = UINT64_C(14653293970879851569);
+static const uint64_t p0 = UINT64_C(0xEC99BF0D8372CAAB);
+static const uint64_t p1 = UINT64_C(0x82434FE90EDCEF39);
+static const uint64_t p2 = UINT64_C(0xD4F06DB99D67BE4B);
+static const uint64_t p3 = UINT64_C(0xBD9CACC22C6E9571);
+static const uint64_t p4 = UINT64_C(0x9C06FAF4D023E3AB);
+static const uint64_t p5 = UINT64_C(0xC060724A8424F345);
+static const uint64_t p6 = UINT64_C(0xCB5AF53AE3AAAC31);
 
 /* rotations */
 static const unsigned s0 = 41;

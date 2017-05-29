@@ -1,3 +1,10 @@
+# T1HA_USE_FAST_ONESHOT_READ:
+# Define it to 1 for little bit faster code.
+# Unfortunately this may triggering a false-positive alarms from Valgrind,
+# AddressSanitizer and other similar tool.
+# So, define it to 0 for calmness if doubt.
+T1HA_USE_FAST_ONESHOT_READ ?=1
+
 ifndef CFLAGS
 CFLAGS = -std=c99
 parenthesis=)

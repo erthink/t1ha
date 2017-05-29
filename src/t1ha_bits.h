@@ -40,6 +40,18 @@
  * for The 1Hippeus project - zerocopy messaging in the spirit of Sparta!
  */
 
+#ifndef T1HA_USE_FAST_ONESHOT_READ
+
+/* Define it to 1 for little bit faster code.
+ * Unfortunately this may triggering a false-positive alarms from Valgrind,
+ * AddressSanitizer and other similar tool.
+ * So, define it to 0 for calmness if doubt. */
+#define T1HA_USE_FAST_ONESHOT_READ 1
+
+#endif /* T1HA_USE_FAST_ONESHOT_READ */
+
+/*****************************************************************************/
+
 #include <string.h> /* for memcpy() */
 
 #if !defined(__BYTE_ORDER__) || !defined(__ORDER_LITTLE_ENDIAN__) ||           \
@@ -230,7 +242,8 @@ static __inline uint16_t fetch16_le(const void *v) {
 #endif
 }
 
-#if UNALIGNED_OK && defined(PAGESIZE) && PAGESIZE > 0
+#if T1HA_USE_FAST_ONESHOT_READ && UNALIGNED_OK && defined(PAGESIZE) &&         \
+    PAGESIZE > 0
 #define can_read_underside(ptr, size)                                          \
   ((size) <= sizeof(uintptr_t) && ((PAGESIZE - (size)) & (uintptr_t)(ptr)) != 0)
 #endif /* can_fast_read */

@@ -1,5 +1,13 @@
 libt1ha.a
 libt1ha.so
+t1ha0_aes_avx.o
+t1ha0_aes_noavx.o
+t1ha0_ia32aes_avx.bc
+t1ha0_ia32aes_avx.i
+t1ha0_ia32aes_avx.s
+t1ha0_ia32aes_noavx.bc
+t1ha0_ia32aes_noavx.i
+t1ha0_ia32aes_noavx.s
 t1ha0.o
 t1ha1.o
 t1ha-dll.VC.db

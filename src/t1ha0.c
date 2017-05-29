@@ -169,7 +169,7 @@ static const uint32_t q4 = UINT32_C(0x86F0FD61);
 static const uint32_t q5 = UINT32_C(0xCA2DA6FB);
 static const uint32_t q6 = UINT32_C(0xC4BB3575);
 
-T1HA_INTERNAL uint64_t _t1ha_32le(const void *data, size_t len, uint64_t seed) {
+uint64_t t1ha0_32le(const void *data, size_t len, uint64_t seed) {
   uint32_t a = rot32((uint32_t)len, s1) + (uint32_t)seed;
   uint32_t b = (uint32_t)len ^ (uint32_t)(seed >> 32);
 
@@ -238,7 +238,7 @@ T1HA_INTERNAL uint64_t _t1ha_32le(const void *data, size_t len, uint64_t seed) {
   }
 }
 
-T1HA_INTERNAL uint64_t _t1ha_32be(const void *data, size_t len, uint64_t seed) {
+uint64_t t1ha0_32be(const void *data, size_t len, uint64_t seed) {
   uint32_t a = rot32((uint32_t)len, s1) + (uint32_t)seed;
   uint32_t b = (uint32_t)len ^ (uint32_t)(seed >> 32);
 
@@ -309,8 +309,10 @@ T1HA_INTERNAL uint64_t _t1ha_32be(const void *data, size_t len, uint64_t seed) {
 
 /***************************************************************************/
 
+#undef T1HA_ia32aes_AVAILABLE
 #if defined(__x86_64__) || defined(_M_IX86) || defined(_M_X64) ||              \
     defined(i386) || defined(_X86_) || defined(__i386__) || defined(_X86_64_)
+
 static uint32_t x86_cpu_features(void) {
 #ifdef __GNUC__
   uint32_t eax, ebx, ecx, edx;
@@ -329,258 +331,11 @@ static uint32_t x86_cpu_features(void) {
   return 0;
 #endif
 }
-#endif
-
-#undef T1HA_ia32aes_AVAILABLE
-#if defined(_X86_64_) || defined(__x86_64__) || defined(_M_X64) ||             \
-    ((defined(__i386__) || defined(_M_IX86) || defined(i386) ||                \
-      defined(_X86_)) &&                                                       \
-     (!defined(_MSC_VER) || (_MSC_VER >= 1900)))
 
 #define T1HA_ia32aes_AVAILABLE
-#include <emmintrin.h>
-#include <smmintrin.h>
-#include <wmmintrin.h>
 
-#if defined(__x86_64__) && defined(__ELF__) &&                                 \
-    (__GNUC_PREREQ(4, 6) || __has_attribute(ifunc)) && __has_attribute(target)
-T1HA_INTERNAL uint64_t _t1ha_ia32aes(const void *data, size_t len,
-                                     uint64_t seed)
-    __attribute__((ifunc("t1ha_aes_resolve")));
-
-static uint64_t t1ha_ia32aes_avx(const void *data, size_t len, uint64_t seed);
-static uint64_t t1ha_ia32aes_noavx(const void *data, size_t len, uint64_t seed);
-
-static uint64_t (*t1ha_aes_resolve(void))(const void *, size_t, uint64_t) {
-  uint32_t features = x86_cpu_features();
-  if ((features & UINT32_C(0x01A000000)) == UINT32_C(0x01A000000))
-    return t1ha_ia32aes_avx;
-  return t1ha_ia32aes_noavx;
-}
-
-static uint64_t __attribute__((target("aes,avx")))
-t1ha_ia32aes_avx(const void *data, size_t len, uint64_t seed) {
-  uint64_t a = seed;
-  uint64_t b = len;
-
-  if (unlikely(len > 32)) {
-    __m128i x = _mm_set_epi64x(a, b);
-    __m128i y = _mm_aesenc_si128(x, _mm_set_epi64x(p0, p1));
-
-    const __m128i *v = (const __m128i *)data;
-    const __m128i *const detent =
-        (const __m128i *)((const uint8_t *)data + (len & ~15ul));
-    data = detent;
-
-    if (len & 16) {
-      x = _mm_add_epi64(x, _mm_loadu_si128(v++));
-      y = _mm_aesenc_si128(x, y);
-    }
-    len &= 15;
-
-    if (v + 7 < detent) {
-      __m128i salt = y;
-      do {
-        __m128i t = _mm_aesenc_si128(_mm_loadu_si128(v++), salt);
-        t = _mm_aesdec_si128(t, _mm_loadu_si128(v++));
-        t = _mm_aesdec_si128(t, _mm_loadu_si128(v++));
-        t = _mm_aesdec_si128(t, _mm_loadu_si128(v++));
-
-        t = _mm_aesdec_si128(t, _mm_loadu_si128(v++));
-        t = _mm_aesdec_si128(t, _mm_loadu_si128(v++));
-        t = _mm_aesdec_si128(t, _mm_loadu_si128(v++));
-        t = _mm_aesdec_si128(t, _mm_loadu_si128(v++));
-
-        salt = _mm_add_epi64(salt, _mm_set_epi64x(p2, p3));
-        t = _mm_aesenc_si128(x, t);
-        x = _mm_add_epi64(y, x);
-        y = t;
-      } while (v + 7 < detent);
-    }
-
-    while (v < detent) {
-      __m128i v0y = _mm_add_epi64(y, _mm_loadu_si128(v++));
-      __m128i v1x = _mm_sub_epi64(x, _mm_loadu_si128(v++));
-      x = _mm_aesdec_si128(x, v0y);
-      y = _mm_aesdec_si128(y, v1x);
-    }
-
-    x = _mm_add_epi64(_mm_aesdec_si128(x, _mm_aesenc_si128(y, x)), y);
-#if defined(__x86_64__) || defined(_M_X64)
-    a = _mm_cvtsi128_si64(x);
-#if defined(__SSE4_1__)
-    b = _mm_extract_epi64(x, 1);
-#else
-    b = _mm_cvtsi128_si64(_mm_unpackhi_epi64(x, x));
-#endif
-#else
-    a = (uint32_t)_mm_cvtsi128_si32(x);
-#if defined(__SSE4_1__)
-    a |= (uint64_t)_mm_extract_epi32(x, 1) << 32;
-    b = (uint32_t)_mm_extract_epi32(x, 2) |
-        (uint64_t)_mm_extract_epi32(x, 3) << 32;
-#else
-    a |= (uint64_t)_mm_cvtsi128_si32(_mm_shuffle_epi32(x, 1)) << 32;
-    x = _mm_unpackhi_epi64(x, x);
-    b = (uint32_t)_mm_cvtsi128_si32(x);
-    b |= (uint64_t)_mm_cvtsi128_si32(_mm_shuffle_epi32(x, 1)) << 32;
-#endif
-#endif
-  }
-
-  const uint64_t *v = (const uint64_t *)data;
-  switch (len) {
-  default:
-    b += mux64(*v++, p4);
-  case 24:
-  case 23:
-  case 22:
-  case 21:
-  case 20:
-  case 19:
-  case 18:
-  case 17:
-    a += mux64(*v++, p3);
-  case 16:
-  case 15:
-  case 14:
-  case 13:
-  case 12:
-  case 11:
-  case 10:
-  case 9:
-    b += mux64(*v++, p2);
-  case 8:
-  case 7:
-  case 6:
-  case 5:
-  case 4:
-  case 3:
-  case 2:
-  case 1:
-    a += mux64(tail64_le(v, len), p1);
-  case 0:
-    return mux64(rot64(a + b, s1), p4) + mix64(a ^ b, p0);
-  }
-}
-
-static uint64_t
-#if __GNUC_PREREQ(4, 4) || __has_attribute(target)
-    __attribute__((target("aes,no-avx,no-avx2")))
-#endif
-    t1ha_ia32aes_noavx(const void *data, size_t len, uint64_t seed) {
-
-#else /* ELF && ifunc */
-
-T1HA_INTERNAL uint64_t
-#if __GNUC_PREREQ(4, 4) || __has_attribute(target)
-    __attribute__((target("aes")))
-#endif
-    _t1ha_ia32aes(const void *data, size_t len, uint64_t seed) {
-#endif
-  uint64_t a = seed;
-  uint64_t b = len;
-
-  if (unlikely(len > 32)) {
-    __m128i x = _mm_set_epi64x(a, b);
-    __m128i y = _mm_aesenc_si128(x, _mm_set_epi64x(p0, p1));
-
-    const __m128i *v = (const __m128i *)data;
-    const __m128i *const detent =
-        (const __m128i *)((const uint8_t *)data + (len & ~15ul));
-    data = detent;
-
-    if (len & 16) {
-      x = _mm_add_epi64(x, _mm_loadu_si128(v++));
-      y = _mm_aesenc_si128(x, y);
-    }
-    len &= 15;
-
-    if (v + 7 < detent) {
-      __m128i salt = y;
-      do {
-        __m128i t = _mm_aesenc_si128(_mm_loadu_si128(v++), salt);
-        t = _mm_aesdec_si128(t, _mm_loadu_si128(v++));
-        t = _mm_aesdec_si128(t, _mm_loadu_si128(v++));
-        t = _mm_aesdec_si128(t, _mm_loadu_si128(v++));
-
-        t = _mm_aesdec_si128(t, _mm_loadu_si128(v++));
-        t = _mm_aesdec_si128(t, _mm_loadu_si128(v++));
-        t = _mm_aesdec_si128(t, _mm_loadu_si128(v++));
-        t = _mm_aesdec_si128(t, _mm_loadu_si128(v++));
-
-        salt = _mm_add_epi64(salt, _mm_set_epi64x(p2, p3));
-        t = _mm_aesenc_si128(x, t);
-        x = _mm_add_epi64(y, x);
-        y = t;
-      } while (v + 7 < detent);
-    }
-
-    while (v < detent) {
-      __m128i v0y = _mm_add_epi64(y, _mm_loadu_si128(v++));
-      __m128i v1x = _mm_sub_epi64(x, _mm_loadu_si128(v++));
-      x = _mm_aesdec_si128(x, v0y);
-      y = _mm_aesdec_si128(y, v1x);
-    }
-
-    x = _mm_add_epi64(_mm_aesdec_si128(x, _mm_aesenc_si128(y, x)), y);
-#if defined(__x86_64__) || defined(_M_X64)
-    a = _mm_cvtsi128_si64(x);
-#if defined(__SSE4_1__)
-    b = _mm_extract_epi64(x, 1);
-#else
-    b = _mm_cvtsi128_si64(_mm_unpackhi_epi64(x, x));
-#endif
-#else
-    a = (uint32_t)_mm_cvtsi128_si32(x);
-#if defined(__SSE4_1__)
-    a |= (uint64_t)_mm_extract_epi32(x, 1) << 32;
-    b = (uint32_t)_mm_extract_epi32(x, 2) |
-        (uint64_t)_mm_extract_epi32(x, 3) << 32;
-#else
-    a |= (uint64_t)_mm_cvtsi128_si32(_mm_shuffle_epi32(x, 1)) << 32;
-    x = _mm_unpackhi_epi64(x, x);
-    b = (uint32_t)_mm_cvtsi128_si32(x);
-    b |= (uint64_t)_mm_cvtsi128_si32(_mm_shuffle_epi32(x, 1)) << 32;
-#endif
-#endif
-  }
-
-  const uint64_t *v = (const uint64_t *)data;
-  switch (len) {
-  default:
-    b += mux64(*v++, p4);
-  case 24:
-  case 23:
-  case 22:
-  case 21:
-  case 20:
-  case 19:
-  case 18:
-  case 17:
-    a += mux64(*v++, p3);
-  case 16:
-  case 15:
-  case 14:
-  case 13:
-  case 12:
-  case 11:
-  case 10:
-  case 9:
-    b += mux64(*v++, p2);
-  case 8:
-  case 7:
-  case 6:
-  case 5:
-  case 4:
-  case 3:
-  case 2:
-  case 1:
-    a += mux64(tail64_le(v, len), p1);
-  case 0:
-    return mux64(rot64(a + b, s1), p4) + mix64(a ^ b, p0);
-  }
-}
+uint64_t t1ha0_ia32aes_avx(const void *data, size_t len, uint64_t seed);
+uint64_t t1ha0_ia32aes_noavx(const void *data, size_t len, uint64_t seed);
 
 #endif /* __i386__ || __x86_64__ */
 
@@ -591,20 +346,22 @@ static
     __attribute__((used))
 #endif
     uint64_t (*t1ha0_resolve(void))(const void *, size_t, uint64_t) {
-#ifdef T1HA_ia32aes_AVAILABLE
 
+#ifdef T1HA_ia32aes_AVAILABLE
   uint32_t features = x86_cpu_features();
-  if (features & (UINT32_C(1) << 25))
-    return _t1ha_ia32aes;
+  if (features & UINT32_C(0x02000000))
+    return ((features & UINT32_C(0x1A000000)) == UINT32_C(0x1A000000))
+               ? t1ha0_ia32aes_avx
+               : t1ha0_ia32aes_noavx;
 #endif /* T1HA_ia32aes_AVAILABLE */
 
   return (sizeof(size_t) >= 8)
 #if __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
              ? t1ha1_be
-             : _t1ha_32be;
+             : t1ha0_32be;
 #else
              ? t1ha1_le
-             : _t1ha_32le;
+             : t1ha0_32le;
 #endif
 }
 
@@ -620,19 +377,19 @@ __asm("\t.globl\tt1ha0\n\t.type\tt1ha0, "
 
 #elif __GNUC_PREREQ(4, 0) || __has_attribute(constructor)
 
-uint64_t (*_t1ha0_ptr)(const void *, size_t, uint64_t);
+uint64_t (*t1ha0_funcptr)(const void *, size_t, uint64_t);
 
 static void __attribute__((constructor)) t1ha0_init(void) {
-  _t1ha0_ptr = t1ha0_resolve();
+  t1ha0_funcptr = t1ha0_resolve();
 }
 
 #else /* ELF */
 
 static uint64_t t1ha0_proxy(const void *data, size_t len, uint64_t seed) {
-  _t1ha0_ptr = t1ha0_resolve();
-  return _t1ha0_ptr(data, len, seed);
+  t1ha0_funcptr = t1ha0_resolve();
+  return t1ha0_funcptr(data, len, seed);
 }
 
-uint64_t (*_t1ha0_ptr)(const void *, size_t, uint64_t) = t1ha0_proxy;
+uint64_t (*t1ha0_funcptr)(const void *, size_t, uint64_t) = t1ha0_proxy;
 
 #endif

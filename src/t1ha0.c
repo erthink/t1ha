@@ -313,23 +313,31 @@ uint64_t t1ha0_32be(const void *data, size_t len, uint64_t seed) {
 #if defined(__x86_64__) || defined(_M_IX86) || defined(_M_X64) ||              \
     defined(i386) || defined(_X86_) || defined(__i386__) || defined(_X86_64_)
 
-static uint32_t x86_cpu_features(void) {
+static uint64_t x86_cpu_features(void) {
+  uint32_t features = 0;
+  uint32_t extended = 0;
 #ifdef __GNUC__
   uint32_t eax, ebx, ecx, edx;
-  if (__get_cpuid_max(0, NULL) < 1)
-    return 0;
-  __cpuid_count(1, 0, eax, ebx, ecx, edx);
-  return ecx;
+  const unsigned cpuid_max = __get_cpuid_max(0, NULL);
+  if (cpuid_max >= 1) {
+    __cpuid_count(1, 0, eax, ebx, features, edx);
+    if (cpuid_max >= 7)
+      __cpuid_count(7, 0, eax, extended, ecx, edx);
+  }
 #elif defined(_MSC_VER)
   int info[4];
   __cpuid(info, 0);
-  if (info[0] < 1)
-    return 0;
-  __cpuidex(info, 1, 0);
-  return info[2];
-#else
-  return 0;
+  const unsigned cpuid_max = info[0];
+  if (cpuid_max >= 1) {
+    __cpuidex(info, 1, 0);
+    features = info[2];
+    if (cpuid_max >= 7) {
+      __cpuidex(info, 7, 0);
+      extended = info[1];
+    }
+  }
 #endif
+  return features | (uint64_t)extended << 32;
 }
 
 #define T1HA_ia32aes_AVAILABLE
@@ -348,11 +356,12 @@ static
     uint64_t (*t1ha0_resolve(void))(const void *, size_t, uint64_t) {
 
 #ifdef T1HA_ia32aes_AVAILABLE
-  uint32_t features = x86_cpu_features();
-  if (features & UINT32_C(0x02000000))
-    return ((features & UINT32_C(0x1A000000)) == UINT32_C(0x1A000000))
-               ? t1ha0_ia32aes_avx
-               : t1ha0_ia32aes_noavx;
+  uint64_t features = x86_cpu_features();
+  if (features & UINT32_C(0x02000000)) {
+    if ((features & UINT32_C(0x1A000000)) == UINT32_C(0x1A000000))
+      return ((features >> 32) & 32) ? t1ha0_ia32aes_avx2 : t1ha0_ia32aes_avx;
+    return t1ha0_ia32aes_noavx;
+  }
 #endif /* T1HA_ia32aes_AVAILABLE */
 
   return (sizeof(size_t) >= 8)

@@ -50,17 +50,6 @@
 #if defined(_X86_64_) || defined(__x86_64__) || defined(_M_X64) ||             \
     defined(__i386__) || defined(_M_IX86) || defined(i386) || defined(_X86_)
 
-#if defined(__SSE2__) || defined(_MSC_VER)
-#include <emmintrin.h>
-#endif /* __SSE2__ */
-
-#if defined(__SSE4_1__) || defined(__SSE4_2__) || defined(__AVX__) ||          \
-    defined(_MSC_VER)
-#include <smmintrin.h>
-#endif /* __SSE4__ */
-
-#include <wmmintrin.h>
-
 uint64_t T1HA_IA32AES_NAME(const void *data, size_t len, uint64_t seed) {
   uint64_t a = seed;
   uint64_t b = len;

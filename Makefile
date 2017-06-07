@@ -12,7 +12,7 @@ TARGET_ARCHx86 = $(shell (export LC_ALL=C; ($(CC) --version 2>&1; $(CC) -v 2>&1)
 
 OBJ_LIST := t1ha0.o t1ha1.o
 ifeq ($(TARGET_ARCHx86),yes)
-OBJ_LIST += t1ha0_aes_avx.o t1ha0_aes_noavx.o
+OBJ_LIST += t1ha0_aes_noavx.o t1ha0_aes_avx.o t1ha0_aes_avx2.o
 endif
 
 CFLAGS_TEST ?= -Wextra -Werror -O -g $(CFLAGS)
@@ -24,11 +24,14 @@ all: test libt1ha.a libt1ha.so
 t1ha0.o: t1ha.h src/t1ha_bits.h src/t1ha0.c Makefile
 	$(CC) $(CFLAGS_LIB) -c -o $@ src/t1ha0.c
 
-t1ha0_aes_avx.o: t1ha.h src/t1ha_bits.h src/t1ha0_ia32aes.h src/t1ha0_ia32aes_avx.c Makefile
-	$(CC) $(CFLAGS_LIB) -save-temps -mavx -maes -c -o $@ src/t1ha0_ia32aes_avx.c
+t1ha0_aes_noavx.o: t1ha.h src/t1ha_bits.h src/t1ha0_ia32aes_a.h src/t1ha0_ia32aes_b.h src/t1ha0_ia32aes_noavx.c Makefile
+	$(CC) $(CFLAGS_LIB) -save-temps -mno-avx2 -mno-avx -maes -c -o $@ src/t1ha0_ia32aes_noavx.c
 
-t1ha0_aes_noavx.o: t1ha.h src/t1ha_bits.h src/t1ha0_ia32aes.h src/t1ha0_ia32aes_noavx.c Makefile
-	$(CC) $(CFLAGS_LIB) -save-temps -mno-avx -maes -c -o $@ src/t1ha0_ia32aes_noavx.c
+t1ha0_aes_avx.o: t1ha.h src/t1ha_bits.h src/t1ha0_ia32aes_a.h src/t1ha0_ia32aes_b.h src/t1ha0_ia32aes_avx.c Makefile
+	$(CC) $(CFLAGS_LIB) -save-temps -mno-avx2 -mavx -maes -c -o $@ src/t1ha0_ia32aes_avx.c
+
+t1ha0_aes_avx2.o: t1ha.h src/t1ha_bits.h src/t1ha0_ia32aes_a.h src/t1ha0_ia32aes_b.h src/t1ha0_ia32aes_avx2.c Makefile
+	$(CC) $(CFLAGS_LIB) -save-temps -mavx2 -mavx -maes -c -o $@ src/t1ha0_ia32aes_avx2.c
 
 t1ha1.o: t1ha.h src/t1ha_bits.h src/t1ha1.c Makefile
 	$(CC) $(CFLAGS_LIB) -c -o $@ src/t1ha1.c

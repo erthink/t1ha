@@ -24,6 +24,7 @@
 
 #include "../t1ha.h"
 
+#include <inttypes.h>
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -190,7 +191,30 @@ static const uint64_t refval_32be[80] = {
 
 #if defined(__x86_64__) || defined(_M_IX86) || defined(_M_X64) ||              \
     defined(i386) || defined(_X86_) || defined(__i386__) || defined(_X86_64_)
-static const uint64_t refval_ia32aes[80] = {
+static const uint64_t refval_ia32aes_a[80] = {
+  0x6a580668d6048674, 0x8400eaa9d99a9005, 0xe3ab9c06faf4d023, 0x6af1c60874c95442,
+  0xb3557e561a6c5d82, 0x0ae73c696f3d37c0, 0x5ef25f7062324941, 0x9b784f3b4ce6af33,
+  0x6993bb206a74f070, 0xf1e95df109076c4c, 0x4e1eb70c58e48540, 0x5fdd7649d8ec44e4,
+  0x559122c706343421, 0x380133d58665e93d, 0x9ce74296c8c55ae4, 0x3556f9a5757ab6d0,
+  0xf62751f7f25c469e, 0x851eec67f6516d94, 0xed463ee3848a8695, 0xdc8791feff8ed3ac,
+  0x2569c744e1a282cf, 0xf90eb7c1d70a80b9, 0x68dfa6a1b8050a4c, 0x94cca5e8210d2134,
+  0xf5cc0beabc259f52, 0x40dbc1f51618fda7, 0x0807945bf0fb52c6, 0xe5ef7e09de70848d,
+  0x63e1df35febe994a, 0x2025e73769720d5a, 0xad6120b2b8a152e1, 0x2a71d9f13959f2b7,
+  0x8a20849a27c32548, 0x0bcbc9fe3b57884e, 0xa7bf2ddd8f00efc0, 0xb080ba4ffe8c091b,
+  0x95c723d82e9e5642, 0xde3e2155d51a2b97, 0xa797bebfea95c7b6, 0x66a04b1c6fcbe618,
+  0x0c56ab810681a051, 0x8d1121337a565265, 0x862a3c70eeb20df6, 0xdeb9b38a4989407f,
+  0xdba1cf225470e4d0, 0x5f5d52d3885dd1c6, 0xd8a842b32a2480ab, 0x9107908035f2c6de,
+  0x9c129a478ca541c2, 0xedec764bfac4bab7, 0xa13dba75b355e511, 0x831dd972eb408603,
+  0x2dbb16bf2d928bc9, 0xe3d796db0d12d23a, 0xdf5404c52cf35e52, 0x6748b200122b76cc,
+  0x4b8149aafdaea1cf, 0xa01bb26c5f447179, 0x72c97ff21010d6bb, 0x3e6fef0a984a2095,
+  0xeb77ebfc0a478c74, 0xf4350a4102478864, 0xbcdfb3555789d1ff, 0x6246e4f758e508da,
+  0x8cf2f2d389542441, 0x3e695ca1865d2208, 0x6aaab8f6a7e8382f, 0xfeb2b25ac5d377ee,
+  0xd71cb9ef6e6ad9dd, 0x25e50673c0339c0f, 0x1ad9a860235a74a2, 0xac2164169775843e,
+  0xa5248411f9e2ffd6, 0xfe6873b7d696b46f, 0x7cebac5d4f9b4a1a, 0x5ca6312e4199250c,
+  0x7a27e4ca25d951a6, 0x4986a4d2835186e4, 0x839d0b22d7782adf, 0xa87a89fa41833a00
+};
+
+static const uint64_t refval_ia32aes_b[80] = {
   0x6A580668D6048674, 0x8400EAA9D99A9005, 0xE3AB9C06FAF4D023, 0x6AF1C60874C95442,
   0xB3557E561A6C5D82, 0x0AE73C696F3D37C0, 0x5EF25F7062324941, 0x9B784F3B4CE6AF33,
   0x6993BB206A74F070, 0xF1E95DF109076C4C, 0x4E1EB70C58E48540, 0x5FDD7649D8EC44E4,
@@ -213,6 +237,7 @@ static const uint64_t refval_ia32aes[80] = {
   0xD671ED579D6185CF, 0x125700F2EFD42D3F, 0x0F8746461407741F, 0xC8878D76F1C0FCB6
 };
 #endif /* Any x86 */
+
 /* *INDENT-ON* */
 /* clang-format on */
 
@@ -221,27 +246,36 @@ static const uint64_t refval_ia32aes[80] = {
 
 #ifdef __GNUC__
 #include <cpuid.h>
+#include <x86intrin.h>
 #elif defined(_MSC_VER)
 #include <intrin.h>
 #endif
 
-static uint32_t x86_cpu_features(void) {
+static uint64_t x86_cpu_features(void) {
+  uint32_t features = 0;
+  uint32_t extended = 0;
 #ifdef __GNUC__
   uint32_t eax, ebx, ecx, edx;
-  if (__get_cpuid_max(0, NULL) < 1)
-    return 0;
-  __cpuid_count(1, 0, eax, ebx, ecx, edx);
-  return ecx;
+  const unsigned cpuid_max = __get_cpuid_max(0, NULL);
+  if (cpuid_max >= 1) {
+    __cpuid_count(1, 0, eax, ebx, features, edx);
+    if (cpuid_max >= 7)
+      __cpuid_count(7, 0, eax, extended, ecx, edx);
+  }
 #elif defined(_MSC_VER)
   int info[4];
   __cpuid(info, 0);
-  if (info[0] < 1)
-    return 0;
-  __cpuidex(info, 1, 0);
-  return info[2];
-#else
-  return 0;
+  const unsigned cpuid_max = info[0];
+  if (cpuid_max >= 1) {
+    __cpuidex(info, 1, 0);
+    features = info[2];
+    if (cpuid_max >= 7) {
+      __cpuidex(info, 7, 0);
+      extended = info[1];
+    }
+  }
 #endif
+  return features | (uint64_t)extended << 32;
 }
 #endif
 
@@ -258,11 +292,16 @@ int main(int argc, const char *argv[]) {
     ((defined(__i386__) || defined(_M_IX86) || defined(i386) ||                \
       defined(_X86_)) &&                                                       \
      (!defined(_MSC_VER) || (_MSC_VER >= 1900)))
-  uint32_t features = x86_cpu_features();
+  uint64_t features = x86_cpu_features();
   if (features & UINT32_C(0x02000000)) {
-    failed |= test("t1ha0_ia32aes_noavx", t1ha0_ia32aes_noavx, refval_ia32aes);
-    if ((features & UINT32_C(0x1A000000)) == UINT32_C(0x1A000000))
-      failed |= test("t1ha0_ia32aes_avx", t1ha0_ia32aes_avx, refval_ia32aes);
+    failed |=
+        test("t1ha0_ia32aes_noavx", t1ha0_ia32aes_noavx, refval_ia32aes_a);
+    if ((features & UINT32_C(0x1A000000)) == UINT32_C(0x1A000000)) {
+      failed |= test("t1ha0_ia32aes_avx", t1ha0_ia32aes_avx, refval_ia32aes_a);
+      if ((features >> 32) & 32)
+        failed |=
+            test("t1ha0_ia32aes_avx2", t1ha0_ia32aes_avx2, refval_ia32aes_b);
+    }
   }
 #endif /* x86 for t1ha_ia32aes */
   return failed ? EXIT_FAILURE : EXIT_SUCCESS;

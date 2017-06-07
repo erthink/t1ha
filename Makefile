@@ -8,7 +8,7 @@ T1HA_USE_FAST_ONESHOT_READ ?=1
 CFLAGS ?= -std=c99
 CC ?= gcc
 
-TARGET_ARCHx86 = $(shell (export LC_ALL=C; ($(CC) --version 2>&1; $(CC) -v 2>&1) | sed -n -e 's/^Target: \(\(x86_64\)\|\(i[3-6]86\)\)-.*/yes/p'; echo 'no') | head -1)
+TARGET_ARCHx86 = $(shell (export LC_ALL=C; ($(CC) --version 2>&1; $(CC) -v 2>&1) | grep -q -i -e '^Target: \(x86_64\)\|\([iI][3-6]86\)-.*' && echo yes || echo no))
 
 OBJ_LIST := t1ha0.o t1ha1.o
 ifeq ($(TARGET_ARCHx86),yes)

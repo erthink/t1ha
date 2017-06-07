@@ -48,9 +48,7 @@
 #include "t1ha_bits.h"
 
 #if defined(_X86_64_) || defined(__x86_64__) || defined(_M_X64) ||             \
-    ((defined(__i386__) || defined(_M_IX86) || defined(i386) ||                \
-      defined(_X86_)) &&                                                       \
-     (!defined(_MSC_VER) || (_MSC_VER >= 1900)))
+    defined(__i386__) || defined(_M_IX86) || defined(i386) || defined(_X86_)
 
 #if defined(__SSE2__) || defined(_MSC_VER)
 #include <emmintrin.h>
@@ -111,24 +109,31 @@ uint64_t T1HA_IA32AES_NAME(const void *data, size_t len, uint64_t seed) {
 
     x = _mm_add_epi64(_mm_aesdec_si128(x, _mm_aesenc_si128(y, x)), y);
 #if defined(__x86_64__) || defined(_M_X64)
-    a = _mm_cvtsi128_si64(x);
 #if defined(__SSE4_1__) || defined(__AVX__)
+    a = _mm_extract_epi64(x, 0);
     b = _mm_extract_epi64(x, 1);
 #else
+    a = _mm_cvtsi128_si64(x);
     b = _mm_cvtsi128_si64(_mm_unpackhi_epi64(x, x));
 #endif
 #else
-    a = (uint32_t)_mm_cvtsi128_si32(x);
 #if defined(__SSE4_1__) || defined(__AVX__)
-    a |= (uint64_t)_mm_extract_epi32(x, 1) << 32;
+    a = (uint32_t)_mm_extract_epi32(x, 0) |
+        (uint64_t)_mm_extract_epi32(x, 1) << 32;
     b = (uint32_t)_mm_extract_epi32(x, 2) |
         (uint64_t)_mm_extract_epi32(x, 3) << 32;
 #else
+    a = (uint32_t)_mm_cvtsi128_si32(x);
     a |= (uint64_t)_mm_cvtsi128_si32(_mm_shuffle_epi32(x, 1)) << 32;
     x = _mm_unpackhi_epi64(x, x);
     b = (uint32_t)_mm_cvtsi128_si32(x);
     b |= (uint64_t)_mm_cvtsi128_si32(_mm_shuffle_epi32(x, 1)) << 32;
 #endif
+#endif
+#ifdef __AVX__
+    _mm256_zeroall();
+#elif !(defined(_X86_64_) || defined(__x86_64__) || defined(_M_X64))
+    _mm_empty();
 #endif
   }
 

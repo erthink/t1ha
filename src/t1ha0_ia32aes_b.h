@@ -163,3 +163,4 @@ uint64_t T1HA_IA32AES_NAME(const void *data, size_t len, uint64_t seed) {
 }
 
 #endif /* __i386__ || __x86_64__ */
+#undef T1HA_IA32AES_NAME

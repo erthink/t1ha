@@ -40,6 +40,7 @@
  * for The 1Hippeus project - zerocopy messaging in the spirit of Sparta!
  */
 
+#pragma once
 #ifndef T1HA_USE_FAST_ONESHOT_READ
 
 /* Define it to 1 for little bit faster code.

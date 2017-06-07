@@ -244,6 +244,13 @@ static const uint64_t refval_ia32aes_b[80] = {
 #if defined(__x86_64__) || defined(_M_IX86) || defined(_M_X64) ||              \
     defined(i386) || defined(_X86_) || defined(__i386__) || defined(_X86_64_)
 
+uint64_t t1ha0_ia32aes_noavx_a(const void *data, size_t length, uint64_t seed);
+uint64_t t1ha0_ia32aes_noavx_b(const void *data, size_t length, uint64_t seed);
+uint64_t t1ha0_ia32aes_avx_a(const void *data, size_t length, uint64_t seed);
+uint64_t t1ha0_ia32aes_avx_b(const void *data, size_t length, uint64_t seed);
+uint64_t t1ha0_ia32aes_avx2_a(const void *data, size_t length, uint64_t seed);
+uint64_t t1ha0_ia32aes_avx2_b(const void *data, size_t length, uint64_t seed);
+
 #ifdef __GNUC__
 #include <cpuid.h>
 #include <x86intrin.h>
@@ -251,13 +258,18 @@ static const uint64_t refval_ia32aes_b[80] = {
 #include <intrin.h>
 #endif
 
+int rdtscp_available;
+
 static uint64_t x86_cpu_features(void) {
   uint32_t features = 0;
   uint32_t extended = 0;
+  rdtscp_available = 0;
 #ifdef __GNUC__
   uint32_t eax, ebx, ecx, edx;
   const unsigned cpuid_max = __get_cpuid_max(0, NULL);
   if (cpuid_max >= 1) {
+    __cpuid(0x80000001, eax, ebx, ecx, edx);
+    rdtscp_available = edx & (1 << 27);
     __cpuid_count(1, 0, eax, ebx, features, edx);
     if (cpuid_max >= 7)
       __cpuid_count(7, 0, eax, extended, ecx, edx);
@@ -267,6 +279,8 @@ static uint64_t x86_cpu_features(void) {
   __cpuid(info, 0);
   const unsigned cpuid_max = info[0];
   if (cpuid_max >= 1) {
+    __cpuid(info, 0x80000001);
+    rdtscp_available = info[3] & (1 << 27);
     __cpuidex(info, 1, 0);
     features = info[2];
     if (cpuid_max >= 7) {
@@ -279,6 +293,68 @@ static uint64_t x86_cpu_features(void) {
 }
 #endif
 
+/***************************************************************************/
+
+#if defined(_X86_64_) || defined(__x86_64__) || defined(_M_X64) ||             \
+    defined(__i386__) || defined(_M_IX86) || defined(i386) || defined(_X86_)
+
+unsigned bench(const char *caption,
+               uint64_t (*hash)(const void *, size_t, uint64_t),
+               const void *data, unsigned len, uint64_t seed) {
+
+  printf("%32s(%8u bytes): ", caption, len);
+  fflush(NULL);
+
+  uint64_t min_ticks = UINT64_MAX;
+  unsigned stable_counter = 0;
+
+  unsigned start_cpu, stop_cpu;
+  uint64_t start_tsc, stop_tsc;
+
+  while (1) {
+    int unused[4];
+#ifdef _MSC_VER
+    __cpuid(unused, 0);
+#else
+    __cpuid(0, unused[0], unused[1], unused[2], unused[3]);
+#endif
+
+    start_tsc = __rdtscp(&start_cpu);
+    hash(data, len, seed);
+    stop_tsc = __rdtscp(&stop_cpu);
+#ifdef _MSC_VER
+    __cpuid(unused, 0);
+#else
+    __cpuid(0, unused[0], unused[1], unused[2], unused[3]);
+#endif
+
+    if (start_cpu != stop_cpu || stop_tsc <= start_tsc)
+      continue;
+
+    uint64_t ticks = stop_tsc - start_tsc;
+    if (min_ticks > ticks) {
+      min_ticks = ticks;
+      stable_counter = 0;
+      continue;
+    }
+
+    if (++stable_counter == 10000)
+      break;
+  }
+
+  printf("%8" PRIu64
+         " ticks, %8.5f clk/byte, %8.5f byte/clk, %8.3f MiB/sec @ 3 ghz\n",
+         min_ticks, (double)min_ticks / len, (double)len / min_ticks,
+         3.0 * len / min_ticks);
+  fflush(NULL);
+
+  return (min_ticks < INT32_MAX) ? (unsigned)min_ticks : UINT32_MAX;
+}
+
+#endif /* x86 for t1ha_ia32aes */
+
+/***************************************************************************/
+
 int main(int argc, const char *argv[]) {
   (void)argc;
   (void)argv;
@@ -289,10 +365,9 @@ int main(int argc, const char *argv[]) {
   failed |= test("t1ha0_32be", t1ha0_32be, refval_32be);
 
 #if defined(_X86_64_) || defined(__x86_64__) || defined(_M_X64) ||             \
-    ((defined(__i386__) || defined(_M_IX86) || defined(i386) ||                \
-      defined(_X86_)) &&                                                       \
-     (!defined(_MSC_VER) || (_MSC_VER >= 1900)))
-  uint64_t features = x86_cpu_features();
+    defined(__i386__) || defined(_M_IX86) || defined(i386) || defined(_X86_)
+
+  const uint64_t features = x86_cpu_features();
   if (features & UINT32_C(0x02000000)) {
     failed |=
         test("t1ha0_ia32aes_noavx", t1ha0_ia32aes_noavx, refval_ia32aes_a);
@@ -303,6 +378,64 @@ int main(int argc, const char *argv[]) {
             test("t1ha0_ia32aes_avx2", t1ha0_ia32aes_avx2, refval_ia32aes_b);
     }
   }
+
+  if (!rdtscp_available) {
+    printf("\nNo RDTSPC available on CPU, skip benchmark\n");
+  } else {
+    printf("\nSimple bench for x86 (large keys):\n");
+    unsigned bytes = 1024 * 256;
+    char *buffer = malloc(bytes);
+    for (unsigned i = 0; i < bytes; ++i)
+      buffer[i] = rand() + i;
+
+    bench("t1ha1_64le", t1ha1_le, buffer, bytes, 42);
+    bench("t1ha1_64be", t1ha1_be, buffer, bytes, 42);
+    bench("t1ha0_32le", t1ha0_32le, buffer, bytes, 42);
+    bench("t1ha0_32be", t1ha0_32be, buffer, bytes, 42);
+
+    printf("\nSimple bench for x86 (small keys):\n");
+    bench("t1ha1_64le", t1ha1_le, buffer, 31, 42);
+    bench("t1ha1_64be", t1ha1_be, buffer, 31, 42);
+    bench("t1ha0_32le", t1ha0_32le, buffer, 31, 42);
+    bench("t1ha0_32be", t1ha0_32be, buffer, 31, 42);
+
+    if (features & UINT32_C(0x02000000)) {
+      printf("\nSimple bench for AES-NI (medium keys):\n");
+      bench("t1ha0_ia32aes_noavx_a", t1ha0_ia32aes_noavx_a, buffer, 127, 42);
+      bench("t1ha0_ia32aes_noavx_b", t1ha0_ia32aes_noavx_b, buffer, 127, 42);
+      bench("t1ha0_ia32aes_noavx", t1ha0_ia32aes_noavx, buffer, 127, 42);
+      if ((features & UINT32_C(0x1A000000)) == UINT32_C(0x1A000000)) {
+        bench("t1ha0_ia32aes_avx_a", t1ha0_ia32aes_avx_a, buffer, 127, 42);
+        bench("t1ha0_ia32aes_avx_b", t1ha0_ia32aes_avx_b, buffer, 127, 42);
+        bench("t1ha0_ia32aes_avx", t1ha0_ia32aes_avx, buffer, 127, 42);
+        if ((features >> 32) & 32) {
+          bench("t1ha0_ia32aes_avx2_a", t1ha0_ia32aes_avx2_a, buffer, 127, 42);
+          bench("t1ha0_ia32aes_avx2_b", t1ha0_ia32aes_avx2_b, buffer, 127, 42);
+          bench("t1ha0_ia32aes_avx2", t1ha0_ia32aes_avx2, buffer, 127, 42);
+        }
+      }
+
+      printf("\nSimple bench for AES-NI (large keys):\n");
+      bench("t1ha0_ia32aes_noavx_a", t1ha0_ia32aes_noavx_a, buffer, bytes, 42);
+      bench("t1ha0_ia32aes_noavx_b", t1ha0_ia32aes_noavx_b, buffer, bytes, 42);
+      bench("t1ha0_ia32aes_noavx", t1ha0_ia32aes_noavx, buffer, bytes, 42);
+      if ((features & UINT32_C(0x1A000000)) == UINT32_C(0x1A000000)) {
+        bench("t1ha0_ia32aes_avx_a", t1ha0_ia32aes_avx_a, buffer, bytes, 42);
+        bench("t1ha0_ia32aes_avx_b", t1ha0_ia32aes_avx_b, buffer, bytes, 42);
+        bench("t1ha0_ia32aes_avx", t1ha0_ia32aes_avx, buffer, bytes, 42);
+        if ((features >> 32) & 32) {
+          bench("t1ha0_ia32aes_avx2_a", t1ha0_ia32aes_avx2_a, buffer, bytes,
+                42);
+          bench("t1ha0_ia32aes_avx2_b", t1ha0_ia32aes_avx2_b, buffer, bytes,
+                42);
+          bench("t1ha0_ia32aes_avx2", t1ha0_ia32aes_avx2, buffer, bytes, 42);
+        }
+      }
+    }
+
+    free(buffer);
+  }
 #endif /* x86 for t1ha_ia32aes */
+
   return failed ? EXIT_FAILURE : EXIT_SUCCESS;
 }

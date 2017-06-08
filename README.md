@@ -6,6 +6,7 @@ by [Positive Technologies](https://www.ptsecurity.com).
 *The Future will Positive. Всё будет хорошо.*
 [![Build Status](https://travis-ci.org/leo-yuriev/t1ha.svg?branch=devel)](https://travis-ci.org/leo-yuriev/t1ha)
 [![Build status](https://ci.appveyor.com/api/projects/status/ptug5fl2ouxdo68h/branch/devel?svg=true)](https://ci.appveyor.com/project/leo-yuriev/t1ha/branch/devel)
+[![CircleCI](https://circleci.com/gh/leo-yuriev/t1ha/tree/devel.svg?style=svg)](https://circleci.com/gh/leo-yuriev/t1ha/tree/devel)
 
 ## Briefly, it is a portable 64-bit hash function:
   1. Intended for 64-bit little-endian platforms, predominantly for x86_64,

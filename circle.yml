@@ -7,4 +7,5 @@ database:
 
 test:
   override:
-    - make
+    - make all
+    - make check

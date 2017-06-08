@@ -40,6 +40,18 @@
  * for The 1Hippeus project - zerocopy messaging in the spirit of Sparta!
  */
 
+#ifndef T1HA_USE_FAST_ONESHOT_READ
+
+/* Define it to 1 for little bit faster code.
+ * Unfortunately this may triggering a false-positive alarms from Valgrind,
+ * AddressSanitizer and other similar tool.
+ * So, define it to 0 for calmness if doubt. */
+#define T1HA_USE_FAST_ONESHOT_READ 1
+
+#endif /* T1HA_USE_FAST_ONESHOT_READ */
+
+/*****************************************************************************/
+
 #include <string.h> /* for memcpy() */
 
 #if !defined(__BYTE_ORDER__) || !defined(__ORDER_LITTLE_ENDIAN__) ||           \
@@ -82,6 +94,7 @@
     defined(_M_X64) || defined(i386) || defined(_X86_) || defined(__i386__) || \
     defined(_X86_64_)
 #define UNALIGNED_OK 1
+#define PAGESIZE 4096
 #else
 #define UNALIGNED_OK 0
 #endif
@@ -177,30 +190,25 @@
 
 #ifndef bswap64
 static __inline uint64_t bswap64(uint64_t v) {
-  return v << 56 | v >> 56 | ((v << 40) & 0x00ff000000000000ull) |
-         ((v << 24) & 0x0000ff0000000000ull) |
-         ((v << 8) & 0x000000ff00000000ull) |
-         ((v >> 8) & 0x00000000ff000000ull) |
-         ((v >> 24) & 0x0000000000ff0000ull) |
-         ((v >> 40) & 0x000000000000ff00ull);
+  return v << 56 | v >> 56 | ((v << 40) & UINT64_C(0x00ff000000000000)) |
+         ((v << 24) & UINT64_C(0x0000ff0000000000)) |
+         ((v << 8) & UINT64_C(0x000000ff00000000)) |
+         ((v >> 8) & UINT64_C(0x00000000ff000000)) |
+         ((v >> 24) & UINT64_C(0x0000000000ff0000)) |
+         ((v >> 40) & UINT64_C(0x000000000000ff00));
 }
 #endif /* bswap64 */
 
 #ifndef bswap32
 static __inline uint32_t bswap32(uint32_t v) {
-  return v << 24 | v >> 24 | ((v << 8) & 0x00ff0000) | ((v >> 8) & 0x0000ff00);
+  return v << 24 | v >> 24 | ((v << 8) & UINT32_C(0x00ff0000)) |
+         ((v >> 8) & UINT32_C(0x0000ff00));
 }
 #endif /* bswap32 */
 
 #ifndef bswap16
 static __inline uint16_t bswap16(uint16_t v) { return v << 8 | v >> 8; }
 #endif /* bswap16 */
-
-#ifndef T1HA_TESTING
-#define T1HA_INTERNAL static maybe_unused
-#else
-#define T1HA_INTERNAL
-#endif /* T1HA_TESTING */
 
 /***************************************************************************/
 
@@ -228,8 +236,27 @@ static __inline uint16_t fetch16_le(const void *v) {
 #endif
 }
 
+#if T1HA_USE_FAST_ONESHOT_READ && UNALIGNED_OK && defined(PAGESIZE) &&         \
+    PAGESIZE > 0
+#define can_read_underside(ptr, size)                                          \
+  ((size) <= sizeof(uintptr_t) && ((PAGESIZE - (size)) & (uintptr_t)(ptr)) != 0)
+#endif /* can_fast_read */
+
 static __inline uint64_t tail64_le(const void *v, size_t tail) {
   const uint8_t *p = (const uint8_t *)v;
+#ifdef can_read_underside
+  /* On some systems (e.g. x86) we can perform a 'oneshot' read, which
+   * is little bit faster. Thanks Marcin Żukowski <marcin.zukowski@gmail.com>
+   * for the reminder. */
+  const unsigned offset = (8 - tail) & 7;
+  const unsigned shift = offset << 3;
+  if (likely(can_read_underside(p, 8))) {
+    p -= offset;
+    return fetch64_le(p) >> shift;
+  }
+  return fetch64_le(p) & ((~UINT64_C(0)) >> shift);
+#endif /* 'oneshot' read */
+
   uint64_t r = 0;
   switch (tail & 7) {
 #if UNALIGNED_OK && __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
@@ -309,6 +336,19 @@ static maybe_unused __inline uint16_t fetch16_be(const void *v) {
 
 static maybe_unused __inline uint64_t tail64_be(const void *v, size_t tail) {
   const uint8_t *p = (const uint8_t *)v;
+#ifdef can_read_underside
+  /* On some systems we can perform a 'oneshot' read, which is little bit
+   * faster. Thanks Marcin Żukowski <marcin.zukowski@gmail.com> for the
+   * reminder. */
+  const unsigned offset = (8 - tail) & 7;
+  const unsigned shift = offset << 3;
+  if (likely(can_read_underside(p, 8))) {
+    p -= offset;
+    return fetch64_be(p) & ((~UINT64_C(0)) >> shift);
+  }
+  return fetch64_be(p) >> shift;
+#endif /* 'oneshot' read */
+
   switch (tail & 7) {
 #if UNALIGNED_OK && __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
   /* For most CPUs this code is better when not needed
@@ -422,13 +462,13 @@ static maybe_unused __inline uint64_t mul_64x64_high(uint64_t a, uint64_t b) {
 /***************************************************************************/
 
 /* 'magic' primes */
-static const uint64_t p0 = 17048867929148541611ull;
-static const uint64_t p1 = 9386433910765580089ull;
-static const uint64_t p2 = 15343884574428479051ull;
-static const uint64_t p3 = 13662985319504319857ull;
-static const uint64_t p4 = 11242949449147999147ull;
-static const uint64_t p5 = 13862205317416547141ull;
-static const uint64_t p6 = 14653293970879851569ull;
+static const uint64_t p0 = UINT64_C(0xEC99BF0D8372CAAB);
+static const uint64_t p1 = UINT64_C(0x82434FE90EDCEF39);
+static const uint64_t p2 = UINT64_C(0xD4F06DB99D67BE4B);
+static const uint64_t p3 = UINT64_C(0xBD9CACC22C6E9571);
+static const uint64_t p4 = UINT64_C(0x9C06FAF4D023E3AB);
+static const uint64_t p5 = UINT64_C(0xC060724A8424F345);
+static const uint64_t p6 = UINT64_C(0xCB5AF53AE3AAAC31);
 
 /* rotations */
 static const unsigned s0 = 41;

@@ -1,62 +1,61 @@
-ifndef CFLAGS
-CFLAGS = -std=c99
-parenthesis=)
-GNUCC_VERSION = $(shell (export LC_ALL=C; $(CC) -v 2>&1 | sed -n -e 's/.*gcc version \([0-9]\+\.[0-9]\+\)\.[0-9]\+.*/\1/p'; echo '?') | head -1)
-CLANG_VERSION = $(shell (export LC_ALL=C; $(CC) --version 2>&1 | sed -n -e 's/.*clang version \([0-9]\+\.[0-9]\+\)\.[0-9]\+.*/\1/p'; echo '?') | head -1)
-GNUCC_ARCHx86 = $(shell (export LC_ALL=C; test '$(GNUCC_VERSION)' != '?' && $(CC) -v 2>&1 | sed -n -e 's/^Target: \(\(x86_64\)\|\(i[3-6]86\)\)-.*/yes/p'; echo 'no') | head -1)
-CLANG_ARCHx86 = $(shell (export LC_ALL=C; test '$(CLANG_VERSION)' != '?' && $(CC) --version 2>&1 | sed -n -e 's/^Target: \(\(x86_64\)\|\(i[3-6]86\)\)-.*/yes/p'; echo 'no') | head -1)
-GNUCC_SIMD_BUG = $(shell (test '$(GNUCC_ARCHx86)' = 'yes' && case '$(GNUCC_VERSION)' in 4.[0-8]$(parenthesis) echo 'yes';; esac; echo 'no') | head -1)
-CLANG_SIMD_BUG = $(shell (test '$(CLANG_ARCHx86)' = 'yes' && case '$(CLANG_VERSION)' in 3.[0-7]$(parenthesis) echo 'yes';; esac; echo 'no') | head -1)
-ifeq ($(GNUCC_SIMD_BUG),yes)
-# LY: -march=native is a workaround for a GNUCC 4.x bug, which was fixed in 4.9 and later.
-CFLAGS += -march=native
-else
-ifeq ($(CLANG_SIMD_BUG),yes)
-# LY: -march=native is a workaround for a clang 3.x bug, which was fixed in 3.8 and later.
-CFLAGS += -march=native
-endif
-endif
+# T1HA_USE_FAST_ONESHOT_READ:
+# Define it to 1 for little bit faster code.
+# Unfortunately this may triggering a false-positive alarms from Valgrind,
+# AddressSanitizer and other similar tool.
+# So, define it to 0 for calmness if doubt.
+T1HA_USE_FAST_ONESHOT_READ ?=1
+
+CFLAGS ?= -std=c99
+CC ?= gcc
+
+TARGET_ARCHx86 = $(shell (export LC_ALL=C; ($(CC) --version 2>&1; $(CC) -v 2>&1) | grep -q -i -e '^Target: \(x86_64\)\|\([iI][3-6]86\)-.*' && echo yes || echo no))
+
+OBJ_LIST := t1ha0.o t1ha1.o
+ifeq ($(TARGET_ARCHx86),yes)
+OBJ_LIST += t1ha0_aes_avx.o t1ha0_aes_noavx.o
 endif
 
-CFLAGS_TEST ?= -Wextra -Werror -O -g -DT1HA_TESTING $(CFLAGS)
-CFLAGS_LIB ?= -Wall -ffunction-sections -O3 -fPIC -g $(CFLAGS)
-CFLAGS_SOLIB ?= $(CFLAGS_LIB) -fvisibility=hidden -Dt1ha_EXPORTS -shared -s
-
-SOURCES = t1ha.h tests/main.c $(addprefix src/, t1ha1.c t1ha0.c t1ha_bits.h) Makefile
+CFLAGS_TEST ?= -Wextra -Werror -O -g $(CFLAGS)
+CFLAGS_LIB ?= -Wall -ffunction-sections -O3 -fPIC -g $(CFLAGS) -fvisibility=hidden -Dt1ha_EXPORTS
 
 all: test libt1ha.a libt1ha.so
 	./test || rm -rf libt1ha.a libt1ha.so
 
-check: check32 check64
-
-t1ha0.o: $(SOURCES)
+t1ha0.o: t1ha.h src/t1ha_bits.h src/t1ha0.c Makefile
 	$(CC) $(CFLAGS_LIB) -c -o $@ src/t1ha0.c
 
-t1ha1.o: $(SOURCES)
+t1ha0_aes_avx.o: t1ha.h src/t1ha_bits.h src/t1ha0_ia32aes.h src/t1ha0_ia32aes_avx.c Makefile
+	$(CC) $(CFLAGS_LIB) -save-temps -mavx -maes -c -o $@ src/t1ha0_ia32aes_avx.c
+
+t1ha0_aes_noavx.o: t1ha.h src/t1ha_bits.h src/t1ha0_ia32aes.h src/t1ha0_ia32aes_noavx.c Makefile
+	$(CC) $(CFLAGS_LIB) -save-temps -mno-avx -maes -c -o $@ src/t1ha0_ia32aes_noavx.c
+
+t1ha1.o: t1ha.h src/t1ha_bits.h src/t1ha1.c Makefile
 	$(CC) $(CFLAGS_LIB) -c -o $@ src/t1ha1.c
 
-libt1ha.a: t1ha0.o t1ha1.o test
-	$(AR) rs $@ t1ha0.o t1ha1.o
+libt1ha.a: $(OBJ_LIST) test Makefile
+	$(AR) rs $@ $(OBJ_LIST)
 
-libt1ha.so: $(SOURCES) test
-	$(CC) $(CFLAGS_SOLIB) -o $@ src/t1ha1.c src/t1ha0.c
+libt1ha.so: $(OBJ_LIST) test Makefile
+	$(CC) $(CFLAGS) -shared -s -o $@ $(OBJ_LIST)
 
-test: $(SOURCES)
-	@test '$(GNUCC_VERSION)' != '?' && echo "GNUCC: Version $(GNUCC_VERSION), ARCHx86: $(GNUCC_ARCHx86); Affected by 'instructions not enabled' bug: $(GNUCC_SIMD_BUG)" || true
-	@test '$(CLANG_VERSION)' != '?' && echo "CLANG: Version $(CLANG_VERSION), ARCHx86: $(CLANG_ARCHx86); Affected by 'instructions not enabled' bug: $(CLANG_SIMD_BUG)" || true
-	$(CC) $(CFLAGS_TEST) -o $@ src/t1ha1.c src/t1ha0.c tests/main.c
+test: $(OBJ_LIST) tests/main.c Makefile
+	@echo "Target-ARCHx86: $(TARGET_ARCHx86)" || true
+	$(CC) $(CFLAGS_TEST) -o $@ tests/main.c $(OBJ_LIST)
 
 clean:
-	rm -f test test32 test64 *.o *.a *.so
+	rm -f test test32 test64 *.i *.bc *.s *.o *.a *.so
 
-test32: $(SOURCES)
-	$(CC) $(CFLAGS_TEST) -m32 -o $@ src/t1ha1.c src/t1ha0.c tests/main.c
-
-check32: test32
-	./test32
-
-test64: $(SOURCES)
-	$(CC) $(CFLAGS_TEST) -m64 -o $@ src/t1ha1.c src/t1ha0.c tests/main.c
-
-check64: test64
-	./test64
+#check: check32 check64
+#
+#test32: $(SOURCES)
+#	$(CC) $(CFLAGS_TEST) -m32 -o $@ src/t1ha1.c src/t1ha0.c tests/main.c
+#
+#check32: test32
+#	./test32
+#
+#test64: $(SOURCES)
+#	$(CC) $(CFLAGS_TEST) -m64 -o $@ src/t1ha1.c src/t1ha0.c tests/main.c
+#
+#check64: test64
+#	./test64

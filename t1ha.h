@@ -150,24 +150,21 @@ static __inline uint64_t t1ha(const void *data, size_t length, uint64_t seed) {
 #ifdef __ELF__
 T1HA_API uint64_t t1ha0(const void *data, size_t length, uint64_t seed);
 #else
-T1HA_API extern uint64_t (*_t1ha0_ptr)(const void *data, size_t length,
-                                       uint64_t seed);
+T1HA_API extern uint64_t (*t1ha0_funcptr)(const void *data, size_t length,
+                                          uint64_t seed);
 static __inline uint64_t t1ha0(const void *data, size_t length, uint64_t seed) {
-  return _t1ha0_ptr(data, length, seed);
+  return t1ha0_funcptr(data, length, seed);
 }
 #endif /* __ELF__ */
 
-#ifdef T1HA_TESTING
-uint64_t _t1ha_32le(const void *data, size_t length, uint64_t seed);
-uint64_t _t1ha_32be(const void *data, size_t length, uint64_t seed);
+uint64_t t1ha0_32le(const void *data, size_t length, uint64_t seed);
+uint64_t t1ha0_32be(const void *data, size_t length, uint64_t seed);
 
-#if ((defined(__AES__) || __GNUC_PREREQ(4, 4) || __has_attribute(target)) &&   \
-     (defined(__x86_64__) || defined(__i386__))) ||                            \
-    defined(_M_X64) || defined(_M_IX86)
-uint64_t _t1ha_ia32aes(const void *data, size_t length, uint64_t seed);
-#endif /* __AES__ */
-
-#endif /* T1HA_TESTING */
+#if defined(__x86_64__) || defined(__i386__) || defined(_M_X64) ||             \
+    defined(_M_IX86)
+uint64_t t1ha0_ia32aes_avx(const void *data, size_t length, uint64_t seed);
+uint64_t t1ha0_ia32aes_noavx(const void *data, size_t length, uint64_t seed);
+#endif /* __i386__ || __x86_64__ */
 
 #ifdef __cplusplus
 }

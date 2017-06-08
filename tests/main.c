@@ -302,7 +302,7 @@ unsigned bench(const char *caption,
                uint64_t (*hash)(const void *, size_t, uint64_t),
                const void *data, unsigned len, uint64_t seed) {
 
-  printf("%32s(%8u bytes): ", caption, len);
+  printf("%24s: ", caption);
   fflush(NULL);
 
   uint64_t min_ticks = UINT64_MAX;
@@ -342,10 +342,8 @@ unsigned bench(const char *caption,
       break;
   }
 
-  printf("%8" PRIu64
-         " ticks, %8.5f clk/byte, %8.5f byte/clk, %8.3f MiB/sec @ 3 ghz\n",
-         min_ticks, (double)min_ticks / len, (double)len / min_ticks,
-         3.0 * len / min_ticks);
+  printf("%7" PRIu64 " ticks, %7.4f clk/byte, %7.3f Mb/s @3GHz\n", min_ticks,
+         (double)min_ticks / len, 3.0 * len / min_ticks);
   fflush(NULL);
 
   return (min_ticks < INT32_MAX) ? (unsigned)min_ticks : UINT32_MAX;
@@ -380,55 +378,59 @@ int main(int argc, const char *argv[]) {
   }
 
   if (!rdtscp_available) {
-    printf("\nNo RDTSPC available on CPU, skip benchmark\n");
+    printf("\nNo RDTSCP available on CPU, skip benchmark\n");
   } else {
-    printf("\nSimple bench for x86 (large keys):\n");
-    unsigned bytes = 1024 * 256;
-    char *buffer = malloc(bytes);
-    for (unsigned i = 0; i < bytes; ++i)
+    const unsigned large = 1024 * 256;
+    const unsigned medium = 127;
+    const unsigned small = 31;
+    char *buffer = malloc(large);
+    for (unsigned i = 0; i < large; ++i)
       buffer[i] = rand() + i;
 
-    bench("t1ha1_64le", t1ha1_le, buffer, bytes, 42);
-    bench("t1ha1_64be", t1ha1_be, buffer, bytes, 42);
-    bench("t1ha0_32le", t1ha0_32le, buffer, bytes, 42);
-    bench("t1ha0_32be", t1ha0_32be, buffer, bytes, 42);
+    printf("\nSimple bench for x86 (large keys, %u bytes):\n", large);
+    bench("t1ha1_64le", t1ha1_le, buffer, large, 42);
+    bench("t1ha1_64be", t1ha1_be, buffer, large, 42);
+    bench("t1ha0_32le", t1ha0_32le, buffer, large, 42);
+    bench("t1ha0_32be", t1ha0_32be, buffer, large, 42);
 
-    printf("\nSimple bench for x86 (small keys):\n");
-    bench("t1ha1_64le", t1ha1_le, buffer, 31, 42);
-    bench("t1ha1_64be", t1ha1_be, buffer, 31, 42);
-    bench("t1ha0_32le", t1ha0_32le, buffer, 31, 42);
-    bench("t1ha0_32be", t1ha0_32be, buffer, 31, 42);
+    printf("\nSimple bench for x86 (small keys, %u bytes):\n", small);
+    bench("t1ha1_64le", t1ha1_le, buffer, small, 42);
+    bench("t1ha1_64be", t1ha1_be, buffer, small, 42);
+    bench("t1ha0_32le", t1ha0_32le, buffer, small, 42);
+    bench("t1ha0_32be", t1ha0_32be, buffer, small, 42);
 
     if (features & UINT32_C(0x02000000)) {
-      printf("\nSimple bench for AES-NI (medium keys):\n");
-      bench("t1ha0_ia32aes_noavx_a", t1ha0_ia32aes_noavx_a, buffer, 127, 42);
-      bench("t1ha0_ia32aes_noavx_b", t1ha0_ia32aes_noavx_b, buffer, 127, 42);
-      bench("t1ha0_ia32aes_noavx", t1ha0_ia32aes_noavx, buffer, 127, 42);
+      printf("\nSimple bench for AES-NI (medium keys, %u bytes):\n", medium);
+      bench("t1ha0_ia32aes_noavx_a", t1ha0_ia32aes_noavx_a, buffer, medium, 42);
+      bench("t1ha0_ia32aes_noavx_b", t1ha0_ia32aes_noavx_b, buffer, medium, 42);
+      bench("t1ha0_ia32aes_noavx", t1ha0_ia32aes_noavx, buffer, medium, 42);
       if ((features & UINT32_C(0x1A000000)) == UINT32_C(0x1A000000)) {
-        bench("t1ha0_ia32aes_avx_a", t1ha0_ia32aes_avx_a, buffer, 127, 42);
-        bench("t1ha0_ia32aes_avx_b", t1ha0_ia32aes_avx_b, buffer, 127, 42);
-        bench("t1ha0_ia32aes_avx", t1ha0_ia32aes_avx, buffer, 127, 42);
+        bench("t1ha0_ia32aes_avx_a", t1ha0_ia32aes_avx_a, buffer, medium, 42);
+        bench("t1ha0_ia32aes_avx_b", t1ha0_ia32aes_avx_b, buffer, medium, 42);
+        bench("t1ha0_ia32aes_avx", t1ha0_ia32aes_avx, buffer, medium, 42);
         if ((features >> 32) & 32) {
-          bench("t1ha0_ia32aes_avx2_a", t1ha0_ia32aes_avx2_a, buffer, 127, 42);
-          bench("t1ha0_ia32aes_avx2_b", t1ha0_ia32aes_avx2_b, buffer, 127, 42);
-          bench("t1ha0_ia32aes_avx2", t1ha0_ia32aes_avx2, buffer, 127, 42);
+          bench("t1ha0_ia32aes_avx2_a", t1ha0_ia32aes_avx2_a, buffer, medium,
+                42);
+          bench("t1ha0_ia32aes_avx2_b", t1ha0_ia32aes_avx2_b, buffer, medium,
+                42);
+          bench("t1ha0_ia32aes_avx2", t1ha0_ia32aes_avx2, buffer, medium, 42);
         }
       }
 
-      printf("\nSimple bench for AES-NI (large keys):\n");
-      bench("t1ha0_ia32aes_noavx_a", t1ha0_ia32aes_noavx_a, buffer, bytes, 42);
-      bench("t1ha0_ia32aes_noavx_b", t1ha0_ia32aes_noavx_b, buffer, bytes, 42);
-      bench("t1ha0_ia32aes_noavx", t1ha0_ia32aes_noavx, buffer, bytes, 42);
+      printf("\nSimple bench for AES-NI (large keys, %u bytes):\n", large);
+      bench("t1ha0_ia32aes_noavx_a", t1ha0_ia32aes_noavx_a, buffer, large, 42);
+      bench("t1ha0_ia32aes_noavx_b", t1ha0_ia32aes_noavx_b, buffer, large, 42);
+      bench("t1ha0_ia32aes_noavx", t1ha0_ia32aes_noavx, buffer, large, 42);
       if ((features & UINT32_C(0x1A000000)) == UINT32_C(0x1A000000)) {
-        bench("t1ha0_ia32aes_avx_a", t1ha0_ia32aes_avx_a, buffer, bytes, 42);
-        bench("t1ha0_ia32aes_avx_b", t1ha0_ia32aes_avx_b, buffer, bytes, 42);
-        bench("t1ha0_ia32aes_avx", t1ha0_ia32aes_avx, buffer, bytes, 42);
+        bench("t1ha0_ia32aes_avx_a", t1ha0_ia32aes_avx_a, buffer, large, 42);
+        bench("t1ha0_ia32aes_avx_b", t1ha0_ia32aes_avx_b, buffer, large, 42);
+        bench("t1ha0_ia32aes_avx", t1ha0_ia32aes_avx, buffer, large, 42);
         if ((features >> 32) & 32) {
-          bench("t1ha0_ia32aes_avx2_a", t1ha0_ia32aes_avx2_a, buffer, bytes,
+          bench("t1ha0_ia32aes_avx2_a", t1ha0_ia32aes_avx2_a, buffer, large,
                 42);
-          bench("t1ha0_ia32aes_avx2_b", t1ha0_ia32aes_avx2_b, buffer, bytes,
+          bench("t1ha0_ia32aes_avx2_b", t1ha0_ia32aes_avx2_b, buffer, large,
                 42);
-          bench("t1ha0_ia32aes_avx2", t1ha0_ia32aes_avx2, buffer, bytes, 42);
+          bench("t1ha0_ia32aes_avx2", t1ha0_ia32aes_avx2, buffer, large, 42);
         }
       }
     }

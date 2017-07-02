@@ -165,14 +165,14 @@
 #endif
 
 #pragma warning(pop)
-
 #pragma warning(disable : 4514) /* 'xyz': unreferenced inline function         \
                                    has been removed */
 #pragma warning(disable : 4710) /* 'xyz': function not inlined */
 #pragma warning(disable : 4711) /* function 'xyz' selected for                 \
                                    automatic inline expansion */
-
-#endif /* Compiler */
+#pragma warning(disable : 4127) /* conditional expression is constant */
+#pragma warning(disable : 4702) /* unreachable code */
+#endif                          /* Compiler */
 
 #ifndef likely
 #define likely(cond) (cond)

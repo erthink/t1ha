@@ -40,6 +40,7 @@
  * for The 1Hippeus project - zerocopy messaging in the spirit of Sparta!
  */
 
+#pragma once
 #ifndef T1HA_USE_FAST_ONESHOT_READ
 
 /* Define it to 1 for little bit faster code.
@@ -126,13 +127,16 @@
 
 #elif defined(_MSC_VER)
 
-#if _MSC_FULL_VER < 190024215
-#if _MSC_FULL_VER < 180040629 && defined(_M_IX86)
-#error Please use Visual Studio 2015 (MSC 19.0) or newer for 32-bit target.
-#else
+#if _MSC_FULL_VER < 190024218 && defined(_M_IX86)
 #pragma message(                                                               \
-    "It is recommended to use Visual Studio 2015 (MSC 19.0) or newer.")
+    "For AES-NI at least \"Microsoft C/C++ Compiler\" version 19.00.24218 (Visual Studio 2015 Update 5) is required.")
 #endif
+#if _MSC_FULL_VER < 191025019
+#pragma message(                                                               \
+    "It is recommended to use \"Microsoft C/C++ Compiler\" version 19.10.25019 (Visual Studio 2017) or newer.")
+#endif
+#if _MSC_FULL_VER < 180040629
+#error At least "Microsoft C/C++ Compiler" version 18.00.40629 (Visual Studio 2013 Update 5) is required.
 #endif
 
 #pragma warning(push, 1)
@@ -164,14 +168,14 @@
 #endif
 
 #pragma warning(pop)
-
 #pragma warning(disable : 4514) /* 'xyz': unreferenced inline function         \
                                    has been removed */
 #pragma warning(disable : 4710) /* 'xyz': function not inlined */
 #pragma warning(disable : 4711) /* function 'xyz' selected for                 \
                                    automatic inline expansion */
-
-#endif /* Compiler */
+#pragma warning(disable : 4127) /* conditional expression is constant */
+#pragma warning(disable : 4702) /* unreachable code */
+#endif                          /* Compiler */
 
 #ifndef likely
 #define likely(cond) (cond)

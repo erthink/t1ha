@@ -11,4 +11,5 @@ os:
   - osx
 
 script:
-  - make
+  - make all
+  - make check

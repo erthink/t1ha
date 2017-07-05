@@ -28,6 +28,10 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#if defined(_MSC_VER) && _MSC_VER < 1900
+#define snprintf _snprintf
+#endif
+
 /* *INDENT-OFF* */
 /* clang-format off */
 static const uint8_t pattern[64] = {

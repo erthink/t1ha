@@ -172,6 +172,7 @@
       <PreprocessorDefinitions>WIN64;NDEBUG;_CONSOLE;T1HA_TESTING;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <InlineFunctionExpansion>AnySuitable</InlineFunctionExpansion>
       <WarningLevel>Level4</WarningLevel>
+      <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
     </ClCompile>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|ARM'">
@@ -190,7 +191,7 @@
     <ClCompile>
       <OmitFramePointers>true</OmitFramePointers>
       <PreprocessorDefinitions>WIN64;NDEBUG;_CONSOLE;T1HA_TESTING;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
+      <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
       <AssemblerOutput>All</AssemblerOutput>
       <InlineFunctionExpansion>AnySuitable</InlineFunctionExpansion>
       <WarningLevel>Level4</WarningLevel>
@@ -202,12 +203,13 @@
       <OmitFramePointers>false</OmitFramePointers>
       <WarningLevel>Level4</WarningLevel>
       <TreatWarningAsError>true</TreatWarningAsError>
+      <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
     </ClCompile>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|ARM'">
     <ClCompile>
       <PreprocessorDefinitions>WIN64;_DEBUG;_CONSOLE;T1HA_TESTING;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
+      <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
       <WarningLevel>Level4</WarningLevel>
       <TreatWarningAsError>true</TreatWarningAsError>
     </ClCompile>

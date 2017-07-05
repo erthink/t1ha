@@ -127,14 +127,15 @@
 
 #elif defined(_MSC_VER)
 
-#if _MSC_FULL_VER < 190024215
-#if _MSC_FULL_VER < 180040629 && defined(_M_IX86)
-#error Please use Visual Studio 2015 (MSC 19.0) or newer for 32-bit target.
-#else
+#if _MSC_FULL_VER < 191025019
 #pragma message(                                                               \
-    "It is recommended to use Visual Studio 2015 (MSC 19.0) or newer.")
+    "It is recommended to use \"Microsoft C/C++ Compiler\" version 19.10.25019 (Visual Studio 2017) or newer.")
+#if _MSC_FULL_VER < 190024218 && !defined(_M_X64)
+#error Building t1ha for x86 at least "Microsoft C/C++ Compiler" version 19.00.24218 (Visual Studio 2015 Update 5) is required.
+#elif _MSC_FULL_VER < 180040629
+#error Building t1ha for x64 at least "Microsoft C/C++ Compiler" version 18.00.40629 (Visual Studio 2013 Update 5) is required.
 #endif
-#endif
+#endif /* _MSC_FULL_VER < 191025019 */
 
 #pragma warning(push, 1)
 

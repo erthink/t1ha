@@ -389,7 +389,7 @@ int main(int argc, const char *argv[]) {
     const unsigned small = 31;
     char *buffer = malloc(large);
     for (unsigned i = 0; i < large; ++i)
-      buffer[i] = rand() + i;
+      buffer[i] = (char)(rand() + i);
 
     printf("\nSimple bench for x86 (large keys, %u bytes):\n", large);
     bench("t1ha1_64le", t1ha1_le, buffer, large, 42);

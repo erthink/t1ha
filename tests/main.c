@@ -389,6 +389,9 @@ int main(int argc, const char *argv[]) {
     }
   }
 
+#if !defined(__OPTIMIZE__) && (defined(_MSC_VER) && defined(_DEBUG))
+  printf("\nNon-optimized/Debug build, skip benchmark\n");
+#else
   if (!rdtscp_available) {
     printf("\nNo RDTSCP available on CPU, skip benchmark\n");
   } else {
@@ -449,6 +452,7 @@ int main(int argc, const char *argv[]) {
 
     free(buffer);
   }
+#endif /* __OPTIMIZE__ */
 #endif /* x86 for t1ha_ia32aes */
 
   return failed ? EXIT_FAILURE : EXIT_SUCCESS;

@@ -310,8 +310,9 @@ uint64_t t1ha0_32be(const void *data, size_t len, uint64_t seed) {
 /***************************************************************************/
 
 #undef T1HA_ia32aes_AVAILABLE
-#if defined(__x86_64__) || defined(_M_IX86) || defined(_M_X64) ||              \
-    defined(i386) || defined(_X86_) || defined(__i386__) || defined(_X86_64_)
+#if defined(__x86_64__) || (defined(_M_IX86) && _MSC_VER > 1800) ||            \
+    defined(_M_X64) || defined(i386) || defined(_X86_) || defined(__i386__) || \
+    defined(_X86_64_)
 
 static uint64_t x86_cpu_features(void) {
   uint32_t features = 0;

@@ -160,8 +160,9 @@ static __inline uint64_t t1ha0(const void *data, size_t length, uint64_t seed) {
 uint64_t t1ha0_32le(const void *data, size_t length, uint64_t seed);
 uint64_t t1ha0_32be(const void *data, size_t length, uint64_t seed);
 
-#if defined(__x86_64__) || defined(_M_IX86) || defined(_M_X64) ||              \
-    defined(i386) || defined(_X86_) || defined(__i386__) || defined(_X86_64_)
+#if defined(__x86_64__) || (defined(_M_IX86) && _MSC_VER > 1800) ||            \
+    defined(_M_X64) || defined(i386) || defined(_X86_) || defined(__i386__) || \
+    defined(_X86_64_)
 uint64_t t1ha0_ia32aes_noavx(const void *data, size_t length, uint64_t seed);
 uint64_t t1ha0_ia32aes_avx(const void *data, size_t length, uint64_t seed);
 uint64_t t1ha0_ia32aes_avx2(const void *data, size_t length, uint64_t seed);

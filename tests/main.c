@@ -367,7 +367,8 @@ int main(int argc, const char *argv[]) {
   failed |= test("t1ha0_32be", t1ha0_32be, refval_32be);
 
 #if defined(_X86_64_) || defined(__x86_64__) || defined(_M_X64) ||             \
-    defined(__i386__) || defined(_M_IX86) || defined(i386) || defined(_X86_)
+    defined(__i386__) || (defined(_M_IX86) && _MSC_VER > 1800) ||              \
+    defined(i386) || defined(_X86_)
 
   const uint64_t features = x86_cpu_features();
   if (features & UINT32_C(0x02000000)) {

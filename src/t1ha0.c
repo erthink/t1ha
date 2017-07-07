@@ -71,6 +71,7 @@ static __inline uint32_t tail32_le(const void *v, size_t tail) {
     return fetch32_le(p);
   case 3:
     r = (uint32_t)p[2] << 16;
+  /* fall through */
   case 2:
     return r + fetch16_le(p);
   case 1:
@@ -81,12 +82,15 @@ static __inline uint32_t tail32_le(const void *v, size_t tail) {
   case 0:
     r += p[3];
     r <<= 8;
+  /* fall through */
   case 3:
     r += p[2];
     r <<= 8;
+  /* fall through */
   case 2:
     r += p[1];
     r <<= 8;
+  /* fall through */
   case 1:
     return r + p[0];
 #endif
@@ -216,23 +220,27 @@ uint64_t t1ha0_32le(const void *data, size_t len, uint64_t seed) {
   default:
     mixup32(&a, &b, fetch32_le(v), q4);
     v += 4;
+  /* fall through */
   case 12:
   case 11:
   case 10:
   case 9:
     mixup32(&b, &a, fetch32_le(v), q3);
     v += 4;
+  /* fall through */
   case 8:
   case 7:
   case 6:
   case 5:
     mixup32(&a, &b, fetch32_le(v), q2);
     v += 4;
+  /* fall through */
   case 4:
   case 3:
   case 2:
   case 1:
     mixup32(&b, &a, tail32_le(v, len), q1);
+  /* fall through */
   case 0:
     return remix32(a, b);
   }
@@ -285,23 +293,27 @@ uint64_t t1ha0_32be(const void *data, size_t len, uint64_t seed) {
   default:
     mixup32(&a, &b, fetch32_be(v), q4);
     v += 4;
+  /* fall through */
   case 12:
   case 11:
   case 10:
   case 9:
     mixup32(&b, &a, fetch32_be(v), q3);
     v += 4;
+  /* fall through */
   case 8:
   case 7:
   case 6:
   case 5:
     mixup32(&a, &b, fetch32_be(v), q2);
     v += 4;
+  /* fall through */
   case 4:
   case 3:
   case 2:
   case 1:
     mixup32(&b, &a, tail32_be(v, len), q1);
+  /* fall through */
   case 0:
     return remix32(a, b);
   }

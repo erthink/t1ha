@@ -353,7 +353,7 @@ unsigned bench(const char *caption,
       break;
   }
 
-  printf("%7" PRIu64 " ticks, %7.4f clk/byte, %7.3f Mb/s @3GHz\n", min_ticks,
+  printf("%7" PRIu64 " ticks, %7.4f clk/byte, %7.3f Gb/s @3GHz\n", min_ticks,
          (double)min_ticks / len, 3.0 * len / min_ticks);
   fflush(NULL);
 

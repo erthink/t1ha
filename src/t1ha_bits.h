@@ -273,13 +273,16 @@ static __inline uint64_t tail64_le(const void *v, size_t tail) {
   case 6:
     r += p[5];
     r <<= 8;
+  /* fall through */
   case 5:
     r += p[4];
     r <<= 32;
+  /* fall through */
   case 4:
     return r + fetch32_le(p);
   case 3:
     r = (uint64_t)p[2] << 16;
+  /* fall through */
   case 2:
     return r + fetch16_le(p);
   case 1:
@@ -289,24 +292,31 @@ static __inline uint64_t tail64_le(const void *v, size_t tail) {
    * copying for alignment and/or byte reordering. */
   case 0:
     r = p[7] << 8;
+  /* fall through */
   case 7:
     r += p[6];
     r <<= 8;
+  /* fall through */
   case 6:
     r += p[5];
     r <<= 8;
+  /* fall through */
   case 5:
     r += p[4];
     r <<= 8;
+  /* fall through */
   case 4:
     r += p[3];
     r <<= 8;
+  /* fall through */
   case 3:
     r += p[2];
     r <<= 8;
+  /* fall through */
   case 2:
     r += p[1];
     r <<= 8;
+  /* fall through */
   case 1:
     return r + p[0];
 #endif

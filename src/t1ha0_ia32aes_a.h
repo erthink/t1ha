@@ -146,6 +146,7 @@ uint64_t T1HA_IA32AES_NAME(const void *data, size_t len, uint64_t seed) {
   switch (len) {
   default:
     b += mux64(*v++, p4);
+  /* fall through */
   case 24:
   case 23:
   case 22:
@@ -155,6 +156,7 @@ uint64_t T1HA_IA32AES_NAME(const void *data, size_t len, uint64_t seed) {
   case 18:
   case 17:
     a += mux64(*v++, p3);
+  /* fall through */
   case 16:
   case 15:
   case 14:
@@ -164,6 +166,7 @@ uint64_t T1HA_IA32AES_NAME(const void *data, size_t len, uint64_t seed) {
   case 10:
   case 9:
     b += mux64(*v++, p2);
+  /* fall through */
   case 8:
   case 7:
   case 6:
@@ -173,6 +176,7 @@ uint64_t T1HA_IA32AES_NAME(const void *data, size_t len, uint64_t seed) {
   case 2:
   case 1:
     a += mux64(tail64_le(v, len), p1);
+  /* fall through */
   case 0:
     return mux64(rot64(a + b, s1), p4) + mix64(a ^ b, p0);
   }

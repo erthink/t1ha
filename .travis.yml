@@ -18,7 +18,12 @@ env:
 
 before_install: >
   if [ "${COVERITY_SCAN_BRANCH}" = 1 ]; then
-    echo -n | openssl s_client -connect scan.coverity.com:443 | sed -ne '/-BEGIN CERTIFICATE-/,/-END CERTIFICATE-/p' | sudo tee -a /etc/ssl/certs/ca-
+    if grep -q '[0-9]\+\.1$' <<< "${TRAVIS_JOB_NUMBER}"; then
+      echo -n | openssl s_client -connect scan.coverity.com:443 | sed -ne '/-BEGIN CERTIFICATE-/,/-END CERTIFICATE-/p' | sudo tee -a /etc/ssl/certs/ca-
+    else
+      echo "Skip CoverityScan for unrelated os/compiler"
+      exit 0
+    fi
   fi
 
 addons:

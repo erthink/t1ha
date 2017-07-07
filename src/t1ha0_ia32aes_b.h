@@ -40,7 +40,7 @@
  * for The 1Hippeus project - zerocopy messaging in the spirit of Sparta!
  */
 
-#ifdef _MSC_VER
+#if defined(_MSC_VER) && _MSC_VER > 1800
 #pragma warning(disable : 4464) /* relative include path contains '..' */
 #endif
 
@@ -48,7 +48,8 @@
 #include "t1ha_bits.h"
 
 #if defined(_X86_64_) || defined(__x86_64__) || defined(_M_X64) ||             \
-    defined(__i386__) || defined(_M_IX86) || defined(i386) || defined(_X86_)
+    defined(__i386__) || (defined(_M_IX86) && _MSC_VER > 1800) ||              \
+    defined(i386) || defined(_X86_)
 
 uint64_t T1HA_IA32AES_NAME(const void *data, size_t len, uint64_t seed) {
   uint64_t a = seed;

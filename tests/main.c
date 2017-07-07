@@ -28,6 +28,17 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#if defined(_MSC_VER)
+#pragma warning(disable : 4711) /* function 'xyz' selected for                 \
+                                   automatic inline expansion */
+#pragma warning(disable : 4127) /* conditional expression is constant */
+#if _MSC_VER < 1900
+#define snprintf _snprintf
+#pragma warning(disable : 4996) /* '_snprintf': This function or variable      \
+                                   may be unsafe */
+#endif
+#endif /* MSVC */
+
 /* *INDENT-OFF* */
 /* clang-format off */
 static const uint8_t pattern[64] = {
@@ -342,7 +353,7 @@ unsigned bench(const char *caption,
       break;
   }
 
-  printf("%7" PRIu64 " ticks, %7.4f clk/byte, %7.3f Mb/s @3GHz\n", min_ticks,
+  printf("%7" PRIu64 " ticks, %7.4f clk/byte, %7.3f Gb/s @3GHz\n", min_ticks,
          (double)min_ticks / len, 3.0 * len / min_ticks);
   fflush(NULL);
 
@@ -363,7 +374,8 @@ int main(int argc, const char *argv[]) {
   failed |= test("t1ha0_32be", t1ha0_32be, refval_32be);
 
 #if defined(_X86_64_) || defined(__x86_64__) || defined(_M_X64) ||             \
-    defined(__i386__) || defined(_M_IX86) || defined(i386) || defined(_X86_)
+    defined(__i386__) || (defined(_M_IX86) && _MSC_VER > 1800) ||              \
+    defined(i386) || defined(_X86_)
 
   const uint64_t features = x86_cpu_features();
   if (features & UINT32_C(0x02000000)) {
@@ -377,6 +389,9 @@ int main(int argc, const char *argv[]) {
     }
   }
 
+#if !defined(__OPTIMIZE__) && (defined(_MSC_VER) && defined(_DEBUG))
+  printf("\nNon-optimized/Debug build, skip benchmark\n");
+#else
   if (!rdtscp_available) {
     printf("\nNo RDTSCP available on CPU, skip benchmark\n");
   } else {
@@ -385,7 +400,7 @@ int main(int argc, const char *argv[]) {
     const unsigned small = 31;
     char *buffer = malloc(large);
     for (unsigned i = 0; i < large; ++i)
-      buffer[i] = rand() + i;
+      buffer[i] = (char)(rand() + i);
 
     printf("\nSimple bench for x86 (large keys, %u bytes):\n", large);
     bench("t1ha1_64le", t1ha1_le, buffer, large, 42);
@@ -437,6 +452,7 @@ int main(int argc, const char *argv[]) {
 
     free(buffer);
   }
+#endif /* __OPTIMIZE__ */
 #endif /* x86 for t1ha_ia32aes */
 
   return failed ? EXIT_FAILURE : EXIT_SUCCESS;

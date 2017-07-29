@@ -112,14 +112,14 @@ extern "C" {
  *  - runs faster on 64-bit low-endian platforms,
  *    in other cases may runs slowly.
  *  - returns same result on all architectures and CPUs,
- *    but it is differs from t1ha(). */
+ *    but it is differs from t1ha0(). */
 T1HA_API uint64_t t1ha1_le(const void *data, size_t length, uint64_t seed);
 
 /* The big-endian version.
  *  - runs faster on 64-bit big-endian platforms,
  *    in other cases may runs slowly.
  *  - returns same result on all architectures and CPUs,
- *    but it is differs from t1ha(). */
+ *    but it is differs from t1ha0(). */
 T1HA_API uint64_t t1ha1_be(const void *data, size_t length, uint64_t seed);
 
 /* The nicname for generic version of "Fast Positive Hash".

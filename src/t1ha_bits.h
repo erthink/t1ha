@@ -1,4 +1,4 @@
-/*
+﻿/*
  *  Copyright (c) 2016-2017 Positive Technologies, https://www.ptsecurity.com,
  *  Fast Positive Hash.
  *
@@ -83,7 +83,7 @@
 #error __BYTE_ORDER__ should be defined.
 #endif
 #endif
-#endif
+#endif /* __BYTE_ORDER__ || __ORDER_LITTLE_ENDIAN__ || __ORDER_BIG_ENDIAN__ */
 
 #if __BYTE_ORDER__ != __ORDER_LITTLE_ENDIAN__ &&                               \
     __BYTE_ORDER__ != __ORDER_BIG_ENDIAN__
@@ -193,6 +193,11 @@
 #endif
 
 #ifndef bswap64
+#if defined(bswap_64)
+#define bswap64 bswap_64
+#elif defined(__bswap_64)
+#define bswap64 __bswap_64
+#else
 static __inline uint64_t bswap64(uint64_t v) {
   return v << 56 | v >> 56 | ((v << 40) & UINT64_C(0x00ff000000000000)) |
          ((v << 24) & UINT64_C(0x0000ff0000000000)) |
@@ -201,17 +206,30 @@ static __inline uint64_t bswap64(uint64_t v) {
          ((v >> 24) & UINT64_C(0x0000000000ff0000)) |
          ((v >> 40) & UINT64_C(0x000000000000ff00));
 }
+#endif
 #endif /* bswap64 */
 
 #ifndef bswap32
+#if defined(bswap_32)
+#define bswap32 bswap_32
+#elif defined(__bswap_32)
+#define bswap32 __bswap_32
+#else
 static __inline uint32_t bswap32(uint32_t v) {
   return v << 24 | v >> 24 | ((v << 8) & UINT32_C(0x00ff0000)) |
          ((v >> 8) & UINT32_C(0x0000ff00));
 }
+#endif
 #endif /* bswap32 */
 
 #ifndef bswap16
+#if defined(bswap_16)
+#define bswap16 bswap_16
+#elif defined(__bswap_16)
+#define bswap16 __bswap_16
+#else
 static __inline uint16_t bswap16(uint16_t v) { return v << 8 | v >> 8; }
+#endif
 #endif /* bswap16 */
 
 /***************************************************************************/

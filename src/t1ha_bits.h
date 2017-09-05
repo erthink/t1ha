@@ -288,6 +288,7 @@ static __inline uint64_t tail64_le(const void *v, size_t tail) {
     return fetch64_le(p);
   case 7:
     r = (uint64_t)p[6] << 8;
+  /* fall through */
   case 6:
     r += p[5];
     r <<= 8;

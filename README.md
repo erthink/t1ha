@@ -62,7 +62,7 @@ Please, feel free to fill an issue or make pull request.
  | `t1ha_32le()`           | 32-bit little-endian                   |
  | `t1ha_32be()`           | 32-bit big-endian                      |
  | `t1ha1_le()`            | 64-bit little-endian                   |
- | `t1ha1_be()`            | 32-bit big-endian                      |
+ | `t1ha1_be()`            | 64-bit big-endian                      |
 
 
 `t1ha1` = 64 bits, fast portable hash

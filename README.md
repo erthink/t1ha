@@ -11,9 +11,9 @@ by [Positive Technologies](https://www.ptsecurity.com).
 
 ## Briefly, it is a portable 64-bit hash function:
   1. Intended for 64-bit little-endian platforms, predominantly for x86_64,
-     but portable and without penalties could run on any 64-bit CPU.
+     but portable and without penalties it can run on any 64-bit CPU.
   2. In most cases up to 15% faster than City64, xxHash, mum-hash, metro-hash
-     and all others portable hash-functions (which are not uses specific hardware tricks).
+     and all others portable hash-functions (which do not use specific hardware tricks).
   3. Currently not suitable for cryptography.
 
 Also pay attention to [Erlang](https://github.com/lemenkov/erlang-t1ha)

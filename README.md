@@ -58,6 +58,7 @@ Please, feel free to fill an issue or make pull request.
  | Implementation          | Platform/CPU                           |
  | :---------------------- | :------------------------------------- |
  | `t1ha_ia32aes_avx()`    | x86 with AES-NI and AVX extensions     |
+ | `t1ha_ia32aes_avx2()`   | x86 with AES-NI and AVX2 extensions    |
  | `t1ha_ia32aes_noavx()`  | x86 with AES-NI without AVX extensions |
  | `t1ha_32le()`           | 32-bit little-endian                   |
  | `t1ha_32be()`           | 32-bit big-endian                      |

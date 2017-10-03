@@ -371,8 +371,10 @@ static
 
 #ifdef T1HA_ia32aes_AVAILABLE
   uint64_t features = x86_cpu_features();
-  if (features & UINT32_C(0x02000000)) {
-    if ((features & UINT32_C(0x1A000000)) == UINT32_C(0x1A000000))
+  if (features & UINT32_C(0x02000000) /* check for AES-NI */) {
+    if ((features & UINT32_C(0x1A000000)) ==
+        UINT32_C(0x1A000000) /* check for any AVX */)
+      /* check for 'Advanced Vector Extensions 2' */
       return ((features >> 32) & 32) ? t1ha0_ia32aes_avx2 : t1ha0_ia32aes_avx;
     return t1ha0_ia32aes_noavx;
   }

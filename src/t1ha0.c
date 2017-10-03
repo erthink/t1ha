@@ -28,9 +28,10 @@
  *
  * Briefly, it is a 64-bit Hash Function:
  *  1. Created for 64-bit little-endian platforms, in predominantly for x86_64,
- *     but without penalties could runs on any 64-bit CPU.
+ *     but portable and without penalties it can run on any 64-bit CPU.
  *  2. In most cases up to 15% faster than City64, xxHash, mum-hash, metro-hash
- *     and all others which are not use specific hardware tricks.
+ *     and all others portable hash-functions (which do not use specific
+ *     hardware tricks).
  *  3. Not suitable for cryptography.
  *
  * The Future will Positive. Всё будет хорошо.
@@ -370,8 +371,10 @@ static
 
 #ifdef T1HA_ia32aes_AVAILABLE
   uint64_t features = x86_cpu_features();
-  if (features & UINT32_C(0x02000000)) {
-    if ((features & UINT32_C(0x1A000000)) == UINT32_C(0x1A000000))
+  if (features & UINT32_C(0x02000000) /* check for AES-NI */) {
+    if ((features & UINT32_C(0x1A000000)) ==
+        UINT32_C(0x1A000000) /* check for any AVX */)
+      /* check for 'Advanced Vector Extensions 2' */
       return ((features >> 32) & 32) ? t1ha0_ia32aes_avx2 : t1ha0_ia32aes_avx;
     return t1ha0_ia32aes_noavx;
   }

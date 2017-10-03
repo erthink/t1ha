@@ -11,9 +11,9 @@ by [Positive Technologies](https://www.ptsecurity.com).
 
 ## Briefly, it is a portable 64-bit hash function:
   1. Intended for 64-bit little-endian platforms, predominantly for x86_64,
-     but portable and without penalties could run on any 64-bit CPU.
+     but portable and without penalties it can run on any 64-bit CPU.
   2. In most cases up to 15% faster than City64, xxHash, mum-hash, metro-hash
-     and all others portable hash-functions (which are not uses specific hardware tricks).
+     and all others portable hash-functions (which do not use specific hardware tricks).
   3. Currently not suitable for cryptography.
 
 Also pay attention to [Erlang](https://github.com/lemenkov/erlang-t1ha)
@@ -58,11 +58,12 @@ Please, feel free to fill an issue or make pull request.
  | Implementation          | Platform/CPU                           |
  | :---------------------- | :------------------------------------- |
  | `t1ha_ia32aes_avx()`    | x86 with AES-NI and AVX extensions     |
+ | `t1ha_ia32aes_avx2()`   | x86 with AES-NI and AVX2 extensions    |
  | `t1ha_ia32aes_noavx()`  | x86 with AES-NI without AVX extensions |
  | `t1ha_32le()`           | 32-bit little-endian                   |
  | `t1ha_32be()`           | 32-bit big-endian                      |
  | `t1ha1_le()`            | 64-bit little-endian                   |
- | `t1ha1_be()`            | 32-bit big-endian                      |
+ | `t1ha1_be()`            | 64-bit big-endian                      |
 
 
 `t1ha1` = 64 bits, fast portable hash

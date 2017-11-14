@@ -36,7 +36,7 @@ Please, feel free to fill an issue or make pull request.
   Provides fast-as-possible hashing for current CPU, including 32-bit
   systems and engaging the available hardware acceleration.
   You can rest assured that t1ha0 faster than all other fast hashes
-  (with comparable quality) so, otherwise we will extending and refine it time-to-time.
+  (with comparable quality) so, otherwise we will extend and refine it time-to-time.
 
   On the other hand, without warranty that the hash result will be same
   for particular key on another machine or another version.
@@ -77,7 +77,7 @@ Please, feel free to fill an issue or make pull request.
   2. Efficiency on modern 64-bit CPUs, but not in a hardware.
   3. Strong as possible, until no penalties on performance.
 
-  The main version is intended for little-endian systems and will runs
+  The main version is intended for little-endian systems and will run
   slowly on big-endian. Therefore a dedicated big-endian version is also
   provided, but returns the different result than the main version.
 
@@ -114,7 +114,7 @@ Please, feel free to fill an issue or make pull request.
        - but unfortunately _t1ha_ could be dramatically slowly
          on architectures without native 64-bit operations.
   2. This implementation of _t1ha_ requires **modern GNU C compatible compiler**,
-     includes Clang/LLVM, or **Visual Studio 2015**.
+     including Clang/LLVM, or **Visual Studio 2015**.
 
 #### Acknowledgement:
 The _t1ha_ was originally developed by Leonid Yuriev (Леонид Юрьев)
@@ -150,7 +150,7 @@ at the worst Visual Studio 2015 (MSVC 19).
 
 ### Scores
 
-Please take in account that the results is significantly depends on actual CPU, compiler version and CFLAGS.
+Please take in account that the results is significantly depend on actual CPU, compiler version and CFLAGS.
 The results below were obtained on:
  - CPU: `Intel(R) Core(TM) i7-6700K CPU`;
  - Compiler: `gcc version 5.4.0 20160609 (Ubuntu 5.4.0-6ubuntu1~16.04.4)`;

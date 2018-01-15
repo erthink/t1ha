@@ -514,8 +514,8 @@ static maybe_unused __inline uint64_t mux64(uint64_t v, uint64_t prime) {
   return l ^ h;
 }
 
-/* xor-mul-xor mixer */
-static maybe_unused __inline uint64_t mix64(uint64_t v, uint64_t prime) {
-  v *= prime;
-  return v ^ rot64(v, 41);
+static __inline uint64_t final64(uint64_t a, uint64_t b) {
+  uint64_t x = (a + rot64(b, 23)) * prime_0;
+  uint64_t y = (rot64(a, 19) + b) * prime_4;
+  return mux64(x ^ y, prime_6);
 }

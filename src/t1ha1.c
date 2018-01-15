@@ -48,6 +48,12 @@
 #include "../t1ha.h"
 #include "t1ha_bits.h"
 
+/* xor-mul-xor mixer */
+static __inline uint64_t mix64(uint64_t v, uint64_t p) {
+  v *= p;
+  return v ^ rot64(v, 41);
+}
+
 static __inline uint64_t final_weak_avalanche(uint64_t a, uint64_t b) {
   /* LY: for performance reason on a some not high-end CPUs
    * I replaced the second mux64() operation by mix64().

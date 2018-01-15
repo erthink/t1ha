@@ -164,7 +164,7 @@ uint64_t T1HA_IA32AES_NAME(const void *data, size_t len, uint64_t seed) {
     a += mux64(tail64_le(v, len), prime_1);
   /* fall through */
   case 0:
-    return mux64(rot64(a + b, 17), prime_4) + mix64(a ^ b, prime_0);
+    return final64(a, b);
   }
 }
 

@@ -1,0 +1,17 @@
+.travis.yml
+LICENSE
+README.md
+circle.yml
+src/t1ha0.c
+src/t1ha0_ia32aes_a.h
+src/t1ha0_ia32aes_avx.c
+src/t1ha0_ia32aes_avx2.c
+src/t1ha0_ia32aes_b.h
+src/t1ha0_ia32aes_noavx.c
+src/t1ha1.c
+src/t1ha_bits.h
+t1ha.h
+tests/4bench_t1ha0_ia32aes_avx.c
+tests/4bench_t1ha0_ia32aes_avx2.c
+tests/4bench_t1ha0_ia32aes_noavx.c
+tests/main.c

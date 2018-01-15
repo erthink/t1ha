@@ -151,19 +151,21 @@ static maybe_unused __inline uint32_t rot32(uint32_t v, unsigned s) {
 }
 #endif /* rot32 */
 
-static __inline uint64_t remix32(uint32_t a, uint32_t b) {
-  a ^= rot32(b, 13);
-  uint64_t l = a | (uint64_t)b << 32;
-  l *= prime_0;
-  l ^= l >> 41;
-  return l;
-}
-
 static __inline void mixup32(uint32_t *a, uint32_t *b, uint32_t v,
                              uint32_t prime) {
   uint64_t l = mul_32x32_64(*b + v, prime);
   *a ^= (uint32_t)l;
   *b += (uint32_t)(l >> 32);
+}
+
+static __inline uint64_t final32(uint32_t a, uint32_t b) {
+  uint64_t l = (b ^ rot32(a, 13)) | (uint64_t)a << 32;
+  l *= prime_0;
+  l ^= l >> 41;
+  l *= prime_4;
+  l ^= l >> 47;
+  l *= prime_6;
+  return l;
 }
 
 /* 32-bit 'magic' primes */
@@ -244,7 +246,7 @@ uint64_t t1ha0_32le(const void *data, size_t len, uint64_t seed) {
     mixup32(&b, &a, tail32_le(v, len), prime32_1);
   /* fall through */
   case 0:
-    return remix32(a, b);
+    return final32(a, b);
   }
 }
 
@@ -317,7 +319,7 @@ uint64_t t1ha0_32be(const void *data, size_t len, uint64_t seed) {
     mixup32(&b, &a, tail32_be(v, len), prime32_1);
   /* fall through */
   case 0:
-    return remix32(a, b);
+    return final32(a, b);
   }
 }
 

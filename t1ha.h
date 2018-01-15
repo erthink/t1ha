@@ -109,24 +109,30 @@
 extern "C" {
 #endif
 
-/* The main low-endian version.
+/* The legacy low-endian version.
  *  - runs faster on 64-bit low-endian platforms,
  *    in other cases may runs slowly.
  *  - returns same result on all architectures and CPUs,
- *    but it is differs from t1ha0(). */
+ *    but it is differs from t1ha0().
+ *  - unfortunately it fails the "strict avalanche criteria",
+ *    see test results at https://github.com/demerphq/smhasher. */
 T1HA_API uint64_t t1ha1_le(const void *data, size_t length, uint64_t seed);
 
-/* The big-endian version.
+/* The big-endian legacy version.
  *  - runs faster on 64-bit big-endian platforms,
  *    in other cases may runs slowly.
  *  - returns same result on all architectures and CPUs,
- *    but it is differs from t1ha0(). */
+ *    but it is differs from t1ha0().
+ *  - unfortunately it fails the "strict avalanche criteria",
+ *    see test results at https://github.com/demerphq/smhasher. */
 T1HA_API uint64_t t1ha1_be(const void *data, size_t length, uint64_t seed);
 
-/* The nicname for generic version of "Fast Positive Hash".
+/* The nicname for generic legacy version of "Fast Positive Hash".
  *  - returns same result on all architectures and CPUs.
  *  - created for 64-bit little-endian platforms,
- *    in other cases may runs slowly. */
+ *    in other cases may runs slowly.
+ *  - unfortunately it fails the "strict avalanche criteria",
+ *    see test results at https://github.com/demerphq/smhasher. */
 static __inline uint64_t t1ha(const void *data, size_t length, uint64_t seed) {
   return t1ha1_le(data, length, seed);
 }

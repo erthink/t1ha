@@ -105,9 +105,55 @@
 #define T1HA_API
 #endif /* T1HA_API */
 
+#if defined(_M_IX86) || defined(_M_X64)
+#define T1HA_ALIGN_PREFIX __declspec(align(32)) /* required only for SIMD */
+#else
+#define T1HA_ALIGN_PREFIX
+#endif /* _MSC_VER */
+
+#if defined(__GNUC__) &&                                                       \
+    (defined(__i386) || defined(__x86_64__) || defined(i386) ||                \
+     defined(_X86_) || defined(__i386__) || defined(_X86_64_))
+#define T1HA_ALIGN_SUFFIX                                                      \
+  __attribute__((aligned(32))) /* required only for SIMD */
+#else
+#define T1HA_ALIGN_SUFFIX
+#endif /* GCC x86 */
+
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+typedef union T1HA_ALIGN_PREFIX t1ha_state256 {
+  uint8_t u8[32];
+  uint16_t u16[16];
+  uint32_t u32[8];
+  uint64_t u64[4];
+  struct {
+    uint64_t a, b, c, d;
+  };
+} t1ha_state256_t T1HA_ALIGN_SUFFIX;
+
+typedef struct t1ha_context {
+  t1ha_state256_t state;
+  t1ha_state256_t buffer;
+  size_t partial;
+  uint64_t total;
+} t1ha_context_t;
+
+T1HA_API uint64_t t1ha2_atonce(const void *data, size_t length, uint64_t seed);
+
+T1HA_API uint64_t t1ha2_atonce128(uint64_t *__restrict extra_result,
+                                  const void *__restrict data, size_t length,
+                                  uint64_t seed);
+
+T1HA_API void t1ha2_init(t1ha_context_t *__restrict ctx, uint64_t seed_x,
+                         uint64_t seed_y);
+T1HA_API void t1ha2_update(t1ha_context_t *__restrict ctx,
+                           const void *__restrict data, size_t length);
+
+T1HA_API uint64_t t1ha2_final(t1ha_context_t *__restrict ctx,
+                              uint64_t *__restrict extra_result);
 
 /* The legacy low-endian version.
  *  - runs faster on 64-bit low-endian platforms,

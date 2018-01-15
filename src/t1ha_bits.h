@@ -546,3 +546,11 @@ static __always_inline uint64_t final64(uint64_t a, uint64_t b) {
   uint64_t y = (rot64(a, 19) + b) * prime_4;
   return mux64(x ^ y, prime_6);
 }
+
+static __always_inline void mixup64(uint64_t *__restrict a,
+                                    uint64_t *__restrict b, uint64_t v,
+                                    uint64_t prime) {
+  uint64_t h;
+  *a ^= mul_64x64_128(*b + v, prime, &h);
+  *b += h;
+}

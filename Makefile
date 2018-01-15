@@ -10,7 +10,7 @@ CC ?= gcc
 
 TARGET_ARCHx86 = $(shell (export LC_ALL=C; ($(CC) --version 2>&1; $(CC) -v 2>&1) | grep -q -i -e '^Target: \(x86_64\)\|\([iI][3-6]86\)-.*' && echo yes || echo no))
 
-OBJ_LIST := t1ha0.o t1ha1.o
+OBJ_LIST := t1ha0.o t1ha1.o t1ha2.o
 BENCH_EXTRA :=
 ifeq ($(TARGET_ARCHx86),yes)
 OBJ_LIST += t1ha0_aes_noavx.o t1ha0_aes_avx.o t1ha0_aes_avx2.o
@@ -46,6 +46,9 @@ t1ha0_aes_avx2.o: t1ha.h src/t1ha_bits.h src/t1ha0_ia32aes_a.h src/t1ha0_ia32aes
 
 t1ha1.o: t1ha.h src/t1ha_bits.h src/t1ha1.c Makefile
 	$(CC) $(CFLAGS_LIB) -c -o $@ src/t1ha1.c
+
+t1ha2.o: t1ha.h src/t1ha_bits.h src/t1ha2.c Makefile
+	$(CC) $(CFLAGS_LIB) -c -o $@ src/t1ha2.c
 
 libt1ha.a: $(OBJ_LIST) test Makefile
 	$(AR) rs $@ $(OBJ_LIST)

@@ -1,4 +1,4 @@
-/*
+﻿/*
  *  Copyright (c) 2016-2017 Positive Technologies, https://www.ptsecurity.com,
  *  Fast Positive Hash.
  *
@@ -392,7 +392,7 @@ static
 
 #ifdef __ELF__
 
-#if __GNUC_PREREQ(4, 6) || __has_attribute(ifunc)
+#if __has_attribute(ifunc)
 uint64_t t1ha0(const void *data, size_t len, uint64_t seed)
     __attribute__((ifunc("t1ha0_resolve")));
 #else

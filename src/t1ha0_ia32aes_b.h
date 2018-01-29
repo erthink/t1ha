@@ -58,7 +58,7 @@ uint64_t T1HA_IA32AES_NAME(const void *data, size_t len, uint64_t seed) {
 
   if (unlikely(len > 32)) {
     __m128i x = _mm_set_epi64x(a, b);
-    __m128i y = _mm_aesenc_si128(x, _mm_set_epi64x(p0, p1));
+    __m128i y = _mm_aesenc_si128(x, _mm_set_epi64x(prime_0, prime_1));
 
     const __m128i *v = (const __m128i *)data;
     const __m128i *const detent =
@@ -84,7 +84,7 @@ uint64_t T1HA_IA32AES_NAME(const void *data, size_t len, uint64_t seed) {
         t = _mm_aesdec_si128(t, _mm_loadu_si128(v++));
         t = _mm_aesdec_si128(t, _mm_loadu_si128(v++));
 
-        salt = _mm_add_epi64(salt, _mm_set_epi64x(p2, p3));
+        salt = _mm_add_epi64(salt, _mm_set_epi64x(prime_2, prime_3));
         t = _mm_aesenc_si128(x, t);
         x = _mm_add_epi64(y, x);
         y = t;
@@ -131,7 +131,7 @@ uint64_t T1HA_IA32AES_NAME(const void *data, size_t len, uint64_t seed) {
   const uint64_t *v = (const uint64_t *)data;
   switch (len) {
   default:
-    b += mux64(*v++, p4);
+    b += mux64(*v++, prime_4);
   /* fall through */
   case 24:
   case 23:
@@ -141,7 +141,7 @@ uint64_t T1HA_IA32AES_NAME(const void *data, size_t len, uint64_t seed) {
   case 19:
   case 18:
   case 17:
-    a += mux64(*v++, p3);
+    a += mux64(*v++, prime_3);
   /* fall through */
   case 16:
   case 15:
@@ -151,7 +151,7 @@ uint64_t T1HA_IA32AES_NAME(const void *data, size_t len, uint64_t seed) {
   case 11:
   case 10:
   case 9:
-    b += mux64(*v++, p2);
+    b += mux64(*v++, prime_2);
   /* fall through */
   case 8:
   case 7:
@@ -161,10 +161,10 @@ uint64_t T1HA_IA32AES_NAME(const void *data, size_t len, uint64_t seed) {
   case 3:
   case 2:
   case 1:
-    a += mux64(tail64_le(v, len), p1);
+    a += mux64(tail64_le(v, len), prime_1);
   /* fall through */
   case 0:
-    return mux64(rot64(a + b, 17), p4) + mix64(a ^ b, p0);
+    return mux64(rot64(a + b, 17), prime_4) + mix64(a ^ b, prime_0);
   }
 }
 

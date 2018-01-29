@@ -154,25 +154,26 @@ static maybe_unused __inline uint32_t rot32(uint32_t v, unsigned s) {
 static __inline uint64_t remix32(uint32_t a, uint32_t b) {
   a ^= rot32(b, 13);
   uint64_t l = a | (uint64_t)b << 32;
-  l *= p0;
+  l *= prime_0;
   l ^= l >> 41;
   return l;
 }
 
-static __inline void mixup32(uint32_t *a, uint32_t *b, uint32_t v, uint32_t p) {
-  uint64_t l = mul_32x32_64(*b + v, p);
+static __inline void mixup32(uint32_t *a, uint32_t *b, uint32_t v,
+                             uint32_t prime) {
+  uint64_t l = mul_32x32_64(*b + v, prime);
   *a ^= (uint32_t)l;
   *b += (uint32_t)(l >> 32);
 }
 
 /* 32-bit 'magic' primes */
-static const uint32_t q0 = UINT32_C(0x92D78269);
-static const uint32_t q1 = UINT32_C(0xCA9B4735);
-static const uint32_t q2 = UINT32_C(0xA4ABA1C3);
-static const uint32_t q3 = UINT32_C(0xF6499843);
-static const uint32_t q4 = UINT32_C(0x86F0FD61);
-static const uint32_t q5 = UINT32_C(0xCA2DA6FB);
-static const uint32_t q6 = UINT32_C(0xC4BB3575);
+static const uint32_t prime32_0 = UINT32_C(0x92D78269);
+static const uint32_t prime32_1 = UINT32_C(0xCA9B4735);
+static const uint32_t prime32_2 = UINT32_C(0xA4ABA1C3);
+static const uint32_t prime32_3 = UINT32_C(0xF6499843);
+static const uint32_t prime32_4 = UINT32_C(0x86F0FD61);
+static const uint32_t prime32_5 = UINT32_C(0xCA2DA6FB);
+static const uint32_t prime32_6 = UINT32_C(0xC4BB3575);
 
 uint64_t t1ha0_32le(const void *data, size_t len, uint64_t seed) {
   uint32_t a = rot32((uint32_t)len, 17) + (uint32_t)seed;
@@ -199,16 +200,16 @@ uint64_t t1ha0_32le(const void *data, size_t len, uint64_t seed) {
       uint32_t d13 = w1 + rot32(w3 + d, 17);
       c ^= rot32(b + w1, 7);
       d ^= rot32(a + w0, 3);
-      b = q1 * (c02 + w3);
-      a = q0 * (d13 ^ w2);
+      b = prime32_1 * (c02 + w3);
+      a = prime32_0 * (d13 ^ w2);
 
       data = (const uint32_t *)data + 4;
     } while (likely(data < detent));
 
     c += a;
     d += b;
-    a ^= q6 * (rot32(c, 16) + d);
-    b ^= q5 * (c + rot32(d, 16));
+    a ^= prime32_6 * (rot32(c, 16) + d);
+    b ^= prime32_5 * (c + rot32(d, 16));
 
     len &= 15;
   }
@@ -219,28 +220,28 @@ uint64_t t1ha0_32le(const void *data, size_t len, uint64_t seed) {
 
   switch (len) {
   default:
-    mixup32(&a, &b, fetch32_le(v), q4);
+    mixup32(&a, &b, fetch32_le(v), prime32_4);
     v += 4;
   /* fall through */
   case 12:
   case 11:
   case 10:
   case 9:
-    mixup32(&b, &a, fetch32_le(v), q3);
+    mixup32(&b, &a, fetch32_le(v), prime32_3);
     v += 4;
   /* fall through */
   case 8:
   case 7:
   case 6:
   case 5:
-    mixup32(&a, &b, fetch32_le(v), q2);
+    mixup32(&a, &b, fetch32_le(v), prime32_2);
     v += 4;
   /* fall through */
   case 4:
   case 3:
   case 2:
   case 1:
-    mixup32(&b, &a, tail32_le(v, len), q1);
+    mixup32(&b, &a, tail32_le(v, len), prime32_1);
   /* fall through */
   case 0:
     return remix32(a, b);
@@ -272,16 +273,16 @@ uint64_t t1ha0_32be(const void *data, size_t len, uint64_t seed) {
       uint32_t d13 = w1 + rot32(w3 + d, 17);
       c ^= rot32(b + w1, 7);
       d ^= rot32(a + w0, 3);
-      b = q1 * (c02 + w3);
-      a = q0 * (d13 ^ w2);
+      b = prime32_1 * (c02 + w3);
+      a = prime32_0 * (d13 ^ w2);
 
       data = (const uint32_t *)data + 4;
     } while (likely(data < detent));
 
     c += a;
     d += b;
-    a ^= q6 * (rot32(c, 16) + d);
-    b ^= q5 * (c + rot32(d, 16));
+    a ^= prime32_6 * (rot32(c, 16) + d);
+    b ^= prime32_5 * (c + rot32(d, 16));
 
     len &= 15;
   }
@@ -292,28 +293,28 @@ uint64_t t1ha0_32be(const void *data, size_t len, uint64_t seed) {
 
   switch (len) {
   default:
-    mixup32(&a, &b, fetch32_be(v), q4);
+    mixup32(&a, &b, fetch32_be(v), prime32_4);
     v += 4;
   /* fall through */
   case 12:
   case 11:
   case 10:
   case 9:
-    mixup32(&b, &a, fetch32_be(v), q3);
+    mixup32(&b, &a, fetch32_be(v), prime32_3);
     v += 4;
   /* fall through */
   case 8:
   case 7:
   case 6:
   case 5:
-    mixup32(&a, &b, fetch32_be(v), q2);
+    mixup32(&a, &b, fetch32_be(v), prime32_2);
     v += 4;
   /* fall through */
   case 4:
   case 3:
   case 2:
   case 1:
-    mixup32(&b, &a, tail32_be(v, len), q1);
+    mixup32(&b, &a, tail32_be(v, len), prime32_1);
   /* fall through */
   case 0:
     return remix32(a, b);

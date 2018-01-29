@@ -1,4 +1,4 @@
-﻿/*
+/*
  *  Copyright (c) 2016-2017 Positive Technologies, https://www.ptsecurity.com,
  *  Fast Positive Hash.
  *
@@ -499,23 +499,23 @@ static maybe_unused __inline uint64_t mul_64x64_high(uint64_t a, uint64_t b) {
 /***************************************************************************/
 
 /* 'magic' primes */
-static const uint64_t p0 = UINT64_C(0xEC99BF0D8372CAAB);
-static const uint64_t p1 = UINT64_C(0x82434FE90EDCEF39);
-static const uint64_t p2 = UINT64_C(0xD4F06DB99D67BE4B);
-static const uint64_t p3 = UINT64_C(0xBD9CACC22C6E9571);
-static const uint64_t p4 = UINT64_C(0x9C06FAF4D023E3AB);
-static const uint64_t p5 = UINT64_C(0xC060724A8424F345);
-static const uint64_t p6 = UINT64_C(0xCB5AF53AE3AAAC31);
+static const uint64_t prime_0 = UINT64_C(0xEC99BF0D8372CAAB);
+static const uint64_t prime_1 = UINT64_C(0x82434FE90EDCEF39);
+static const uint64_t prime_2 = UINT64_C(0xD4F06DB99D67BE4B);
+static const uint64_t prime_3 = UINT64_C(0xBD9CACC22C6E9571);
+static const uint64_t prime_4 = UINT64_C(0x9C06FAF4D023E3AB);
+static const uint64_t prime_5 = UINT64_C(0xC060724A8424F345);
+static const uint64_t prime_6 = UINT64_C(0xCB5AF53AE3AAAC31);
 
 /* xor high and low parts of full 128-bit product */
-static maybe_unused __inline uint64_t mux64(uint64_t v, uint64_t p) {
+static maybe_unused __inline uint64_t mux64(uint64_t v, uint64_t prime) {
   uint64_t l, h;
-  l = mul_64x64_128(v, p, &h);
+  l = mul_64x64_128(v, prime, &h);
   return l ^ h;
 }
 
 /* xor-mul-xor mixer */
-static maybe_unused __inline uint64_t mix64(uint64_t v, uint64_t p) {
-  v *= p;
+static maybe_unused __inline uint64_t mix64(uint64_t v, uint64_t prime) {
+  v *= prime;
   return v ^ rot64(v, 41);
 }

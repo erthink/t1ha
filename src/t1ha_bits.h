@@ -507,11 +507,6 @@ static const uint64_t p4 = UINT64_C(0x9C06FAF4D023E3AB);
 static const uint64_t p5 = UINT64_C(0xC060724A8424F345);
 static const uint64_t p6 = UINT64_C(0xCB5AF53AE3AAAC31);
 
-/* rotations */
-static const unsigned s0 = 41;
-static const unsigned s1 = 17;
-static const unsigned s2 = 31;
-
 /* xor high and low parts of full 128-bit product */
 static maybe_unused __inline uint64_t mux64(uint64_t v, uint64_t p) {
   uint64_t l, h;
@@ -522,5 +517,5 @@ static maybe_unused __inline uint64_t mux64(uint64_t v, uint64_t p) {
 /* xor-mul-xor mixer */
 static maybe_unused __inline uint64_t mix64(uint64_t v, uint64_t p) {
   v *= p;
-  return v ^ rot64(v, s0);
+  return v ^ rot64(v, 41);
 }

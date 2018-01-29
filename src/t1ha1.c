@@ -53,7 +53,7 @@ static __inline uint64_t final_weak_avalanche(uint64_t a, uint64_t b) {
    * I replaced the second mux64() operation by mix64().
    * Unfortunately this approach fails the "strict avalanche criteria",
    * see test results at https://github.com/demerphq/smhasher. */
-  return mux64(rot64(a + b, s1), p4) + mix64(a ^ b, p0);
+  return mux64(rot64(a + b, 17), p4) + mix64(a ^ b, p0);
 }
 
 uint64_t t1ha1_le(const void *data, size_t len, uint64_t seed) {
@@ -64,8 +64,8 @@ uint64_t t1ha1_le(const void *data, size_t len, uint64_t seed) {
   uint64_t align[4];
 
   if (unlikely(len > 32)) {
-    uint64_t c = rot64(len, s1) + seed;
-    uint64_t d = len ^ rot64(seed, s1);
+    uint64_t c = rot64(len, 17) + seed;
+    uint64_t d = len ^ rot64(seed, 17);
     const void *detent = (const uint8_t *)data + len - 31;
     do {
       const uint64_t *v = (const uint64_t *)data;
@@ -77,17 +77,17 @@ uint64_t t1ha1_le(const void *data, size_t len, uint64_t seed) {
       uint64_t w2 = fetch64_le(v + 2);
       uint64_t w3 = fetch64_le(v + 3);
 
-      uint64_t d02 = w0 ^ rot64(w2 + d, s1);
-      uint64_t c13 = w1 ^ rot64(w3 + c, s1);
-      c += a ^ rot64(w0, s0);
-      d -= b ^ rot64(w1, s2);
+      uint64_t d02 = w0 ^ rot64(w2 + d, 17);
+      uint64_t c13 = w1 ^ rot64(w3 + c, 17);
+      c += a ^ rot64(w0, 41);
+      d -= b ^ rot64(w1, 31);
       a ^= p1 * (d02 + w3);
       b ^= p0 * (c13 + w2);
       data = (const uint64_t *)data + 4;
     } while (likely(data < detent));
 
-    a ^= p6 * (rot64(c, s1) + d);
-    b ^= p5 * (c + rot64(d, s1));
+    a ^= p6 * (rot64(c, 17) + d);
+    b ^= p5 * (c + rot64(d, 17));
     len &= 31;
   }
 
@@ -142,8 +142,8 @@ uint64_t t1ha1_be(const void *data, size_t len, uint64_t seed) {
   uint64_t align[4];
 
   if (unlikely(len > 32)) {
-    uint64_t c = rot64(len, s1) + seed;
-    uint64_t d = len ^ rot64(seed, s1);
+    uint64_t c = rot64(len, 17) + seed;
+    uint64_t d = len ^ rot64(seed, 17);
     const void *detent = (const uint8_t *)data + len - 31;
     do {
       const uint64_t *v = (const uint64_t *)data;
@@ -155,17 +155,17 @@ uint64_t t1ha1_be(const void *data, size_t len, uint64_t seed) {
       uint64_t w2 = fetch64_be(v + 2);
       uint64_t w3 = fetch64_be(v + 3);
 
-      uint64_t d02 = w0 ^ rot64(w2 + d, s1);
-      uint64_t c13 = w1 ^ rot64(w3 + c, s1);
-      c += a ^ rot64(w0, s0);
-      d -= b ^ rot64(w1, s2);
+      uint64_t d02 = w0 ^ rot64(w2 + d, 17);
+      uint64_t c13 = w1 ^ rot64(w3 + c, 17);
+      c += a ^ rot64(w0, 41);
+      d -= b ^ rot64(w1, 31);
       a ^= p1 * (d02 + w3);
       b ^= p0 * (c13 + w2);
       data = (const uint64_t *)data + 4;
     } while (likely(data < detent));
 
-    a ^= p6 * (rot64(c, s1) + d);
-    b ^= p5 * (c + rot64(d, s1));
+    a ^= p6 * (rot64(c, 17) + d);
+    b ^= p5 * (c + rot64(d, 17));
     len &= 31;
   }
 

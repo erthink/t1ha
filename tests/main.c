@@ -25,6 +25,7 @@
 #include "../t1ha.h"
 
 #include <inttypes.h>
+#include <stdbool.h> /* for bool */
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -50,29 +51,31 @@ static const uint8_t pattern[64] = {
 /* *INDENT-ON* */
 /* clang-format on */
 
-int verbose;
+bool verbose, skip;
 
-int probe(uint64_t (*hash)(const void *, size_t, uint64_t), const char *caption,
-          const uint64_t check, const void *data, unsigned len, uint64_t seed) {
+bool probe(uint64_t (*hash)(const void *, size_t, uint64_t),
+           const char *caption, const uint64_t check, const void *data,
+           unsigned len, uint64_t seed) {
   uint64_t value = hash(data, len, seed);
-  if (verbose || value != check)
+  if (verbose || (value != check && !skip))
     printf("Pattern '%s', reference value %08X%08X: ", caption,
            (uint32_t)(check >> 32), (uint32_t)check);
   if (check == value) {
     if (verbose)
       printf("Passed\n");
-    return 0;
+    return false;
   }
-  printf("Failed! Got %08X%08X\n", (uint32_t)(value >> 32), (uint32_t)value);
-  return -1;
+  if (!skip)
+    printf("Failed! Got %08X%08X\n", (uint32_t)(value >> 32), (uint32_t)value);
+  return true;
 }
 
-int test(const char *title, uint64_t (*hash)(const void *, size_t, uint64_t),
-         const uint64_t *reference_values) {
+bool test(const char *title, uint64_t (*hash)(const void *, size_t, uint64_t),
+          const uint64_t *reference_values) {
   printf("Testing %s...%s", title, verbose ? "\n" : "");
 
   const uint64_t zero = 0;
-  int failed = 0;
+  bool failed = false;
   failed |= probe(hash, "empty-zero", 0, NULL, 0, zero);
   failed |= probe(hash, "empty-all1", *reference_values++, NULL, 0, ~zero);
   failed |= probe(hash, "bin64-zero", *reference_values++, pattern, 64, zero);
@@ -102,12 +105,17 @@ int test(const char *title, uint64_t (*hash)(const void *, size_t, uint64_t),
                     128 + i * 17, seed);
   }
 
-  printf(" %s\n", (!verbose && !failed) ? "Ok" : "");
-  return failed;
+  printf(" %s\n", (!verbose && !failed) ? "Ok" : (skip ? "Skipped" : ""));
+  return failed && !skip;
 }
 
 /* *INDENT-OFF* */
 /* clang-format off */
+static const uint64_t refval_2atonce[80] = {};
+static const uint64_t refval_2atonce128[80] = {};
+static const uint64_t refval_2stream[80] = {};
+static const uint64_t refval_2stream128[80] = {};
+
 static const uint64_t refval_64le[80] = {
   0x6A580668D6048674, 0xA2FE904AFF0D0879, 0xE3AB9C06FAF4D023, 0x6AF1C60874C95442,
   0xB3557E561A6C5D82, 0x0AE73C696F3D37C0, 0x5EF25F7062324941, 0x9B784F3B4CE6AF33,
@@ -269,18 +277,18 @@ uint64_t t1ha0_ia32aes_avx2_b(const void *data, size_t length, uint64_t seed);
 #include <intrin.h>
 #endif
 
-int rdtscp_available;
+bool rdtscp_available;
 
 static uint64_t x86_cpu_features(void) {
   uint32_t features = 0;
   uint32_t extended = 0;
-  rdtscp_available = 0;
+  rdtscp_available = false;
 #ifdef __GNUC__
   uint32_t eax, ebx, ecx, edx;
   const unsigned cpuid_max = __get_cpuid_max(0, NULL);
   if (cpuid_max >= 1) {
     __cpuid(0x80000001, eax, ebx, ecx, edx);
-    rdtscp_available = edx & (1 << 27);
+    rdtscp_available = (edx & (1 << 27)) ? true : false;
     __cpuid_count(1, 0, eax, ebx, features, edx);
     if (cpuid_max >= 7)
       __cpuid_count(7, 0, eax, extended, ecx, edx);
@@ -309,11 +317,34 @@ static uint64_t x86_cpu_features(void) {
 #if defined(_X86_64_) || defined(__x86_64__) || defined(_M_X64) ||             \
     defined(__i386__) || defined(_M_IX86) || defined(i386) || defined(_X86_)
 
+static uint64_t thunk_t1ha2_atonce128(const void *data, size_t len,
+                                      uint64_t seed) {
+  uint64_t unused;
+  return t1ha2_atonce128(&unused, data, len, seed);
+}
+
+static uint64_t thunk_t1ha2_stream(const void *data, size_t len,
+                                   uint64_t seed) {
+  t1ha_context_t ctx;
+  t1ha2_init(&ctx, seed, seed);
+  t1ha2_update(&ctx, data, len);
+  return t1ha2_final(&ctx, NULL);
+}
+
+static uint64_t thunk_t1ha2_stream128(const void *data, size_t len,
+                                      uint64_t seed) {
+  t1ha_context_t ctx;
+  t1ha2_init(&ctx, seed, seed);
+  t1ha2_update(&ctx, data, len);
+  uint64_t unused;
+  return t1ha2_final(&ctx, &unused);
+}
+
 unsigned bench(const char *caption,
                uint64_t (*hash)(const void *, size_t, uint64_t),
                const void *data, unsigned len, uint64_t seed) {
 
-  printf("%24s: ", caption);
+  printf("%-24s: ", caption);
   fflush(NULL);
 
   uint64_t min_ticks = UINT64_MAX;
@@ -353,21 +384,81 @@ unsigned bench(const char *caption,
       break;
   }
 
-  printf("%7" PRIu64 " ticks, %7.4f clk/byte, %7.3f Gb/s @3GHz\n", min_ticks,
+  printf("%7" PRIu64 " ticks, %7.3f clk/byte, %7.3f Gb/s @3GHz\n", min_ticks,
          (double)min_ticks / len, 3.0 * len / min_ticks);
   fflush(NULL);
 
   return (min_ticks < INT32_MAX) ? (unsigned)min_ticks : UINT32_MAX;
 }
 
-#endif /* x86 for t1ha_ia32aes */
+enum bench_flags {
+  bench_32 = 1 << 1,
+  bench_64 = 1 << 2,
+  bench_le = 1 << 3,
+  bench_be = 1 << 4,
+  bench_aes = 1 << 5,
+  bench_avx = 1 << 6,
+  bench_avx2 = 1 << 7,
+};
 
-/***************************************************************************/
+static bool is_set(unsigned value, unsigned mask) {
+  return (value & mask) == mask;
+}
+
+static void bench_size(const unsigned size, const char *caption,
+                       const unsigned bench_flags) {
+  printf("\nSimple bench for x86 (%s keys, %u bytes):\n", caption, size);
+  const uint64_t seed = 42;
+  char *buffer = malloc(size);
+  for (unsigned i = 0; i < size; ++i)
+    buffer[i] = (char)(rand() + i);
+
+  if (is_set(bench_flags, bench_64 | bench_le)) {
+    bench("t1ha2_atonce", t1ha2_atonce, buffer, size, seed);
+    bench("t1ha2_atonce128", thunk_t1ha2_atonce128, buffer, size, seed);
+    bench("t1ha2_stream", thunk_t1ha2_stream, buffer, size, seed);
+    bench("t1ha2_stream128", thunk_t1ha2_stream128, buffer, size, seed);
+    bench("t1ha1_64le", t1ha1_le, buffer, size, seed);
+  }
+  if (is_set(bench_flags, bench_64 | bench_be))
+    bench("t1ha1_64be", t1ha1_be, buffer, size, seed);
+  if (is_set(bench_flags, bench_32 | bench_le))
+    bench("t1ha0_32le", t1ha0_32le, buffer, size, seed);
+  if (is_set(bench_flags, bench_32 | bench_be))
+    bench("t1ha0_32be", t1ha0_32be, buffer, size, seed);
+
+  if (bench_flags & bench_aes) {
+    bench("t1ha0_ia32aes_noavx_a", t1ha0_ia32aes_noavx_a, buffer, size, seed);
+    bench("t1ha0_ia32aes_noavx_b", t1ha0_ia32aes_noavx_b, buffer, size, seed);
+    bench("t1ha0_ia32aes_noavx", t1ha0_ia32aes_noavx, buffer, size, seed);
+    if (bench_flags & bench_avx) {
+      bench("t1ha0_ia32aes_avx_a", t1ha0_ia32aes_avx_a, buffer, size, seed);
+      bench("t1ha0_ia32aes_avx_b", t1ha0_ia32aes_avx_b, buffer, size, seed);
+      bench("t1ha0_ia32aes_avx", t1ha0_ia32aes_avx, buffer, size, seed);
+    }
+    if (bench_flags & bench_avx2) {
+      bench("t1ha0_ia32aes_avx2_a", t1ha0_ia32aes_avx2_a, buffer, size, seed);
+      bench("t1ha0_ia32aes_avx2_b", t1ha0_ia32aes_avx2_b, buffer, size, seed);
+      bench("t1ha0_ia32aes_avx2", t1ha0_ia32aes_avx2, buffer, size, seed);
+    }
+  }
+
+  free(buffer);
+}
+
+#endif /* x86 for t1ha_ia32aes */
 
 int main(int argc, const char *argv[]) {
   (void)argc;
   (void)argv;
-  int failed = 0;
+  bool failed = false;
+
+  skip = true;
+  failed |= test("t1ha2_atonce", t1ha2_atonce, refval_2atonce);
+  failed |= test("t1ha2_atonce128", thunk_t1ha2_atonce128, refval_2atonce128);
+  failed |= test("t1ha2_stream", thunk_t1ha2_stream, refval_2stream);
+  failed |= test("t1ha2_stream128", thunk_t1ha2_stream128, refval_2stream128);
+  skip = false;
   failed |= test("t1ha1_64le", t1ha1_le, refval_64le);
   failed |= test("t1ha1_64be", t1ha1_be, refval_64be);
   failed |= test("t1ha0_32le", t1ha0_32le, refval_32le);
@@ -395,62 +486,18 @@ int main(int argc, const char *argv[]) {
   if (!rdtscp_available) {
     printf("\nNo RDTSCP available on CPU, skip benchmark\n");
   } else {
-    const unsigned large = 1024 * 256;
-    const unsigned medium = 127;
-    const unsigned small = 31;
-    char *buffer = malloc(large);
-    for (unsigned i = 0; i < large; ++i)
-      buffer[i] = (char)(rand() + i);
+    unsigned bench_all = ~0u;
+    if ((features & UINT32_C(0x02000000)) == 0)
+      bench_all -= bench_aes;
+    if ((features & UINT32_C(0x1A000000)) != UINT32_C(0x1A000000))
+      bench_all -= bench_avx;
+    if (((features >> 32) & 32) == 0)
+      bench_all -= bench_avx2;
 
-    printf("\nSimple bench for x86 (large keys, %u bytes):\n", large);
-    bench("t1ha1_64le", t1ha1_le, buffer, large, 42);
-    bench("t1ha1_64be", t1ha1_be, buffer, large, 42);
-    bench("t1ha0_32le", t1ha0_32le, buffer, large, 42);
-    bench("t1ha0_32be", t1ha0_32be, buffer, large, 42);
-
-    printf("\nSimple bench for x86 (small keys, %u bytes):\n", small);
-    bench("t1ha1_64le", t1ha1_le, buffer, small, 42);
-    bench("t1ha1_64be", t1ha1_be, buffer, small, 42);
-    bench("t1ha0_32le", t1ha0_32le, buffer, small, 42);
-    bench("t1ha0_32be", t1ha0_32be, buffer, small, 42);
-
-    if (features & UINT32_C(0x02000000)) {
-      printf("\nSimple bench for AES-NI (medium keys, %u bytes):\n", medium);
-      bench("t1ha0_ia32aes_noavx_a", t1ha0_ia32aes_noavx_a, buffer, medium, 42);
-      bench("t1ha0_ia32aes_noavx_b", t1ha0_ia32aes_noavx_b, buffer, medium, 42);
-      bench("t1ha0_ia32aes_noavx", t1ha0_ia32aes_noavx, buffer, medium, 42);
-      if ((features & UINT32_C(0x1A000000)) == UINT32_C(0x1A000000)) {
-        bench("t1ha0_ia32aes_avx_a", t1ha0_ia32aes_avx_a, buffer, medium, 42);
-        bench("t1ha0_ia32aes_avx_b", t1ha0_ia32aes_avx_b, buffer, medium, 42);
-        bench("t1ha0_ia32aes_avx", t1ha0_ia32aes_avx, buffer, medium, 42);
-        if ((features >> 32) & 32) {
-          bench("t1ha0_ia32aes_avx2_a", t1ha0_ia32aes_avx2_a, buffer, medium,
-                42);
-          bench("t1ha0_ia32aes_avx2_b", t1ha0_ia32aes_avx2_b, buffer, medium,
-                42);
-          bench("t1ha0_ia32aes_avx2", t1ha0_ia32aes_avx2, buffer, medium, 42);
-        }
-      }
-
-      printf("\nSimple bench for AES-NI (large keys, %u bytes):\n", large);
-      bench("t1ha0_ia32aes_noavx_a", t1ha0_ia32aes_noavx_a, buffer, large, 42);
-      bench("t1ha0_ia32aes_noavx_b", t1ha0_ia32aes_noavx_b, buffer, large, 42);
-      bench("t1ha0_ia32aes_noavx", t1ha0_ia32aes_noavx, buffer, large, 42);
-      if ((features & UINT32_C(0x1A000000)) == UINT32_C(0x1A000000)) {
-        bench("t1ha0_ia32aes_avx_a", t1ha0_ia32aes_avx_a, buffer, large, 42);
-        bench("t1ha0_ia32aes_avx_b", t1ha0_ia32aes_avx_b, buffer, large, 42);
-        bench("t1ha0_ia32aes_avx", t1ha0_ia32aes_avx, buffer, large, 42);
-        if ((features >> 32) & 32) {
-          bench("t1ha0_ia32aes_avx2_a", t1ha0_ia32aes_avx2_a, buffer, large,
-                42);
-          bench("t1ha0_ia32aes_avx2_b", t1ha0_ia32aes_avx2_b, buffer, large,
-                42);
-          bench("t1ha0_ia32aes_avx2", t1ha0_ia32aes_avx2, buffer, large, 42);
-        }
-      }
-    }
-
-    free(buffer);
+    bench_size(5, "tiny", bench_all);
+    bench_size(31, "small", bench_all & ~(bench_be | bench_32));
+    bench_size(1024, "medium", bench_all & ~(bench_be | bench_32));
+    bench_size(1024 * 256, "large", bench_all);
   }
 #endif /* __OPTIMIZE__ */
 #endif /* x86 for t1ha_ia32aes */

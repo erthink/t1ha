@@ -122,8 +122,14 @@
 #if __GNUC_PREREQ(4, 8) || __has_builtin(__builtin_bswap16)
 #define bswap16(v) __builtin_bswap16(v)
 #endif
-#if __GNUC_PREREQ(4, 3) || __has_attribute(unused)
-#define maybe_unused __attribute__((unused))
+
+#if !defined(__maybe_unused) && (__GNUC_PREREQ(4, 3) || __has_attribute(unused))
+#define __maybe_unused __attribute__((unused))
+#endif
+
+#if !defined(__always_inline) &&                                               \
+    (__GNUC_PREREQ(3, 2) || __has_attribute(always_inline))
+#define __always_inline __inline __attribute__((always_inline))
 #endif
 
 #elif defined(_MSC_VER)
@@ -152,7 +158,7 @@
 #define bswap16(v) _byteswap_ushort(v)
 #define rot64(v, s) _rotr64(v, s)
 #define rot32(v, s) _rotr(v, s)
-#define __inline __forceinline
+#define __always_inline __forceinline
 
 #if defined(_M_X64) || defined(_M_IA64)
 #pragma intrinsic(_umul128)
@@ -187,8 +193,11 @@
 #ifndef unlikely
 #define unlikely(cond) (cond)
 #endif
-#ifndef maybe_unused
-#define maybe_unused
+#ifndef __maybe_unused
+#define __maybe_unused
+#endif
+#ifndef __always_inline
+#define __always_inline __inline
 #endif
 #ifndef unreachable
 #define unreachable()                                                          \
@@ -202,7 +211,7 @@
 #elif defined(__bswap_64)
 #define bswap64 __bswap_64
 #else
-static __inline uint64_t bswap64(uint64_t v) {
+static __always_inline uint64_t bswap64(uint64_t v) {
   return v << 56 | v >> 56 | ((v << 40) & UINT64_C(0x00ff000000000000)) |
          ((v << 24) & UINT64_C(0x0000ff0000000000)) |
          ((v << 8) & UINT64_C(0x000000ff00000000)) |
@@ -219,7 +228,7 @@ static __inline uint64_t bswap64(uint64_t v) {
 #elif defined(__bswap_32)
 #define bswap32 __bswap_32
 #else
-static __inline uint32_t bswap32(uint32_t v) {
+static __always_inline uint32_t bswap32(uint32_t v) {
   return v << 24 | v >> 24 | ((v << 8) & UINT32_C(0x00ff0000)) |
          ((v >> 8) & UINT32_C(0x0000ff00));
 }
@@ -232,13 +241,13 @@ static __inline uint32_t bswap32(uint32_t v) {
 #elif defined(__bswap_16)
 #define bswap16 __bswap_16
 #else
-static __inline uint16_t bswap16(uint16_t v) { return v << 8 | v >> 8; }
+static __always_inline uint16_t bswap16(uint16_t v) { return v << 8 | v >> 8; }
 #endif
 #endif /* bswap16 */
 
 /***************************************************************************/
 
-static __inline uint64_t fetch64_le(const void *v) {
+static __always_inline uint64_t fetch64_le(const void *v) {
 #if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
   return *(const uint64_t *)v;
 #else
@@ -246,7 +255,7 @@ static __inline uint64_t fetch64_le(const void *v) {
 #endif
 }
 
-static __inline uint32_t fetch32_le(const void *v) {
+static __always_inline uint32_t fetch32_le(const void *v) {
 #if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
   return *(const uint32_t *)v;
 #else
@@ -254,7 +263,7 @@ static __inline uint32_t fetch32_le(const void *v) {
 #endif
 }
 
-static __inline uint16_t fetch16_le(const void *v) {
+static __always_inline uint16_t fetch16_le(const void *v) {
 #if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
   return *(const uint16_t *)v;
 #else
@@ -268,7 +277,7 @@ static __inline uint16_t fetch16_le(const void *v) {
   ((size) <= sizeof(uintptr_t) && ((PAGESIZE - (size)) & (uintptr_t)(ptr)) != 0)
 #endif /* can_fast_read */
 
-static __inline uint64_t tail64_le(const void *v, size_t tail) {
+static __always_inline uint64_t tail64_le(const void *v, size_t tail) {
   const uint8_t *p = (const uint8_t *)v;
 #ifdef can_read_underside
   /* On some systems (e.g. x86) we can perform a 'oneshot' read, which
@@ -347,7 +356,7 @@ static __inline uint64_t tail64_le(const void *v, size_t tail) {
   unreachable();
 }
 
-static maybe_unused __inline uint64_t fetch64_be(const void *v) {
+static __maybe_unused __always_inline uint64_t fetch64_be(const void *v) {
 #if __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
   return *(const uint64_t *)v;
 #else
@@ -355,7 +364,7 @@ static maybe_unused __inline uint64_t fetch64_be(const void *v) {
 #endif
 }
 
-static maybe_unused __inline uint32_t fetch32_be(const void *v) {
+static __maybe_unused __always_inline uint32_t fetch32_be(const void *v) {
 #if __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
   return *(const uint32_t *)v;
 #else
@@ -363,7 +372,7 @@ static maybe_unused __inline uint32_t fetch32_be(const void *v) {
 #endif
 }
 
-static maybe_unused __inline uint16_t fetch16_be(const void *v) {
+static __maybe_unused __always_inline uint16_t fetch16_be(const void *v) {
 #if __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
   return *(const uint16_t *)v;
 #else
@@ -371,7 +380,8 @@ static maybe_unused __inline uint16_t fetch16_be(const void *v) {
 #endif
 }
 
-static maybe_unused __inline uint64_t tail64_be(const void *v, size_t tail) {
+static __maybe_unused __always_inline uint64_t tail64_be(const void *v,
+                                                         size_t tail) {
   const uint8_t *p = (const uint8_t *)v;
 #ifdef can_read_underside
   /* On some systems we can perform a 'oneshot' read, which is little bit
@@ -441,27 +451,28 @@ static maybe_unused __inline uint64_t tail64_be(const void *v, size_t tail) {
 /***************************************************************************/
 
 #ifndef rot64
-static __inline uint64_t rot64(uint64_t v, unsigned s) {
+static __always_inline uint64_t rot64(uint64_t v, unsigned s) {
   return (v >> s) | (v << (64 - s));
 }
 #endif /* rot64 */
 
 #ifndef mul_32x32_64
-static __inline uint64_t mul_32x32_64(uint32_t a, uint32_t b) {
+static __always_inline uint64_t mul_32x32_64(uint32_t a, uint32_t b) {
   return a * (uint64_t)b;
 }
 #endif /* mul_32x32_64 */
 
 #ifndef mul_64x64_128
 
-static maybe_unused __inline unsigned add_with_carry(uint64_t *sum,
-                                                     uint64_t addend) {
+static __maybe_unused __always_inline unsigned add_with_carry(uint64_t *sum,
+                                                              uint64_t addend) {
   *sum += addend;
   return *sum < addend;
 }
 
-static maybe_unused __inline uint64_t mul_64x64_128(uint64_t a, uint64_t b,
-                                                    uint64_t *h) {
+static __maybe_unused __always_inline uint64_t mul_64x64_128(uint64_t a,
+                                                             uint64_t b,
+                                                             uint64_t *h) {
 #if defined(__SIZEOF_INT128__) ||                                              \
     (defined(_INTEGRAL_MAX_BITS) && _INTEGRAL_MAX_BITS >= 128)
   __uint128_t r = (__uint128_t)a * (__uint128_t)b;
@@ -489,7 +500,8 @@ static maybe_unused __inline uint64_t mul_64x64_128(uint64_t a, uint64_t b,
 #endif /* mul_64x64_128() */
 
 #ifndef mul_64x64_high
-static maybe_unused __inline uint64_t mul_64x64_high(uint64_t a, uint64_t b) {
+static __maybe_unused __always_inline uint64_t mul_64x64_high(uint64_t a,
+                                                              uint64_t b) {
   uint64_t h;
   mul_64x64_128(a, b, &h);
   return h;
@@ -508,13 +520,14 @@ static const uint64_t prime_5 = UINT64_C(0xC060724A8424F345);
 static const uint64_t prime_6 = UINT64_C(0xCB5AF53AE3AAAC31);
 
 /* xor high and low parts of full 128-bit product */
-static maybe_unused __inline uint64_t mux64(uint64_t v, uint64_t prime) {
+static __maybe_unused __always_inline uint64_t mux64(uint64_t v,
+                                                     uint64_t prime) {
   uint64_t l, h;
   l = mul_64x64_128(v, prime, &h);
   return l ^ h;
 }
 
-static __inline uint64_t final64(uint64_t a, uint64_t b) {
+static __always_inline uint64_t final64(uint64_t a, uint64_t b) {
   uint64_t x = (a + rot64(b, 23)) * prime_0;
   uint64_t y = (rot64(a, 19) + b) * prime_4;
   return mux64(x ^ y, prime_6);

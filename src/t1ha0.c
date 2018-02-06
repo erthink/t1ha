@@ -48,7 +48,7 @@
 #include "../t1ha.h"
 #include "t1ha_bits.h"
 
-static __inline uint32_t tail32_le(const void *v, size_t tail) {
+static __always_inline uint32_t tail32_le(const void *v, size_t tail) {
   const uint8_t *p = (const uint8_t *)v;
 #ifdef can_read_underside
   /* On some systems (e.g. x86) we can perform a 'oneshot' read, which
@@ -99,7 +99,7 @@ static __inline uint32_t tail32_le(const void *v, size_t tail) {
   unreachable();
 }
 
-static __inline uint32_t tail32_be(const void *v, size_t tail) {
+static __always_inline uint32_t tail32_be(const void *v, size_t tail) {
   const uint8_t *p = (const uint8_t *)v;
 #ifdef can_read_underside
   /* On some systems we can perform a 'oneshot' read, which is little bit
@@ -146,19 +146,19 @@ static __inline uint32_t tail32_be(const void *v, size_t tail) {
 /***************************************************************************/
 
 #ifndef rot32
-static maybe_unused __inline uint32_t rot32(uint32_t v, unsigned s) {
+static __maybe_unused __always_inline uint32_t rot32(uint32_t v, unsigned s) {
   return (v >> s) | (v << (32 - s));
 }
 #endif /* rot32 */
 
-static __inline void mixup32(uint32_t *a, uint32_t *b, uint32_t v,
-                             uint32_t prime) {
+static __always_inline void mixup32(uint32_t *a, uint32_t *b, uint32_t v,
+                                    uint32_t prime) {
   uint64_t l = mul_32x32_64(*b + v, prime);
   *a ^= (uint32_t)l;
   *b += (uint32_t)(l >> 32);
 }
 
-static __inline uint64_t final32(uint32_t a, uint32_t b) {
+static __always_inline uint64_t final32(uint32_t a, uint32_t b) {
   uint64_t l = (b ^ rot32(a, 13)) | (uint64_t)a << 32;
   l *= prime_0;
   l ^= l >> 41;

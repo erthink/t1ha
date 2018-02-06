@@ -41,11 +41,6 @@
  * for The 1Hippeus project - zerocopy messaging in the spirit of Sparta!
  */
 
-#if defined(_MSC_VER) && _MSC_VER > 1800
-#pragma warning(disable : 4464) /* relative include path contains '..' */
-#endif
-
-#include "../t1ha.h"
 #include "t1ha_bits.h"
 
 #if defined(_X86_64_) || defined(__x86_64__) || defined(_M_X64) ||             \

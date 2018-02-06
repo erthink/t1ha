@@ -42,19 +42,25 @@
  */
 
 #pragma once
-#ifndef T1HA_USE_FAST_ONESHOT_READ
 
+#if defined(_MSC_VER) && _MSC_VER > 1800
+#pragma warning(disable : 4464) /* relative include path contains '..' */
+#endif
+#include "../t1ha.h"
+
+#ifndef T1HA_USE_FAST_ONESHOT_READ
 /* Define it to 1 for little bit faster code.
  * Unfortunately this may triggering a false-positive alarms from Valgrind,
  * AddressSanitizer and other similar tool.
  * So, define it to 0 for calmness if doubt. */
 #define T1HA_USE_FAST_ONESHOT_READ 1
-
 #endif /* T1HA_USE_FAST_ONESHOT_READ */
 
 /*****************************************************************************/
 
-#include <string.h> /* for memcpy() */
+#include <assert.h>  /* for assert() */
+#include <stdbool.h> /* for bool */
+#include <string.h>  /* for memcpy() */
 
 #if !defined(__BYTE_ORDER__) || !defined(__ORDER_LITTLE_ENDIAN__) ||           \
     !defined(__ORDER_BIG_ENDIAN__)
@@ -112,11 +118,19 @@
 #include <cpuid.h>
 #include <x86intrin.h>
 #endif
+
+#ifndef likely
 #define likely(cond) __builtin_expect(!!(cond), 1)
+#endif
+
+#ifndef unlikely
 #define unlikely(cond) __builtin_expect(!!(cond), 0)
-#if __GNUC_PREREQ(4, 5) || defined(__clang__)
+#endif
+
+#if __GNUC_PREREQ(4, 5) || __has_builtin(__builtin_unreachable)
 #define unreachable() __builtin_unreachable()
 #endif
+
 #define bswap64(v) __builtin_bswap64(v)
 #define bswap32(v) __builtin_bswap32(v)
 #if __GNUC_PREREQ(4, 8) || __has_builtin(__builtin_bswap16)
@@ -477,8 +491,8 @@ static __maybe_unused __always_inline uint64_t mul_64x64_128(uint64_t a,
     (defined(_INTEGRAL_MAX_BITS) && _INTEGRAL_MAX_BITS >= 128)
   __uint128_t r = (__uint128_t)a * (__uint128_t)b;
   /* modern GCC could nicely optimize this */
-  *h = r >> 64;
-  return r;
+  *h = (uint64_t)(r >> 64);
+  return (uint64_t)r;
 #elif defined(mul_64x64_high)
   *h = mul_64x64_high(a, b);
   return a * b;

@@ -43,9 +43,12 @@
 
 #pragma once
 
-#if defined(_MSC_VER) && _MSC_VER > 1800
+#if defined(_MSC_VER)
+#pragma warning(disable : 4201) /* nameless struct/union */
+#if _MSC_VER > 1800
 #pragma warning(disable : 4464) /* relative include path contains '..' */
-#endif
+#endif /* 1800 */
+#endif /* MSVC */
 #include "../t1ha.h"
 
 #ifndef T1HA_USE_FAST_ONESHOT_READ

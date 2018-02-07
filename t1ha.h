@@ -146,8 +146,7 @@ T1HA_API uint64_t t1ha2_atonce128(uint64_t *__restrict extra_result,
                                   const void *__restrict data, size_t length,
                                   uint64_t seed);
 
-T1HA_API void t1ha2_init(t1ha_context_t *__restrict ctx, uint64_t seed_x,
-                         uint64_t seed_y);
+T1HA_API void t1ha2_init(t1ha_context_t *ctx, uint64_t seed_x, uint64_t seed_y);
 T1HA_API void t1ha2_update(t1ha_context_t *__restrict ctx,
                            const void *__restrict data, size_t length);
 

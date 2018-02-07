@@ -111,10 +111,10 @@ bool test(const char *title, uint64_t (*hash)(const void *, size_t, uint64_t),
 
 /* *INDENT-OFF* */
 /* clang-format off */
-static const uint64_t refval_2atonce[80] = {};
-static const uint64_t refval_2atonce128[80] = {};
-static const uint64_t refval_2stream[80] = {};
-static const uint64_t refval_2stream128[80] = {};
+static const uint64_t refval_2atonce[80] = { 0 };
+static const uint64_t refval_2atonce128[80] = { 0 };
+static const uint64_t refval_2stream[80] = { 0 };
+static const uint64_t refval_2stream128[80] = { 0 };
 
 static const uint64_t refval_64le[80] = {
   0x6A580668D6048674, 0xA2FE904AFF0D0879, 0xE3AB9C06FAF4D023, 0x6AF1C60874C95442,

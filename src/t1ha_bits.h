@@ -554,3 +554,122 @@ static __always_inline void mixup64(uint64_t *__restrict a,
   *a ^= mul_64x64_128(*b + v, prime, &h);
   *b += h;
 }
+
+/***************************************************************************/
+
+typedef union t1ha_uint128 {
+#if defined(__SIZEOF_INT128__) ||                                              \
+    (defined(_INTEGRAL_MAX_BITS) && _INTEGRAL_MAX_BITS >= 128)
+  __uint128_t v;
+#endif
+  struct {
+#if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
+    uint64_t l, h;
+#else
+    uint64_t h, l;
+#endif
+  };
+} t1ha_uint128_t;
+
+static __always_inline t1ha_uint128_t not128(const t1ha_uint128_t v) {
+  t1ha_uint128_t r;
+#if defined(__SIZEOF_INT128__) ||                                              \
+    (defined(_INTEGRAL_MAX_BITS) && _INTEGRAL_MAX_BITS >= 128)
+  r.v = ~v.v;
+#else
+  r.l = ~v.l;
+  r.h = ~v.h;
+#endif
+  return r;
+}
+
+static __always_inline t1ha_uint128_t left128(const t1ha_uint128_t v,
+                                              unsigned s) {
+  t1ha_uint128_t r;
+  assert(s < 128);
+#if defined(__SIZEOF_INT128__) ||                                              \
+    (defined(_INTEGRAL_MAX_BITS) && _INTEGRAL_MAX_BITS >= 128)
+  r.v = v.v << s;
+#else
+  r.l = (s < 64) ? v.l << s : 0;
+  r.h = (s < 64) ? (v.h << s) | (s ? v.l >> (64 - s) : 0) : v.l << (s - 64);
+#endif
+  return r;
+}
+
+static __always_inline t1ha_uint128_t right128(const t1ha_uint128_t v,
+                                               unsigned s) {
+  t1ha_uint128_t r;
+  assert(s < 128);
+#if defined(__SIZEOF_INT128__) ||                                              \
+    (defined(_INTEGRAL_MAX_BITS) && _INTEGRAL_MAX_BITS >= 128)
+  r.v = v.v >> s;
+#else
+  r.l = (s < 64) ? (s ? v.h << (64 - s) : 0) | (v.l >> s) : v.h >> (s - 64);
+  r.h = (s < 64) ? v.h >> s : 0;
+#endif
+  return r;
+}
+
+static __always_inline t1ha_uint128_t or128(t1ha_uint128_t x,
+                                            t1ha_uint128_t y) {
+  t1ha_uint128_t r;
+#if defined(__SIZEOF_INT128__) ||                                              \
+    (defined(_INTEGRAL_MAX_BITS) && _INTEGRAL_MAX_BITS >= 128)
+  r.v = x.v | y.v;
+#else
+  r.l = x.l | y.l;
+  r.h = x.h | y.h;
+#endif
+  return r;
+}
+
+static __always_inline t1ha_uint128_t xor128(t1ha_uint128_t x,
+                                             t1ha_uint128_t y) {
+  t1ha_uint128_t r;
+#if defined(__SIZEOF_INT128__) ||                                              \
+    (defined(_INTEGRAL_MAX_BITS) && _INTEGRAL_MAX_BITS >= 128)
+  r.v = x.v ^ y.v;
+#else
+  r.l = x.l ^ y.l;
+  r.h = x.h ^ y.h;
+#endif
+  return r;
+}
+
+static __always_inline t1ha_uint128_t rot128(t1ha_uint128_t v, unsigned s) {
+  s &= 127;
+#if defined(__SIZEOF_INT128__) ||                                              \
+    (defined(_INTEGRAL_MAX_BITS) && _INTEGRAL_MAX_BITS >= 128)
+  v.v = (v.v << (128 - s)) | (v.v >> s);
+  return v;
+#else
+  return s ? or128(left128(v, 128 - s), right128(v, s)) : v;
+#endif
+}
+
+static __always_inline t1ha_uint128_t add128(t1ha_uint128_t x,
+                                             t1ha_uint128_t y) {
+  t1ha_uint128_t r;
+#if defined(__SIZEOF_INT128__) ||                                              \
+    (defined(_INTEGRAL_MAX_BITS) && _INTEGRAL_MAX_BITS >= 128)
+  r.v = x.v + y.v;
+#else
+  r.l = x.l + y.l;
+  r.h = (r.l < x.l) + x.h + y.h;
+#endif
+  return r;
+}
+
+static __always_inline t1ha_uint128_t mul128(t1ha_uint128_t x,
+                                             t1ha_uint128_t y) {
+  t1ha_uint128_t r;
+#if defined(__SIZEOF_INT128__) ||                                              \
+    (defined(_INTEGRAL_MAX_BITS) && _INTEGRAL_MAX_BITS >= 128)
+  r.v = x.v * y.v;
+#else
+  r.l = mul_64x64_128(x.l, y.l, &r.h);
+  r.h += x.l * y.h + y.l * x.h;
+#endif
+  return r;
+}

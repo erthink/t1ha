@@ -45,14 +45,14 @@
 
 static __always_inline void init_ab(t1ha_state256_t *s, uint64_t x,
                                     uint64_t y) {
-  s->a = x;
-  s->b = y;
+  s->n.a = x;
+  s->n.b = y;
 }
 
 static __always_inline void init_cd(t1ha_state256_t *s, uint64_t x,
                                     uint64_t y) {
-  s->c = rot64(y, 23) + ~x;
-  s->d = ~y + rot64(x, 19);
+  s->n.c = rot64(y, 23) + ~x;
+  s->n.d = ~y + rot64(x, 19);
 }
 
 static __always_inline void update(t1ha_state256_t *__restrict s,
@@ -62,17 +62,17 @@ static __always_inline void update(t1ha_state256_t *__restrict s,
   uint64_t w2 = fetch64_le(v + 2);
   uint64_t w3 = fetch64_le(v + 3);
 
-  uint64_t d02 = w0 + rot64(w2 + s->d, 56);
-  uint64_t c13 = w1 + rot64(w3 + s->c, 19);
-  s->d ^= s->b + rot64(w1, 38);
-  s->c ^= s->a + rot64(w0, 57);
-  s->b ^= prime_6 * (c13 + w2);
-  s->a ^= prime_5 * (d02 + w3);
+  uint64_t d02 = w0 + rot64(w2 + s->n.d, 56);
+  uint64_t c13 = w1 + rot64(w3 + s->n.c, 19);
+  s->n.d ^= s->n.b + rot64(w1, 38);
+  s->n.c ^= s->n.a + rot64(w0, 57);
+  s->n.b ^= prime_6 * (c13 + w2);
+  s->n.a ^= prime_5 * (d02 + w3);
 }
 
 static __always_inline void squash(t1ha_state256_t *s) {
-  s->a ^= prime_6 * (s->c + rot64(s->d, 23));
-  s->b ^= prime_5 * (rot64(s->c, 19) + s->d);
+  s->n.a ^= prime_6 * (s->n.c + rot64(s->n.d, 23));
+  s->n.b ^= prime_5 * (rot64(s->n.c, 19) + s->n.d);
 }
 
 static __always_inline const void *
@@ -93,7 +93,7 @@ static __always_inline void tail_ab(t1ha_state256_t *__restrict s,
                                     const uint64_t *__restrict v, size_t len) {
   switch (len) {
   default:
-    mixup64(&s->a, &s->b, fetch64_le(v++), prime_4);
+    mixup64(&s->n.a, &s->n.b, fetch64_le(v++), prime_4);
   /* fall through */
   case 24:
   case 23:
@@ -103,7 +103,7 @@ static __always_inline void tail_ab(t1ha_state256_t *__restrict s,
   case 19:
   case 18:
   case 17:
-    mixup64(&s->b, &s->a, fetch64_le(v++), prime_3);
+    mixup64(&s->n.b, &s->n.a, fetch64_le(v++), prime_3);
   /* fall through */
   case 16:
   case 15:
@@ -113,7 +113,7 @@ static __always_inline void tail_ab(t1ha_state256_t *__restrict s,
   case 11:
   case 10:
   case 9:
-    mixup64(&s->a, &s->b, fetch64_le(v++), prime_2);
+    mixup64(&s->n.a, &s->n.b, fetch64_le(v++), prime_2);
   /* fall through */
   case 8:
   case 7:
@@ -123,7 +123,7 @@ static __always_inline void tail_ab(t1ha_state256_t *__restrict s,
   case 3:
   case 2:
   case 1:
-    mixup64(&s->b, &s->a, tail64_le(v, len), prime_1);
+    mixup64(&s->n.b, &s->n.a, tail64_le(v, len), prime_1);
   /* fall through */
   case 0:
     return;
@@ -135,7 +135,7 @@ static __always_inline void tail_abcd(t1ha_state256_t *__restrict s,
                                       size_t len) {
   switch (len) {
   default:
-    mixup64(&s->a, &s->d, fetch64_le(v++), prime_4);
+    mixup64(&s->n.a, &s->n.d, fetch64_le(v++), prime_4);
   /* fall through */
   case 24:
   case 23:
@@ -145,7 +145,7 @@ static __always_inline void tail_abcd(t1ha_state256_t *__restrict s,
   case 19:
   case 18:
   case 17:
-    mixup64(&s->b, &s->a, fetch64_le(v++), prime_3);
+    mixup64(&s->n.b, &s->n.a, fetch64_le(v++), prime_3);
   /* fall through */
   case 16:
   case 15:
@@ -155,7 +155,7 @@ static __always_inline void tail_abcd(t1ha_state256_t *__restrict s,
   case 11:
   case 10:
   case 9:
-    mixup64(&s->c, &s->b, fetch64_le(v++), prime_2);
+    mixup64(&s->n.c, &s->n.b, fetch64_le(v++), prime_2);
   /* fall through */
   case 8:
   case 7:
@@ -165,7 +165,7 @@ static __always_inline void tail_abcd(t1ha_state256_t *__restrict s,
   case 3:
   case 2:
   case 1:
-    mixup64(&s->d, &s->c, tail64_le(v, len), prime_1);
+    mixup64(&s->n.d, &s->n.c, tail64_le(v, len), prime_1);
   /* fall through */
   case 0:
     return;
@@ -203,7 +203,7 @@ uint64_t t1ha2_atonce(const void *data, size_t length, uint64_t seed) {
     v = (const uint64_t *)memcpy(&buffer4align, v, length);
 
   tail_ab(&state, v, length);
-  return final64(state.a, state.b);
+  return final64(state.n.a, state.n.b);
 }
 
 uint64_t t1ha2_atonce128(uint64_t *__restrict extra_result,
@@ -226,7 +226,7 @@ uint64_t t1ha2_atonce128(uint64_t *__restrict extra_result,
     v = (const uint64_t *)memcpy(&buffer4align, v, length);
 
   tail_abcd(&state, v, length);
-  return final128(state.a, state.b, state.c, state.d, extra_result);
+  return final128(state.n.a, state.n.b, state.n.c, state.n.d, extra_result);
 }
 
 //------------------------------------------------------------------------------
@@ -245,7 +245,7 @@ void t1ha2_update(t1ha_context_t *__restrict ctx, const void *__restrict data,
   if (ctx->partial) {
     const size_t left = 32 - ctx->partial;
     const size_t chunk = (length >= left) ? left : length;
-    memcpy(ctx->buffer.u8 + ctx->partial, data, chunk);
+    memcpy(ctx->buffer.bytes + ctx->partial, data, chunk);
     ctx->partial += chunk;
     if (ctx->partial < 32) {
       assert(left >= length);
@@ -266,7 +266,7 @@ void t1ha2_update(t1ha_context_t *__restrict ctx, const void *__restrict data,
   }
 
   if (length)
-    memcpy(ctx->buffer.u8, data, ctx->partial = length & 31);
+    memcpy(ctx->buffer.bytes, data, ctx->partial = length & 31);
 }
 
 uint64_t t1ha2_final(t1ha_context_t *__restrict ctx,
@@ -275,10 +275,10 @@ uint64_t t1ha2_final(t1ha_context_t *__restrict ctx,
   if (likely(!extra_result)) {
     squash(&ctx->state);
     tail_ab(&ctx->state, ctx->buffer.u64, ctx->partial);
-    return final64(ctx->state.a, ctx->state.b);
+    return final64(ctx->state.n.a, ctx->state.n.b);
   }
 
   tail_abcd(&ctx->state, ctx->buffer.u64, ctx->partial);
-  return final128(ctx->state.a, ctx->state.b, ctx->state.c, ctx->state.d,
-                  extra_result);
+  return final128(ctx->state.n.a, ctx->state.n.b, ctx->state.n.c,
+                  ctx->state.n.d, extra_result);
 }

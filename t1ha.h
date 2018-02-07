@@ -125,13 +125,12 @@ extern "C" {
 #endif
 
 typedef union T1HA_ALIGN_PREFIX t1ha_state256 {
-  uint8_t u8[32];
-  uint16_t u16[16];
+  uint8_t bytes[32];
   uint32_t u32[8];
   uint64_t u64[4];
   struct {
     uint64_t a, b, c, d;
-  };
+  } n;
 } t1ha_state256_t T1HA_ALIGN_SUFFIX;
 
 typedef struct t1ha_context {

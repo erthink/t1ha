@@ -154,9 +154,12 @@
 #define rot32(v, s) _rotr(v, s)
 #define __inline __forceinline
 
-#if defined(_M_ARM64) || defined(_M_X64) || defined(_M_IA64)
+#if defined(_M_X64) || defined(_M_IA64)
 #pragma intrinsic(_umul128)
 #define mul_64x64_128(a, b, ph) _umul128(a, b, ph)
+#endif
+
+#if defined(_M_ARM64) || defined(_M_X64) || defined(_M_IA64)
 #pragma intrinsic(__umulh)
 #define mul_64x64_high(a, b) __umulh(a, b)
 #endif

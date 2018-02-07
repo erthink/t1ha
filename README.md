@@ -82,13 +82,12 @@ Please, feel free to fill an issue or make pull request.
   provided, but returns the different result than the main version.
 
 
-`t1ha2` = 64 bits, little more attention for quality and strength
+`t1ha2` = 64 and 128 bits, little more attention for quality and strength
 -----------------------------------------------------------------
-  The next-step version of "Fast Positive Hash",
-  but not yet finished and therefore not available.
+ Preliminary version available for evaluation and testing, including the 128 bit hashing.
 
 
-`t1ha3` = 128 bits, fast non-cryptographic fingerprinting
+`t1ha3` = 128 and 256 bits, fast non-cryptographic fingerprinting
 ---------------------------------------------------------
   The next-step version of "Fast Positive Hash",
   but not yet finished and therefore not available.

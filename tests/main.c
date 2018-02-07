@@ -208,8 +208,7 @@ static const uint64_t refval_32be[80] = {
   0xEA08F8BFB2039CDE, 0xCCC6D04D243EC753, 0x8977D105298B0629, 0x7AAA976494A5905E
 };
 
-#if defined(__x86_64__) || defined(_M_IX86) || defined(_M_X64) ||              \
-    defined(i386) || defined(_X86_) || defined(__i386__) || defined(_X86_64_)
+#ifdef T1HA_IA32_AVAILABLE
 static const uint64_t refval_ia32aes_a[80] = {
   0x4DE42DAE10FAB4D6, 0x25AADCE36A1D661D, 0xD9F87681CBBD0526, 0x2AD24CCD17D8478A,
   0xBEB68103CE241ADF, 0x42B2C3EF775510E0, 0x1AEB8CA76C60DF39, 0xBD89A22CC2CFC161,
@@ -255,13 +254,12 @@ static const uint64_t refval_ia32aes_b[80] = {
   0xF7DAF53D53ACBF96, 0x95BCB6B815FF253B, 0xAB2E53FD00ABA0EE, 0x574C120B0968CC0B,
   0x4AFBBFA6897A67DF, 0x95A76119140DC64B, 0xEC7F244BD901BA23, 0x8E258FE7DA53451D
 };
-#endif /* Any x86 */
+#endif /* T1HA_IA32_AVAILABLE */
 
 /* *INDENT-ON* */
 /* clang-format on */
 
-#if defined(__x86_64__) || defined(_M_IX86) || defined(_M_X64) ||              \
-    defined(i386) || defined(_X86_) || defined(__i386__) || defined(_X86_64_)
+#ifdef T1HA_IA32_AVAILABLE
 
 uint64_t t1ha0_ia32aes_noavx_a(const void *data, size_t length, uint64_t seed);
 uint64_t t1ha0_ia32aes_noavx_b(const void *data, size_t length, uint64_t seed);
@@ -310,12 +308,10 @@ static uint64_t x86_cpu_features(void) {
 #endif
   return features | (uint64_t)extended << 32;
 }
-#endif
+
+#endif /* T1HA_IA32_AVAILABLE */
 
 /***************************************************************************/
-
-#if defined(_X86_64_) || defined(__x86_64__) || defined(_M_X64) ||             \
-    defined(__i386__) || defined(_M_IX86) || defined(i386) || defined(_X86_)
 
 static uint64_t thunk_t1ha2_atonce128(const void *data, size_t len,
                                       uint64_t seed) {
@@ -339,6 +335,8 @@ static uint64_t thunk_t1ha2_stream128(const void *data, size_t len,
   uint64_t unused;
   return t1ha2_final(&ctx, &unused);
 }
+
+#ifdef T1HA_IA32_AVAILABLE
 
 unsigned bench(const char *caption,
                uint64_t (*hash)(const void *, size_t, uint64_t),
@@ -445,8 +443,7 @@ static void bench_size(const unsigned size, const char *caption,
 
   free(buffer);
 }
-
-#endif /* x86 for t1ha_ia32aes */
+#endif /* T1HA_IA32_AVAILABLE */
 
 int main(int argc, const char *argv[]) {
   (void)argc;
@@ -464,9 +461,7 @@ int main(int argc, const char *argv[]) {
   failed |= test("t1ha0_32le", t1ha0_32le, refval_32le);
   failed |= test("t1ha0_32be", t1ha0_32be, refval_32be);
 
-#if defined(_X86_64_) || defined(__x86_64__) || defined(_M_X64) ||             \
-    defined(__i386__) || (defined(_M_IX86) && _MSC_VER > 1800) ||              \
-    defined(i386) || defined(_X86_)
+#ifdef T1HA_IA32_AVAILABLE
 
   const uint64_t features = x86_cpu_features();
   if (features & UINT32_C(0x02000000)) {
@@ -500,7 +495,7 @@ int main(int argc, const char *argv[]) {
     bench_size(1024 * 256, "large", bench_all);
   }
 #endif /* __OPTIMIZE__ */
-#endif /* x86 for t1ha_ia32aes */
+#endif /* T1HA_IA32_AVAILABLE */
 
   return failed ? EXIT_FAILURE : EXIT_SUCCESS;
 }

@@ -279,10 +279,11 @@ uint64_t t1ha0_32le(const void *data, size_t length, uint64_t seed);
 uint64_t t1ha0_32be(const void *data, size_t length, uint64_t seed);
 
 #if T1HA_IA32_AVAILABLE && (!defined(_M_IX86) || _MSC_VER > 1800)
+#define T1HA0_AESNI_AVAILABLE
+#define T1HA0_RUNTIME_SELECT
 uint64_t t1ha0_ia32aes_noavx(const void *data, size_t length, uint64_t seed);
 uint64_t t1ha0_ia32aes_avx(const void *data, size_t length, uint64_t seed);
 uint64_t t1ha0_ia32aes_avx2(const void *data, size_t length, uint64_t seed);
-#define T1HA0_RUNTIME_SELECT
 #endif /* T1HA_IA32_AVAILABLE */
 
 #ifdef T1HA0_RUNTIME_SELECT

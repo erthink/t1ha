@@ -208,7 +208,10 @@ static const uint64_t refval_32be[80] = {
   0xEA08F8BFB2039CDE, 0xCCC6D04D243EC753, 0x8977D105298B0629, 0x7AAA976494A5905E
 };
 
-#if T1HA_IA32_AVAILABLE
+#ifdef T1HA0_AESNI_AVAILABLE
+uint64_t t1ha0_ia32aes_noavx_a(const void *data, size_t length, uint64_t seed);
+uint64_t t1ha0_ia32aes_avx_a(const void *data, size_t length, uint64_t seed);
+uint64_t t1ha0_ia32aes_avx2_a(const void *data, size_t length, uint64_t seed);
 static const uint64_t refval_ia32aes_a[80] = {
   0x4DE42DAE10FAB4D6, 0x25AADCE36A1D661D, 0xD9F87681CBBD0526, 0x2AD24CCD17D8478A,
   0xBEB68103CE241ADF, 0x42B2C3EF775510E0, 0x1AEB8CA76C60DF39, 0xBD89A22CC2CFC161,
@@ -232,6 +235,9 @@ static const uint64_t refval_ia32aes_a[80] = {
   0x5A42DEABB396266C, 0x663262CB32B7B6AC, 0x241F5BC2A1430D39, 0xC34697D55EFB8870
 };
 
+uint64_t t1ha0_ia32aes_noavx_b(const void *data, size_t length, uint64_t seed);
+uint64_t t1ha0_ia32aes_avx_b(const void *data, size_t length, uint64_t seed);
+uint64_t t1ha0_ia32aes_avx2_b(const void *data, size_t length, uint64_t seed);
 static const uint64_t refval_ia32aes_b[80] = {
   0x4DE42DAE10FAB4D6, 0xD43E785727EC1D9E, 0xD9F87681CBBD0526, 0x2AD24CCD17D8478A,
   0xBEB68103CE241ADF, 0x42B2C3EF775510E0, 0x1AEB8CA76C60DF39, 0xBD89A22CC2CFC161,
@@ -254,19 +260,12 @@ static const uint64_t refval_ia32aes_b[80] = {
   0xF7DAF53D53ACBF96, 0x95BCB6B815FF253B, 0xAB2E53FD00ABA0EE, 0x574C120B0968CC0B,
   0x4AFBBFA6897A67DF, 0x95A76119140DC64B, 0xEC7F244BD901BA23, 0x8E258FE7DA53451D
 };
-#endif /* T1HA_IA32_AVAILABLE */
+#endif /* T1HA0_AESNI_AVAILABLE */
 
 /* *INDENT-ON* */
 /* clang-format on */
 
 #if T1HA_IA32_AVAILABLE
-
-uint64_t t1ha0_ia32aes_noavx_a(const void *data, size_t length, uint64_t seed);
-uint64_t t1ha0_ia32aes_noavx_b(const void *data, size_t length, uint64_t seed);
-uint64_t t1ha0_ia32aes_avx_a(const void *data, size_t length, uint64_t seed);
-uint64_t t1ha0_ia32aes_avx_b(const void *data, size_t length, uint64_t seed);
-uint64_t t1ha0_ia32aes_avx2_a(const void *data, size_t length, uint64_t seed);
-uint64_t t1ha0_ia32aes_avx2_b(const void *data, size_t length, uint64_t seed);
 
 #ifdef __GNUC__
 #include <cpuid.h>
@@ -308,7 +307,6 @@ static uint64_t x86_cpu_features(void) {
 #endif
   return features | (uint64_t)extended << 32;
 }
-
 #endif /* T1HA_IA32_AVAILABLE */
 
 /***************************************************************************/
@@ -337,7 +335,6 @@ static uint64_t thunk_t1ha2_stream128(const void *data, size_t len,
 }
 
 #if T1HA_IA32_AVAILABLE
-
 unsigned bench(const char *caption,
                uint64_t (*hash)(const void *, size_t, uint64_t),
                const void *data, unsigned len, uint64_t seed) {
@@ -425,6 +422,7 @@ static void bench_size(const unsigned size, const char *caption,
   if (is_set(bench_flags, bench_32 | bench_be))
     bench("t1ha0_32be", t1ha0_32be, buffer, size, seed);
 
+#ifdef T1HA0_AESNI_AVAILABLE
   if (bench_flags & bench_aes) {
     bench("t1ha0_ia32aes_noavx_a", t1ha0_ia32aes_noavx_a, buffer, size, seed);
     bench("t1ha0_ia32aes_noavx_b", t1ha0_ia32aes_noavx_b, buffer, size, seed);
@@ -440,6 +438,7 @@ static void bench_size(const unsigned size, const char *caption,
       bench("t1ha0_ia32aes_avx2", t1ha0_ia32aes_avx2, buffer, size, seed);
     }
   }
+#endif /* T1HA0_AESNI_AVAILABLE */
 
   free(buffer);
 }
@@ -463,6 +462,8 @@ int main(int argc, const char *argv[]) {
 
 #if T1HA_IA32_AVAILABLE
   const uint64_t features = x86_cpu_features();
+
+#ifdef T1HA0_AESNI_AVAILABLE
   if (features & UINT32_C(0x02000000)) {
     failed |=
         test("t1ha0_ia32aes_noavx", t1ha0_ia32aes_noavx, refval_ia32aes_a);
@@ -473,6 +474,7 @@ int main(int argc, const char *argv[]) {
             test("t1ha0_ia32aes_avx2", t1ha0_ia32aes_avx2, refval_ia32aes_b);
     }
   }
+#endif /* T1HA0_AESNI_AVAILABLE */
 
 #if !defined(__OPTIMIZE__) && (defined(_MSC_VER) && defined(_DEBUG))
   printf("\nNon-optimized/Debug build, skip benchmark\n");

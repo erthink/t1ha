@@ -47,8 +47,8 @@
 #pragma warning(disable : 4201) /* nameless struct/union */
 #if _MSC_VER > 1800
 #pragma warning(disable : 4464) /* relative include path contains '..' */
-#endif /* 1800 */
-#endif /* MSVC */
+#endif                          /* 1800 */
+#endif                          /* MSVC */
 #include "../t1ha.h"
 
 #ifndef T1HA_USE_FAST_ONESHOT_READ
@@ -67,31 +67,58 @@
 
 #if !defined(__BYTE_ORDER__) || !defined(__ORDER_LITTLE_ENDIAN__) ||           \
     !defined(__ORDER_BIG_ENDIAN__)
-#ifndef _MSC_VER
-#include <sys/param.h> /* for endianness */
-#endif
+
+#if defined(__GLIBC__) || defined(__GNU_LIBRARY__) || defined(__ANDROID__)
+#include <endian.h>
+#elif defined(__APPLE__) || defined(__MACH__) || defined(__OpenBSD__)
+#include <machine/endian.h>
+#elif defined(__bsdi__) || defined(__DragonFly__) || defined(__FreeBSD__) ||   \
+    defined(__NETBSD__) || defined(__NetBSD__)
+#include <sys/param.h>
+#endif /* OS */
+
 #if defined(__BYTE_ORDER) && defined(__LITTLE_ENDIAN) && defined(__BIG_ENDIAN)
 #define __ORDER_LITTLE_ENDIAN__ __LITTLE_ENDIAN
 #define __ORDER_BIG_ENDIAN__ __BIG_ENDIAN
 #define __BYTE_ORDER__ __BYTE_ORDER
+#elif defined(_BYTE_ORDER) && defined(_LITTLE_ENDIAN) && defined(_BIG_ENDIAN)
+#define __ORDER_LITTLE_ENDIAN__ _LITTLE_ENDIAN
+#define __ORDER_BIG_ENDIAN__ _BIG_ENDIAN
+#define __BYTE_ORDER__ _BYTE_ORDER
 #else
 #define __ORDER_LITTLE_ENDIAN__ 1234
 #define __ORDER_BIG_ENDIAN__ 4321
+
 #if defined(__LITTLE_ENDIAN__) || defined(_LITTLE_ENDIAN) ||                   \
     defined(__ARMEL__) || defined(__THUMBEL__) || defined(__AARCH64EL__) ||    \
     defined(__MIPSEL__) || defined(_MIPSEL) || defined(__MIPSEL) ||            \
-    defined(__i386) || defined(__x86_64__) || defined(_M_IX86) ||              \
-    defined(_M_X64) || defined(i386) || defined(_X86_) || defined(__i386__) || \
-    defined(_X86_64_) || defined(_M_ARM) || defined(_M_ARM64) ||               \
-    defined(__e2k__)
+    defined(_M_ARM) || defined(_M_ARM64) || defined(__e2k__) ||                \
+    defined(__elbrus_4c__) || defined(__elbrus_8c__) || defined(__bfin__) ||   \
+    defined(__BFIN__) || defined(__ia64__) || defined(_IA64) ||                \
+    defined(__IA64__) || defined(__ia64) || defined(_M_IA64) ||                \
+    defined(__itanium__) || defined(i386) || defined(__i386__) ||              \
+    defined(__i486__) || defined(__i586__) || defined(__i686__) ||             \
+    defined(__i386) || defined(_M_IX86) || defined(_X86_) ||                   \
+    defined(__THW_INTEL__) || defined(__I86__) || defined(__INTEL__) ||        \
+    defined(__x86_64) || defined(__x86_64__) || defined(__amd64__) ||          \
+    defined(__amd64) || defined(_M_X64) || defined(_WIN32) ||                  \
+    defined(_WIN64) || defined(__WIN32__) || defined(__TOS_WIN__) ||           \
+    defined(__WINDOWS__)
 #define __BYTE_ORDER__ __ORDER_LITTLE_ENDIAN__
+
 #elif defined(__BIG_ENDIAN__) || defined(_BIG_ENDIAN) || defined(__ARMEB__) || \
     defined(__THUMBEB__) || defined(__AARCH64EB__) || defined(__MIPSEB__) ||   \
-    defined(_MIPSEB) || defined(__MIPSEB) || defined(_M_IA64)
+    defined(_MIPSEB) || defined(__MIPSEB) defined(__m68k__) ||                 \
+    defined(M68000) || defined(__hppa__) || defined(__hppa) ||                 \
+    defined(__HPPA__) || defined(__sparc__) || defined(__sparc) ||             \
+    defined(__370__) || defined(__THW_370__) || defined(__s390__) ||           \
+    defined(__s390x__) || defined(__SYSC_ZARCH__)
 #define __BYTE_ORDER__ __ORDER_BIG_ENDIAN__
+
 #else
 #error __BYTE_ORDER__ should be defined.
-#endif
+#endif /* Arch */
+
 #endif
 #endif /* __BYTE_ORDER__ || __ORDER_LITTLE_ENDIAN__ || __ORDER_BIG_ENDIAN__ */
 
@@ -100,16 +127,23 @@
 #error Unsupported byte order.
 #endif
 
+/***************************************************************************/
+
 #if !defined(UNALIGNED_OK)
-#if defined(__i386) || defined(__x86_64__) || defined(_M_IX86) ||              \
-    defined(_M_X64) || defined(i386) || defined(_X86_) || defined(__i386__) || \
-    defined(_X86_64_)
+#if defined(i386) || defined(__i386__) || defined(__i486__) ||                 \
+    defined(__i586__) || defined(__i686__) || defined(__i386) ||               \
+    defined(_M_IX86) || defined(_X86_) || defined(__THW_INTEL__) ||            \
+    defined(__I86__) || defined(__INTEL__) || defined(__x86_64) ||             \
+    defined(__x86_64__) || defined(__amd64__) || defined(__amd64) ||           \
+    defined(_M_X64)
 #define UNALIGNED_OK 1
 #define PAGESIZE 4096
 #else
 #define UNALIGNED_OK 0
 #endif
 #endif
+
+/***************************************************************************/
 
 #ifndef __has_builtin
 #define __has_builtin(x) (0)

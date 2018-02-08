@@ -42,8 +42,13 @@
  */
 
 #pragma once
+#ifdef __cplusplus
+#include <cstddef>
+#include <cstdint>
+#else
 #include <stddef.h>
 #include <stdint.h>
+#endif
 
 #ifndef __has_attribute
 #define __has_attribute(x) (0)

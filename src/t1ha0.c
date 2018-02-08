@@ -378,14 +378,19 @@ static
   }
 #endif /* T1HA_ia32aes_AVAILABLE */
 
-  return (sizeof(size_t) >= 8)
 #if __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
-             ? t1ha1_be
-             : t1ha0_32be;
+#if UINTPTR_MAX > 0xffffFFFFul || ULONG_MAX > 0xffffFFFFul
+  return t1ha1_be;
 #else
-             ? t1ha1_le
-             : t1ha0_32le;
+  return t1ha0_32be;
 #endif
+#else /* __BYTE_ORDER__ != __ORDER_BIG_ENDIAN__ */
+#if UINTPTR_MAX > 0xffffFFFFul || ULONG_MAX > 0xffffFFFFul
+  return t1ha1_le;
+#else
+  return t1ha0_32le;
+#endif
+#endif /* __BYTE_ORDER__ */
 }
 
 #ifdef __ELF__

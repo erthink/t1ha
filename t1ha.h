@@ -295,19 +295,22 @@ static __inline uint64_t t1ha0(const void *data, size_t length, uint64_t seed) {
   return t1ha0_funcptr(data, length, seed);
 }
 #endif /* __ELF__ */
+
 #elif __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
 static __inline uint64_t t1ha0(const void *data, size_t length, uint64_t seed) {
-  if (sizeof(size_t) > 4)
-    return t1ha1_be(data, length, seed);
-  else
-    return t1ha0_32be(data, length, seed);
+#if UINTPTR_MAX > 0xffffFFFFul || ULONG_MAX > 0xffffFFFFul
+  return t1ha1_be(data, length, seed);
+#else
+  return t1ha0_32be(data, length, seed);
+#endif
 }
 #else
 static __inline uint64_t t1ha0(const void *data, size_t length, uint64_t seed) {
-  if (sizeof(size_t) > 4)
-    return t1ha1_le(data, length, seed);
-  else
-    return t1ha0_32le(data, length, seed);
+#if UINTPTR_MAX > 0xffffFFFFul || ULONG_MAX > 0xffffFFFFul
+  return t1ha1_le(data, length, seed);
+#else
+  return t1ha0_32le(data, length, seed);
+#endif
 }
 #endif /* !T1HA0_RUNTIME_SELECT */
 

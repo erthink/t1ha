@@ -42,7 +42,7 @@
  */
 
 #pragma once
-#ifdef __cplusplus
+#if defined(__cplusplus) && __cplusplus >= 201103L
 #include <climits>
 #include <cstddef>
 #include <cstdint>

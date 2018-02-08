@@ -321,9 +321,7 @@ uint64_t t1ha0_32be(const void *data, size_t len, uint64_t seed) {
 /***************************************************************************/
 
 #undef T1HA_ia32aes_AVAILABLE
-#if defined(__x86_64__) || (defined(_M_IX86) && _MSC_VER > 1800) ||            \
-    defined(_M_X64) || defined(i386) || defined(_X86_) || defined(__i386__) || \
-    defined(_X86_64_)
+#if T1HA_IA32_AVAILABLE && (!defined(_M_IX86) || _MSC_VER > 1800)
 
 static uint64_t x86_cpu_features(void) {
   uint32_t features = 0;
@@ -360,6 +358,8 @@ uint64_t t1ha0_ia32aes_noavx(const void *data, size_t len, uint64_t seed);
 #endif /* __i386__ || __x86_64__ */
 
 /***************************************************************************/
+
+#ifdef T1HA0_RUNTIME_SELECT
 
 static
 #if __GNUC_PREREQ(4, 0) || __has_attribute(used)
@@ -415,4 +415,5 @@ static uint64_t t1ha0_proxy(const void *data, size_t len, uint64_t seed) {
 
 uint64_t (*t1ha0_funcptr)(const void *, size_t, uint64_t) = t1ha0_proxy;
 
-#endif
+#endif /* !ELF */
+#endif /* T1HA0_RUNTIME_SELECT */

@@ -208,7 +208,7 @@ static const uint64_t refval_32be[80] = {
   0xEA08F8BFB2039CDE, 0xCCC6D04D243EC753, 0x8977D105298B0629, 0x7AAA976494A5905E
 };
 
-#ifdef T1HA_IA32_AVAILABLE
+#if T1HA_IA32_AVAILABLE
 static const uint64_t refval_ia32aes_a[80] = {
   0x4DE42DAE10FAB4D6, 0x25AADCE36A1D661D, 0xD9F87681CBBD0526, 0x2AD24CCD17D8478A,
   0xBEB68103CE241ADF, 0x42B2C3EF775510E0, 0x1AEB8CA76C60DF39, 0xBD89A22CC2CFC161,
@@ -259,7 +259,7 @@ static const uint64_t refval_ia32aes_b[80] = {
 /* *INDENT-ON* */
 /* clang-format on */
 
-#ifdef T1HA_IA32_AVAILABLE
+#if T1HA_IA32_AVAILABLE
 
 uint64_t t1ha0_ia32aes_noavx_a(const void *data, size_t length, uint64_t seed);
 uint64_t t1ha0_ia32aes_noavx_b(const void *data, size_t length, uint64_t seed);
@@ -336,7 +336,7 @@ static uint64_t thunk_t1ha2_stream128(const void *data, size_t len,
   return t1ha2_final(&ctx, &unused);
 }
 
-#ifdef T1HA_IA32_AVAILABLE
+#if T1HA_IA32_AVAILABLE
 
 unsigned bench(const char *caption,
                uint64_t (*hash)(const void *, size_t, uint64_t),
@@ -461,8 +461,7 @@ int main(int argc, const char *argv[]) {
   failed |= test("t1ha0_32le", t1ha0_32le, refval_32le);
   failed |= test("t1ha0_32be", t1ha0_32be, refval_32be);
 
-#ifdef T1HA_IA32_AVAILABLE
-
+#if T1HA_IA32_AVAILABLE
   const uint64_t features = x86_cpu_features();
   if (features & UINT32_C(0x02000000)) {
     failed |=

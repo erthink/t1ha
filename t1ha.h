@@ -43,9 +43,11 @@
 
 #pragma once
 #ifdef __cplusplus
+#include <climits>
 #include <cstddef>
 #include <cstdint>
 #else
+#include <limits.h>
 #include <stddef.h>
 #include <stdint.h>
 #endif
@@ -171,15 +173,24 @@
 #define T1HA_API
 #endif /* T1HA_API */
 
+#if defined(i386) || defined(__i386__) || defined(__i486__) ||                 \
+    defined(__i586__) || defined(__i686__) || defined(__i386) ||               \
+    defined(_M_IX86) || defined(_X86_) || defined(__THW_INTEL__) ||            \
+    defined(__I86__) || defined(__INTEL__) || defined(__x86_64) ||             \
+    defined(__x86_64__) || defined(__amd64__) || defined(__amd64) ||           \
+    defined(_M_X64)
+#define T1HA_IA32_AVAILABLE 1
+#else
+#define T1HA_IA32_AVAILABLE 0
+#endif /* x86 */
+
 #if defined(_M_IX86) || defined(_M_X64)
 #define T1HA_ALIGN_PREFIX __declspec(align(32)) /* required only for SIMD */
 #else
 #define T1HA_ALIGN_PREFIX
 #endif /* _MSC_VER */
 
-#if defined(__GNUC__) &&                                                       \
-    (defined(__i386) || defined(__x86_64__) || defined(i386) ||                \
-     defined(_X86_) || defined(__i386__) || defined(_X86_64_))
+#if defined(__GNUC__) && T1HA_IA32_AVAILABLE
 #define T1HA_ALIGN_SUFFIX                                                      \
   __attribute__((aligned(32))) /* required only for SIMD */
 #else
@@ -264,6 +275,17 @@ static __inline uint64_t t1ha(const void *data, size_t length, uint64_t seed) {
  *      used only in runtime, but should not be persist or transferred
  *      over a network. */
 
+uint64_t t1ha0_32le(const void *data, size_t length, uint64_t seed);
+uint64_t t1ha0_32be(const void *data, size_t length, uint64_t seed);
+
+#if T1HA_IA32_AVAILABLE && (!defined(_M_IX86) || _MSC_VER > 1800)
+uint64_t t1ha0_ia32aes_noavx(const void *data, size_t length, uint64_t seed);
+uint64_t t1ha0_ia32aes_avx(const void *data, size_t length, uint64_t seed);
+uint64_t t1ha0_ia32aes_avx2(const void *data, size_t length, uint64_t seed);
+#define T1HA0_RUNTIME_SELECT
+#endif /* T1HA_IA32_AVAILABLE */
+
+#ifdef T1HA0_RUNTIME_SELECT
 #ifdef __ELF__
 T1HA_API uint64_t t1ha0(const void *data, size_t length, uint64_t seed);
 #else
@@ -273,18 +295,21 @@ static __inline uint64_t t1ha0(const void *data, size_t length, uint64_t seed) {
   return t1ha0_funcptr(data, length, seed);
 }
 #endif /* __ELF__ */
-
-uint64_t t1ha0_32le(const void *data, size_t length, uint64_t seed);
-uint64_t t1ha0_32be(const void *data, size_t length, uint64_t seed);
-
-#if defined(__x86_64__) || (defined(_M_IX86) && _MSC_VER > 1800) ||            \
-    defined(_M_X64) || defined(i386) || defined(_X86_) || defined(__i386__) || \
-    defined(_X86_64_)
-#define T1HA_IA32_AVAILABLE
-uint64_t t1ha0_ia32aes_noavx(const void *data, size_t length, uint64_t seed);
-uint64_t t1ha0_ia32aes_avx(const void *data, size_t length, uint64_t seed);
-uint64_t t1ha0_ia32aes_avx2(const void *data, size_t length, uint64_t seed);
-#endif /* __i386__ || __x86_64__ */
+#elif __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
+static __inline uint64_t t1ha0(const void *data, size_t length, uint64_t seed) {
+  if (sizeof(size_t) > 4)
+    return t1ha1_be(data, length, seed);
+  else
+    return t1ha0_32be(data, length, seed);
+}
+#else
+static __inline uint64_t t1ha0(const void *data, size_t length, uint64_t seed) {
+  if (sizeof(size_t) > 4)
+    return t1ha1_le(data, length, seed);
+  else
+    return t1ha0_32le(data, length, seed);
+}
+#endif /* !T1HA0_RUNTIME_SELECT */
 
 #ifdef __cplusplus
 }

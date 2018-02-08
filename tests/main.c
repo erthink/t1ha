@@ -274,18 +274,16 @@ static const uint64_t refval_ia32aes_b[80] = {
 #include <intrin.h>
 #endif
 
-bool rdtscp_available;
-
-static uint64_t x86_cpu_features(void) {
+static uint64_t x86_cpu_features(bool *rdtscp_available) {
   uint32_t features = 0;
   uint32_t extended = 0;
-  rdtscp_available = false;
+  *rdtscp_available = false;
 #ifdef __GNUC__
   uint32_t eax, ebx, ecx, edx;
   const unsigned cpuid_max = __get_cpuid_max(0, NULL);
   if (cpuid_max >= 1) {
     __cpuid(0x80000001, eax, ebx, ecx, edx);
-    rdtscp_available = (edx & (1 << 27)) ? true : false;
+    *rdtscp_available = (edx & (1 << 27)) ? true : false;
     __cpuid_count(1, 0, eax, ebx, features, edx);
     if (cpuid_max >= 7)
       __cpuid_count(7, 0, eax, extended, ecx, edx);
@@ -296,7 +294,7 @@ static uint64_t x86_cpu_features(void) {
   const unsigned cpuid_max = info[0];
   if (cpuid_max >= 1) {
     __cpuid(info, 0x80000001);
-    rdtscp_available = info[3] & (1 << 27);
+    *rdtscp_available = (info[3] & (1 << 27)) ? true : false;
     __cpuidex(info, 1, 0);
     features = info[2];
     if (cpuid_max >= 7) {
@@ -461,7 +459,8 @@ int main(int argc, const char *argv[]) {
   failed |= test("t1ha0_32be", t1ha0_32be, refval_32be);
 
 #if T1HA_IA32_AVAILABLE
-  const uint64_t features = x86_cpu_features();
+  bool rdtscp_available;
+  const uint64_t features = x86_cpu_features(&rdtscp_available);
 
 #ifdef T1HA0_AESNI_AVAILABLE
   if (features & UINT32_C(0x02000000)) {
@@ -474,6 +473,8 @@ int main(int argc, const char *argv[]) {
             test("t1ha0_ia32aes_avx2", t1ha0_ia32aes_avx2, refval_ia32aes_b);
     }
   }
+#else
+  (void)features;
 #endif /* T1HA0_AESNI_AVAILABLE */
 
 #if !defined(__OPTIMIZE__) && (defined(_MSC_VER) && defined(_DEBUG))

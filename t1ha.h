@@ -90,8 +90,8 @@
     defined(__i386) || defined(_M_IX86) || defined(_X86_) ||                   \
     defined(__THW_INTEL__) || defined(__I86__) || defined(__INTEL__) ||        \
     defined(__x86_64) || defined(__x86_64__) || defined(__amd64__) ||          \
-    defined(__amd64) || defined(_M_X64) || defined(_WIN32) ||                  \
-    defined(_WIN64) || defined(__WIN32__) || defined(__TOS_WIN__) ||           \
+    defined(__amd64) || defined(_M_X64) || defined(__CYGWIN__) ||              \
+    defined(_WIN64) || defined(_WIN32) || defined(__TOS_WIN__) ||              \
     defined(__WINDOWS__)
 #define __BYTE_ORDER__ __ORDER_LITTLE_ENDIAN__
 
@@ -136,7 +136,7 @@
 #endif /* __CLANG_PREREQ */
 
 #ifndef __dll_export
-#if defined(_WIN32) || defined(__CYGWIN__)
+#if defined(_WIN32) || defined(_WIN64) || defined(__CYGWIN__)
 #if defined(__GNUC__) || __has_attribute(dllexport)
 #define __dll_export __attribute__((dllexport))
 #elif defined(_MSC_VER)
@@ -152,7 +152,7 @@
 #endif /* __dll_export */
 
 #ifndef __dll_import
-#if defined(_WIN32) || defined(__CYGWIN__)
+#if defined(_WIN32) || defined(_WIN64) || defined(__CYGWIN__)
 #if defined(__GNUC__) || __has_attribute(dllimport)
 #define __dll_import __attribute__((dllimport))
 #elif defined(_MSC_VER)

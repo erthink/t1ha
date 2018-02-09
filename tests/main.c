@@ -22,23 +22,7 @@
  *  3. This notice may not be removed or altered from any source distribution.
  */
 
-#include "../t1ha.h"
-
-#include <inttypes.h>
-#include <stdbool.h> /* for bool */
-#include <stdio.h>
-#include <stdlib.h>
-
-#if defined(_MSC_VER)
-#pragma warning(disable : 4711) /* function 'xyz' selected for                 \
-                                   automatic inline expansion */
-#pragma warning(disable : 4127) /* conditional expression is constant */
-#if _MSC_VER < 1900
-#define snprintf _snprintf
-#pragma warning(disable : 4996) /* '_snprintf': This function or variable      \
-                                   may be unsafe */
-#endif
-#endif /* MSVC */
+#include "bench.h"
 
 /* *INDENT-OFF* */
 /* clang-format off */

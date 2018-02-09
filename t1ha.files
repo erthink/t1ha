@@ -1,5 +1,6 @@
 .travis.yml
 LICENSE
+Makefile
 README.md
 circle.yml
 src/t1ha0.c
@@ -15,4 +16,6 @@ t1ha.h
 tests/4bench_t1ha0_ia32aes_avx.c
 tests/4bench_t1ha0_ia32aes_avx2.c
 tests/4bench_t1ha0_ia32aes_noavx.c
+tests/bench.h
 tests/main.c
+tests/mera.c

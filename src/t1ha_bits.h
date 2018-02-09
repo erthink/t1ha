@@ -71,12 +71,7 @@
 #endif
 
 #if !defined(UNALIGNED_OK)
-#if defined(i386) || defined(__i386__) || defined(__i486__) ||                 \
-    defined(__i586__) || defined(__i686__) || defined(__i386) ||               \
-    defined(_M_IX86) || defined(_X86_) || defined(__THW_INTEL__) ||            \
-    defined(__I86__) || defined(__INTEL__) || defined(__x86_64) ||             \
-    defined(__x86_64__) || defined(__amd64__) || defined(__amd64) ||           \
-    defined(_M_X64)
+#if T1HA_IA32_AVAILABLE || defined(__e2k__)
 #define UNALIGNED_OK 1
 #define PAGESIZE 4096
 #else
@@ -92,7 +87,7 @@
 
 #if __GNUC_PREREQ(4, 4) || defined(__clang__)
 
-#if defined(__i386__) || defined(__x86_64__)
+#if T1HA_IA32_AVAILABLE
 #include <cpuid.h>
 #include <x86intrin.h>
 #endif

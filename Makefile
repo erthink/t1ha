@@ -10,9 +10,9 @@ TARGET_ARCHe2k = $(shell (uname -m | grep -q -i -e e2k && echo yes || echo no))
 ifeq ($(TARGET_ARCHe2k),yes)
 TARGET_ARCHx86 = no
 CC = /home/admlcc/ecomp.rel-i-1/lcc_e
-#CFLAGS = -std=c99 -mcpu=elbrus-v3 -O0 -g
-CFLAGS = -std=c99 -mcpu=elbrus-v3 -O4 -fno-comb-oper
-#CFLAGS = -std=c99 -mcpu=elbrus-v3 -O4 -ffast -fno-comb-oper
+#CFLAGS = -std=c99 -mcpu=elbrus-v3 -O0 -g -ffast
+#CFLAGS = -std=c99 -mcpu=elbrus-v3 -O4 -fno-comb-oper
+CFLAGS = -std=c99 -mcpu=elbrus-v3 -O4 -g -ffast -fno-comb-oper
 CFLAGS_LIB ?= -Wall -ffunction-sections -fPIC $(CFLAGS) -fvisibility=hidden -Dt1ha_EXPORTS
 MAVX2 =
 MNO_AVX2 =

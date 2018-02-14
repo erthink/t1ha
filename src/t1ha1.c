@@ -70,8 +70,9 @@ uint64_t t1ha1_le(const void *data, size_t len, uint64_t seed) {
     const void *detent = (const uint8_t *)data + len - 31;
     do {
       const uint64_t *v = (const uint64_t *)data;
+      const char * v_nonaligned = (const char *)v;
       if (unlikely(need_align))
-        v = (const uint64_t *)memcpy(&align, v, 32);
+        v = (const uint64_t *)memcpy(align, v_nonaligned, 32);
 
       uint64_t w0 = fetch64_le(v + 0);
       uint64_t w1 = fetch64_le(v + 1);
@@ -148,8 +149,9 @@ uint64_t t1ha1_be(const void *data, size_t len, uint64_t seed) {
     const void *detent = (const uint8_t *)data + len - 31;
     do {
       const uint64_t *v = (const uint64_t *)data;
+      const char * v_nonaligned = (const char *)v;
       if (unlikely(need_align))
-        v = (const uint64_t *)memcpy(&align, v, 32);
+        v = (const uint64_t *)memcpy(align, v_nonaligned, 32);
 
       uint64_t w0 = fetch64_be(v + 0);
       uint64_t w1 = fetch64_be(v + 1);

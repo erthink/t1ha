@@ -657,3 +657,4 @@ static __always_inline t1ha_uint128_t mul128(t1ha_uint128_t x,
 #endif
   return r;
 }
+

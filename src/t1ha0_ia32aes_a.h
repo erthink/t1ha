@@ -137,6 +137,12 @@ uint64_t T1HA_IA32AES_NAME(const void *data, size_t len, uint64_t seed) {
   }
 
   const uint64_t *v = (const uint64_t *)data;
+#if !UNALIGNED_OK
+  uint64_t align[4];
+  const int need_align = (((uintptr_t)data) & 7) != 0;
+  if (unlikely(need_align))
+        v = (const uint64_t *)memcpy(align, v, len);
+#endif
   switch (len) {
   default:
     mixup64(&a, &b, *v++, prime_4);

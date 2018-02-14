@@ -76,7 +76,7 @@
     defined(_M_IX86) || defined(_X86_) || defined(__THW_INTEL__) ||            \
     defined(__I86__) || defined(__INTEL__) || defined(__x86_64) ||             \
     defined(__x86_64__) || defined(__amd64__) || defined(__amd64) ||           \
-    defined(_M_X64)
+    defined(_M_X64) || (defined(__e2k__) && !defined(__ALIGNED__))
 #define UNALIGNED_OK 1
 #define PAGESIZE 4096
 #else
@@ -92,8 +92,10 @@
 
 #if __GNUC_PREREQ(4, 4) || defined(__clang__)
 
-#if defined(__i386__) || defined(__x86_64__)
+#if defined(__i386__) || defined(__x86_64__) || defined(__e2k__)
+#ifndef __e2k__
 #include <cpuid.h>
+#endif
 #include <x86intrin.h>
 #endif
 
@@ -167,6 +169,10 @@
 #define mul_32x32_64(a, b) __emulu(a, b)
 #elif defined(_M_ARM)
 #define mul_32x32_64(a, b) _arm_umull(a, b)
+#endif
+
+#if defined(__e2k__)
+#define mul_64x64_high(a, b) __builtin_e2k_umulhd(a, b)
 #endif
 
 #pragma warning(pop)

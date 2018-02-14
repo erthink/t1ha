@@ -325,6 +325,10 @@ static uint64_t x86_cpu_features(void) {
   uint32_t features = 0;
   uint32_t extended = 0;
 #ifdef __GNUC__
+#ifdef __e2k__
+    features = 0x1A000000; /* enable AES-NI, AVX and no AVX2 */
+    extended = 0;
+#else
   uint32_t eax, ebx, ecx, edx;
   const unsigned cpuid_max = __get_cpuid_max(0, NULL);
   if (cpuid_max >= 1) {
@@ -332,6 +336,7 @@ static uint64_t x86_cpu_features(void) {
     if (cpuid_max >= 7)
       __cpuid_count(7, 0, eax, extended, ecx, edx);
   }
+#endif /* __e2k__ */
 #elif defined(_MSC_VER)
   int info[4];
   __cpuid(info, 0);

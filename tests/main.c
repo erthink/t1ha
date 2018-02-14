@@ -268,7 +268,9 @@ static const uint64_t refval_ia32aes_b[80] = {
 #if T1HA_IA32_AVAILABLE
 
 #ifdef __GNUC__
+#ifndef __e2k__
 #include <cpuid.h>
+#endif
 #include <x86intrin.h>
 #elif defined(_MSC_VER)
 #include <intrin.h>
@@ -279,6 +281,11 @@ static uint64_t x86_cpu_features(bool *rdtscp_available) {
   uint32_t extended = 0;
   *rdtscp_available = false;
 #ifdef __GNUC__
+#ifdef __e2k__
+    *rdtscp_available = true;
+    features = 0x1A000000; /* enable AES-NI, AVX and no AVX2 */
+    extended = 0;
+#else
   uint32_t eax, ebx, ecx, edx;
   const unsigned cpuid_max = __get_cpuid_max(0, NULL);
   if (cpuid_max >= 1) {
@@ -288,6 +295,7 @@ static uint64_t x86_cpu_features(bool *rdtscp_available) {
     if (cpuid_max >= 7)
       __cpuid_count(7, 0, eax, extended, ecx, edx);
   }
+#endif /* __e2k__ */
 #elif defined(_MSC_VER)
   int info[4];
   __cpuid(info, 0);
@@ -348,19 +356,27 @@ unsigned bench(const char *caption,
 
   while (1) {
     int unused[4];
+#ifdef __e2k__
+    asm volatile ("":::"memory");
+#else
 #ifdef _MSC_VER
     __cpuid(unused, 0);
 #else
     __cpuid(0, unused[0], unused[1], unused[2], unused[3]);
 #endif
+#endif
 
     start_tsc = __rdtscp(&start_cpu);
     hash(data, len, seed);
     stop_tsc = __rdtscp(&stop_cpu);
+#ifdef __e2k__
+    asm volatile ("":::"memory");
+#else
 #ifdef _MSC_VER
     __cpuid(unused, 0);
 #else
     __cpuid(0, unused[0], unused[1], unused[2], unused[3]);
+#endif
 #endif
 
     if (start_cpu != stop_cpu || stop_tsc <= start_tsc)
@@ -377,8 +393,13 @@ unsigned bench(const char *caption,
       break;
   }
 
+#ifdef __e2k__
+  printf("%7" PRIu64 " ticks, %7.3f clk/byte, %7.3f Gb/s @1.2GHz\n", min_ticks,
+         (double)min_ticks / len, 1.2 * len / min_ticks);
+#else
   printf("%7" PRIu64 " ticks, %7.3f clk/byte, %7.3f Gb/s @3GHz\n", min_ticks,
          (double)min_ticks / len, 3.0 * len / min_ticks);
+#endif
   fflush(NULL);
 
   return (min_ticks < INT32_MAX) ? (unsigned)min_ticks : UINT32_MAX;
@@ -400,7 +421,11 @@ static bool is_set(unsigned value, unsigned mask) {
 
 static void bench_size(const unsigned size, const char *caption,
                        const unsigned bench_flags) {
+#ifdef __e2k__
+  printf("\nSimple bench for e2k (%s keys, %u bytes):\n", caption, size);
+#else
   printf("\nSimple bench for x86 (%s keys, %u bytes):\n", caption, size);
+#endif
   const uint64_t seed = 42;
   char *buffer = malloc(size);
   for (unsigned i = 0; i < size; ++i)

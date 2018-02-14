@@ -105,7 +105,7 @@ uint64_t T1HA_IA32AES_NAME(const void *data, size_t len, uint64_t seed) {
     }
 
     x = _mm_add_epi64(_mm_aesdec_si128(x, _mm_aesenc_si128(y, x)), y);
-#if defined(__x86_64__) || defined(_M_X64)
+#if defined(__x86_64__) || defined(_M_X64) || defined(__e2k__)
 #if defined(__SSE4_1__) || defined(__AVX__)
     a = _mm_extract_epi64(x, 0);
     b = _mm_extract_epi64(x, 1);
@@ -129,7 +129,7 @@ uint64_t T1HA_IA32AES_NAME(const void *data, size_t len, uint64_t seed) {
 #endif
 #ifdef __AVX__
     _mm256_zeroall();
-#elif !(defined(_X86_64_) || defined(__x86_64__) || defined(_M_X64))
+#elif !(defined(_X86_64_) || defined(__x86_64__) || defined(_M_X64) || defined(__e2k__))
     _mm_empty();
 #endif
     data = v;
@@ -137,6 +137,12 @@ uint64_t T1HA_IA32AES_NAME(const void *data, size_t len, uint64_t seed) {
   }
 
   const uint64_t *v = (const uint64_t *)data;
+#if !UNALIGNED_OK
+  uint64_t align[4];
+  const int need_align = (((uintptr_t)data) & 7) != 0;
+  if (unlikely(need_align))
+        v = (const uint64_t *)memcpy(align, v, len);
+#endif
   switch (len) {
   default:
     mixup64(&a, &b, *v++, prime_4);

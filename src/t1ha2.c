@@ -81,8 +81,9 @@ loop(bool need_copy4align, uint64_t *__restrict buffer4align,
   const void *detent = (const uint8_t *)data + len - 31;
   do {
     const uint64_t *v = (const uint64_t *)data;
+    const char * v_nonaligned = (const char *)v;
     if (unlikely(need_copy4align))
-      v = (const uint64_t *)memcpy(buffer4align, v, 32);
+      v = (const uint64_t *)memcpy(buffer4align, v_nonaligned - 0, 32);
     update(s, v);
     data = (const uint64_t *)data + 4;
   } while (likely(data < detent));

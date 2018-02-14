@@ -178,11 +178,11 @@
     defined(_M_IX86) || defined(_X86_) || defined(__THW_INTEL__) ||            \
     defined(__I86__) || defined(__INTEL__) || defined(__x86_64) ||             \
     defined(__x86_64__) || defined(__amd64__) || defined(__amd64) ||           \
-    defined(_M_X64)
+    defined(_M_X64) || defined(__e2k__)
 #define T1HA_IA32_AVAILABLE 1
 #else
 #define T1HA_IA32_AVAILABLE 0
-#endif /* x86 */
+#endif /* x86 || e2k */
 
 #if defined(_M_IX86) || defined(_M_X64)
 #define T1HA_ALIGN_PREFIX __declspec(align(32)) /* required only for SIMD */
@@ -191,8 +191,13 @@
 #endif /* _MSC_VER */
 
 #if defined(__GNUC__) && T1HA_IA32_AVAILABLE
+#ifndef __e2k__
 #define T1HA_ALIGN_SUFFIX                                                      \
   __attribute__((aligned(32))) /* required only for SIMD */
+#else
+#define T1HA_ALIGN_SUFFIX                                                      \
+  __attribute__((aligned(16))) /* required only for SIMD */
+#endif
 #else
 #define T1HA_ALIGN_SUFFIX
 #endif /* GCC x86 */
@@ -278,7 +283,7 @@ static __inline uint64_t t1ha(const void *data, size_t length, uint64_t seed) {
 uint64_t t1ha0_32le(const void *data, size_t length, uint64_t seed);
 uint64_t t1ha0_32be(const void *data, size_t length, uint64_t seed);
 
-#if T1HA_IA32_AVAILABLE && (!defined(_M_IX86) || _MSC_VER > 1800)
+#if T1HA_IA32_AVAILABLE && (!defined(_M_IX86) || _MSC_VER > 1800 || defined(__e2k__))
 #define T1HA0_AESNI_AVAILABLE
 #define T1HA0_RUNTIME_SELECT
 uint64_t t1ha0_ia32aes_noavx(const void *data, size_t length, uint64_t seed);

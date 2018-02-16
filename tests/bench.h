@@ -22,6 +22,8 @@
  *  3. This notice may not be removed or altered from any source distribution.
  */
 
+#pragma once
+
 #include <inttypes.h>
 #include <limits.h>
 #include <stdbool.h>
@@ -30,6 +32,20 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+
+#if defined(_MSC_VER)
+#pragma warning(disable : 4711) /* function 'xyz' selected for                 \
+                                   automatic inline expansion */
+#pragma warning(disable : 4127) /* conditional expression is constant */
+#if _MSC_VER < 1900
+#define snprintf _snprintf
+#pragma warning(disable : 4996) /* '_snprintf': This function or variable      \
+                                   may be unsafe */
+#endif
+#if _MSC_VER > 1800
+#pragma warning(disable : 4464) /* relative include path contains '..' */
+#endif
+#endif /* MSVC */
 
 #include "../t1ha.h"
 

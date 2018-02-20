@@ -387,7 +387,9 @@ static unsigned clock_fallback(timestamp_t *now) {
 #define FALLBACK_UNITS "clk"
   *now = _Asm_mov_from_ar(_AREG_ITC);
 
-#elif (defined(__hppa__) || defined(__hppa)) && defined(__GNUC__)
+#elif (defined(__hppa__) || defined(__hppa) || defined(__hppa64__) ||          \
+       defined(__hppa64)) &&                                                   \
+    defined(__GNUC__)
 #define FALLBACK_UNITS "clk"
 #define FALLBACK_SOURCE "MFCTL(16)"
 #define FALLBACK_FLAGS (timestamp_clock_stable | timestamp_clock_cheap)

@@ -65,6 +65,7 @@ typedef struct {
   const char *units;
   const char *source;
   unsigned flags;
+  int cpunum;
 } mera_t;
 
 extern mera_t mera;

@@ -244,7 +244,7 @@ static int set_single_affinity(void) {
     defined(__WINDOWS__)
   return -1;
 #elif defined(__GLIBC__) || defined(__GNU_LIBRARY__) || defined(__ANDROID__)
-  const unsigned ncpu = sysconf(_SC_NPROCESSORS_CONF);
+  const int ncpu = sysconf(_SC_NPROCESSORS_CONF);
   const unsigned cpuset_size = CPU_ALLOC_SIZE(ncpu);
   cpu_set_t *affinity = CPU_ALLOC(ncpu);
   if (!affinity) {
@@ -265,7 +265,7 @@ static int set_single_affinity(void) {
     return -1;
   }
   CPU_FREE(affinity);
-  return 0;
+  return current_cpu;
 #elif defined(__APPLE__) || defined(__MACH__)
   return -1;
 #else
@@ -890,12 +890,14 @@ unsigned perf_rdpmc_finish(timestamp_t *now) {
 }
 #endif /* T1HA_IA32_AVAILABLE */
 
+#else
+#define perf_fd (-1)
 #endif /* __NR_perf_event_open */
 
 /*****************************************************************************/
 
 void mera_init(void) {
-  set_single_affinity();
+  mera.cpunum = set_single_affinity();
 
 #ifdef PR_SET_TSC
   int tsc_mode = PR_TSC_SIGSEGV;
@@ -1053,5 +1055,5 @@ static double fuse_convert(timestamp_t unused) {
   return 0;
 }
 
-mera_t mera = {fuse_timestamp, fuse_timestamp, fuse_convert,
-               "void",         "none",         false};
+mera_t mera = {
+    fuse_timestamp, fuse_timestamp, fuse_convert, "void", "none", 0, -1};

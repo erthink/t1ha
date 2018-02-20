@@ -291,33 +291,33 @@ static unsigned clock_fallback(timestamp_t *now) {
   unsigned coreid = 0;
 
 #if defined(__APPLE__) || defined(__MACH__)
-#define UNITS "ns"
-#define SOURCE "mach_absolute_time()"
-#define FLAGS 0
+#define FALLBACK_UNITS "ns"
+#define FALLBACK_SOURCE "mach_absolute_time()"
+#define FALLBACK_FLAGS 0
 #define RATIO runtime
 
   *now = mach_absolute_time();
 
 #elif defined(EMSCRIPTEN)
-#define UNITS "ns"
-#define SOURCE "emscripten_get_now()"
-#define FLAGS 0
+#define FALLBACK_UNITS "ns"
+#define FALLBACK_SOURCE "emscripten_get_now()"
+#define FALLBACK_FLAGS 0
 #define RATIO 1e6
   *now = (timestamp_t)(emscripten_get_now() * 1e6);
 
 #elif defined(__e2k__)
-#define UNITS "clk"
-#define SOURCE "RDTSCP"
-#define FLAGS (timestamp_clock_stable | timestamp_clock_cheap)
+#define FALLBACK_UNITS "clk"
+#define FALLBACK_SOURCE "RDTSCP"
+#define FALLBACK_FLAGS (timestamp_clock_stable | timestamp_clock_cheap)
 #define RATIO 1
   *now = __rdtscp(&coreid);
 
 #elif (defined(__powerpc64__) || defined(__ppc64__) || defined(__ppc64) ||     \
        defined(__powerpc64)) &&                                                \
     defined(__GNUC__)
-#define UNITS "clk"
-#define SOURCE "MFSPR(268)"
-#define FLAGS (timestamp_clock_stable | timestamp_clock_cheap)
+#define FALLBACK_UNITS "clk"
+#define FALLBACK_SOURCE "MFSPR(268)"
+#define FALLBACK_FLAGS (timestamp_clock_stable | timestamp_clock_cheap)
 #define RATIO 1
   uint64_t ticks;
   __asm __volatile("mfspr %0, 268" : "=r"(ticks));
@@ -326,17 +326,17 @@ static unsigned clock_fallback(timestamp_t *now) {
 #elif (defined(__powerpc__) || defined(__ppc__)) && defined(__GNUC__)
 /* A time-base timer, which is not always precisely a cycle-count. */
 #if UINTPTR_MAX > 0xffffFFFFul || ULONG_MAX > 0xffffFFFFul
-#define UNITS "tick"
-#define SOURCE "MFTB"
-#define FLAGS timestamp_clock_cheap
+#define FALLBACK_UNITS "tick"
+#define FALLBACK_SOURCE "MFTB"
+#define FALLBACK_FLAGS timestamp_clock_cheap
 #define RATIO 1
   uint64_t ticks;
   __asm __volatile("mftb  %0" : "=r"(ticks));
   *now = ticks;
 #else
-#define UNITS "tick"
-#define SOURCE "MFTB+MFTBU"
-#define FLAGS (timestamp_clock_stable | timestamp_clock_cheap)
+#define FALLBACK_UNITS "tick"
+#define FALLBACK_SOURCE "MFTB+MFTBU"
+#define FALLBACK_FLAGS (timestamp_clock_stable | timestamp_clock_cheap)
 #define RATIO 1
   unsigned long low, high_before, high_after;
   __asm __volatile("mftbu %0; mftb  %1; mftbu %2"
@@ -348,18 +348,18 @@ static unsigned clock_fallback(timestamp_t *now) {
 #endif
 
 #elif defined(__sparc_v9__) && defined(__GNUC__)
-#define UNITS "clk"
-#define SOURCE "tick register"
-#define FLAGS (timestamp_clock_stable | timestamp_clock_cheap)
+#define FALLBACK_UNITS "clk"
+#define FALLBACK_SOURCE "tick register"
+#define FALLBACK_FLAGS (timestamp_clock_stable | timestamp_clock_cheap)
 #define RATIO 1
   uint64_t cycles;
   __asm __volatile("rd %%tick, %0" : "=r"(cycles));
   *now = cycles;
 
 #elif (defined(__sparc__) || defined(__sparc)) && defined(__GNUC__)
-#define UNITS "clk"
-#define SOURCE "tick register"
-#define FLAGS (timestamp_clock_stable | timestamp_clock_cheap)
+#define FALLBACK_UNITS "clk"
+#define FALLBACK_SOURCE "tick register"
+#define FALLBACK_FLAGS (timestamp_clock_stable | timestamp_clock_cheap)
 #define RATIO 1
   uint64_t ticks;
   __asm __volatile(".byte 0x83, 0x41, 0x00, 0x00; mov %%g1, %0"
@@ -367,30 +367,30 @@ static unsigned clock_fallback(timestamp_t *now) {
   *now = ticks;
 
 #elif (defined(__ia64__) || defined(__ia64)) && defined(__GNUC__)
-#define UNITS "clk"
-#define SOURCE "ITC"
-#define FLAGS (timestamp_clock_stable | timestamp_clock_cheap)
+#define FALLBACK_UNITS "clk"
+#define FALLBACK_SOURCE "ITC"
+#define FALLBACK_FLAGS (timestamp_clock_stable | timestamp_clock_cheap)
 #define RATIO 1
   uint64_t ticks;
   __asm __volatile("mov %0 = ar.itc" : "=r"(ticks));
   *now = ticks;
 #elif (defined(__EDG_VERSION) || defined(__ECC)) && defined(__ia64__)
-#define UNITS "clk"
-#define SOURCE "ITC"
-#define FLAGS (timestamp_clock_stable | timestamp_clock_cheap)
+#define FALLBACK_UNITS "clk"
+#define FALLBACK_SOURCE "ITC"
+#define FALLBACK_FLAGS (timestamp_clock_stable | timestamp_clock_cheap)
 #define RATIO 1
   *now = __getReg(_IA64_REG_AR_ITC);
 #elif defined(__hpux) && defined(__ia64)
 #define RATIO 1
-#define SOURCE "ITC"
-#define FLAGS (timestamp_clock_stable | timestamp_clock_cheap)
-#define UNITS "clk"
+#define FALLBACK_SOURCE "ITC"
+#define FALLBACK_FLAGS (timestamp_clock_stable | timestamp_clock_cheap)
+#define FALLBACK_UNITS "clk"
   *now = _Asm_mov_from_ar(_AREG_ITC);
 
 #elif (defined(__hppa__) || defined(__hppa)) && defined(__GNUC__)
-#define UNITS "clk"
-#define SOURCE "MFCTL(16)"
-#define FLAGS (timestamp_clock_stable | timestamp_clock_cheap)
+#define FALLBACK_UNITS "clk"
+#define FALLBACK_SOURCE "MFCTL(16)"
+#define FALLBACK_FLAGS (timestamp_clock_stable | timestamp_clock_cheap)
 #define RATIO 1
   uint64_t ticks;
 #ifdef __GNUC__
@@ -405,36 +405,36 @@ static unsigned clock_fallback(timestamp_t *now) {
  * The frequency is fixed, typically in the range 1-50MHz.  It can be
  * read at CNTFRQ special register.  We assume the OS has set up
  * the virtual timer properly. */
-#define UNITS "tick"
-#define SOURCE "VirtualTimer"
-#define FLAGS timestamp_clock_cheap
+#define FALLBACK_UNITS "tick"
+#define FALLBACK_SOURCE "VirtualTimer"
+#define FALLBACK_FLAGS timestamp_clock_cheap
 #define RATIO 1
   uint64_t virtual_timer;
   __asm __volatile("mrs %0, cntvct_el0" : "=r"(virtual_timer));
   *now = virtual_timer;
 
 #elif defined(__s390__)
-#define UNITS "clk"
-#define SOURCE "STCKE"
-#define FLAGS (timestamp_clock_stable | timestamp_clock_cheap)
+#define FALLBACK_UNITS "clk"
+#define FALLBACK_SOURCE "STCKE"
+#define FALLBACK_FLAGS (timestamp_clock_stable | timestamp_clock_cheap)
 #define RATIO 1
   uint8_t clk[16];
   __asm __volatile("stcke %0" : "=Q"(&clk) : : "cc");
   *now = *((unsigned long long *)&clk[1]) >> 2;
 
 #elif defined(__alpha__)
-#define UNITS "clk"
-#define SOURCE "RPCC"
-#define FLAGS (timestamp_clock_stable | timestamp_clock_cheap)
+#define FALLBACK_UNITS "clk"
+#define FALLBACK_SOURCE "RPCC"
+#define FALLBACK_FLAGS (timestamp_clock_stable | timestamp_clock_cheap)
 #define RATIO 1
   unsigned long cycles;
   __asm__ __volatile("rpcc %0" : "=r"(cycles));
   *now = cycles & 0xFFFFffff;
 
 #elif defined(TIMEBASE_SZ) || defined(__OS400__)
-#define UNITS "ns"
-#define SOURCE "read_wall_time(TIMEBASE_SZ)"
-#define FLAGS (timestamp_clock_stable | timestamp_clock_cheap)
+#define FALLBACK_UNITS "ns"
+#define FALLBACK_SOURCE "read_wall_time(TIMEBASE_SZ)"
+#define FALLBACK_FLAGS (timestamp_clock_stable | timestamp_clock_cheap)
 #define RATIO runtime
   timebasestruct_t tb;
   if (read_wall_time(&tb, TIMEBASE_SZ) != 0) {
@@ -446,17 +446,17 @@ static unsigned clock_fallback(timestamp_t *now) {
   u->u32.l = tb.tb_low;
 
 #elif defined(__sun__) || defined(__sun)
-#define UNITS "ns"
-#define SOURCE "gethrtime()"
-#define FLAGS 0
+#define FALLBACK_UNITS "ns"
+#define FALLBACK_SOURCE "gethrtime()"
+#define FALLBACK_FLAGS 0
 #define RATIO 1
   *now = gethrtime();
 
 #elif defined(_WIN64) || defined(_WIN32) || defined(__TOS_WIN__) ||            \
     defined(__WINDOWS__)
-#define UNITS "ns"
-#define SOURCE "QueryPerformanceCounter()"
-#define FLAGS 0
+#define FALLBACK_UNITS "ns"
+#define FALLBACK_SOURCE "QueryPerformanceCounter()"
+#define FALLBACK_FLAGS 0
 #define RATIO runtime
   if (!QueryPerformanceCounter((LARGE_INTEGER *)now)) {
     perror("QueryPerformanceCounter()");
@@ -464,9 +464,9 @@ static unsigned clock_fallback(timestamp_t *now) {
   }
 
 #elif defined(CLOCK_SGI_CYCLE)
-#define UNITS "ns"
-#define SOURCE "clock_gettime(CLOCK_SGI_CYCLE)"
-#define FLAGS 0
+#define FALLBACK_UNITS "ns"
+#define FALLBACK_SOURCE "clock_gettime(CLOCK_SGI_CYCLE)"
+#define FALLBACK_FLAGS 0
 #define RATIO 1
   struct timespec ts;
   if (clock_gettime(CLOCK_SGI_CYCLE, &ts) == 0) {
@@ -477,9 +477,9 @@ static unsigned clock_fallback(timestamp_t *now) {
   }
 
 #elif defined(CLOCK_MONOTONIC_RAW)
-#define UNITS "ns"
-#define SOURCE "clock_gettime(CLOCK_MONOTONIC_RAW)"
-#define FLAGS 0
+#define FALLBACK_UNITS "ns"
+#define FALLBACK_SOURCE "clock_gettime(CLOCK_MONOTONIC_RAW)"
+#define FALLBACK_FLAGS 0
 #define RATIO 1
   struct timespec ts;
   if (clock_gettime(CLOCK_MONOTONIC_RAW, &ts) == 0) {
@@ -490,9 +490,9 @@ static unsigned clock_fallback(timestamp_t *now) {
   }
 
 #elif defined(CLOCK_MONOTONIC)
-#define UNITS "ns"
-#define SOURCE "clock_gettime(CLOCK_MONOTONIC)"
-#define FLAGS 0
+#define FALLBACK_UNITS "ns"
+#define FALLBACK_SOURCE "clock_gettime(CLOCK_MONOTONIC)"
+#define FALLBACK_FLAGS 0
 #define RATIO 1
   struct timespec ts;
   if (clock_gettime(CLOCK_MONOTONIC, &ts) == 0) {
@@ -503,9 +503,9 @@ static unsigned clock_fallback(timestamp_t *now) {
   }
 
 #else
-#define UNITS "ns"
-#define SOURCE "gettimeofday()"
-#define FLAGS 0
+#define FALLBACK_UNITS "ns"
+#define FALLBACK_SOURCE "gettimeofday()"
+#define FALLBACK_FLAGS 0
 #define RATIO 1e3
   struct timeval tv;
   gettimeofday(&tv, NULL);
@@ -1038,9 +1038,9 @@ void mera_init(void) {
 
   mera.start = mera.finish = clock_fallback;
   mera.convert = convert_fallback;
-  mera.units = UNITS;
-  mera.source = SOURCE;
-  mera.flags = FLAGS;
+  mera.units = FALLBACK_UNITS;
+  mera.source = FALLBACK_SOURCE;
+  mera.flags = FALLBACK_FLAGS;
 }
 
 static unsigned fuse_timestamp(timestamp_t *unused) {

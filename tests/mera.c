@@ -575,24 +575,25 @@ static double convert_fallback(timestamp_t timestamp) {
 
 static double convert_1to1(timestamp_t timestamp) { return (double)timestamp; }
 
-#if (defined(__ARM_ARCH) && __ARM_ARCH >= 6) || defined(_M_ARM64)
-static void clock_pmccntr(timestamp_t *now) {
+#if (defined(__ARM_ARCH) && __ARM_ARCH > 5 && __ARM_ARCH < 8) || defined(_M_ARM)
+static unsigned clock_pmccntr(timestamp_t *now) {
   compiler_barrier();
-#ifdef __GNUC__
+#ifdef _M_ARM
+  *now = __rdpmccntr64();
+#else
   unsigned long pmccntr;
   __asm __volatile("mrc p15, 0, %0, c9, c13, 0" : "=r"(pmccntr));
   *now = (uint64_t)pmccntr;
-#else
-  *now = __rdpmccntr64();
 #endif
   compiler_barrier();
+  return 0;
 }
 
 static double convert_pmccntr_x64(timestamp_t timestamp) {
   /* The counter is set up to count every 64th cycle */
   return timestamp * 64.0;
 }
-#endif /* __ARM_ARCH >= 6 || _M_ARM64 */
+#endif /* __ARM_ARCH >= 6 || _M_ARM */
 
 #if defined(__mips__) && defined(PROT_READ) && defined(MAP_SHARED)
 static volatile uint64_t *mips_tsc_addr;
@@ -920,20 +921,20 @@ void mera_init(void) {
     perror("prctl(PR_SET_TSC, PR_TSC_ENABLE)");
 #endif /* PR_SET_TSC */
 
-#if (defined(__ARM_ARCH) && __ARM_ARCH >= 6) || defined(_M_ARM64)
+#if (defined(__ARM_ARCH) && __ARM_ARCH > 5 && __ARM_ARCH < 8) || defined(_M_ARM)
   uint32_t pmuseren;
 /* Read the user mode perf monitor counter access permissions. */
-#ifdef __GNUC__
-  __asm("mrc p15, 0, %0, c9, c14, 0" : "=r"(pmuseren));
-#else
+#ifdef _M_ARM
   pmuseren = _MoveFromCoprocessor(15, 0, 9, 14, 0);
+#else
+  __asm("mrc p15, 0, %0, c9, c14, 0" : "=r"(pmuseren));
 #endif
   if (1 & pmuseren /* Is it allowed for user mode code? */) {
     uint32_t pmcntenset;
-#ifdef __GNUC__
-    __asm("mrc p15, 0, %0, c9, c12, 1" : "=r"(pmcntenset));
-#else
+#ifdef _M_ARM
     pmcntenset = _MoveFromCoprocessor(15, 0, 9, 12, 1);
+#else
+    __asm("mrc p15, 0, %0, c9, c12, 1" : "=r"(pmcntenset));
 #endif
     if ((pmcntenset & 0x80000000ul /* Is it counting? */) &&
         probe(clock_pmccntr, clock_pmccntr) == 0) {
@@ -944,7 +945,7 @@ void mera_init(void) {
       mera.flags = timestamp_clock_stable | timestamp_clock_cheap;
     }
   }
-#endif /* __ARM_ARCH >= 6 || _M_ARM64 */
+#endif /* (__ARM_ARCH > 5 && __ARM_ARCH < 8) || _M_ARM */
 
 #if defined(__mips__) && defined(PROT_READ) && defined(MAP_SHARED)
   uint64_t *mips_tsc_addr;

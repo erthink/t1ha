@@ -249,3 +249,19 @@ retry:
     }
   }
 }
+
+double bench_mats(void) { return measure(NULL, NULL, 0, 0); }
+
+void bench(const char *caption,
+           uint64_t (*hash)(const void *, size_t, uint64_t), const void *data,
+           unsigned len, uint64_t seed) {
+
+  printf("%-24s: ", caption);
+  fflush(NULL);
+
+  double value = measure(hash, data, len, seed);
+
+  printf("%10.3f %s/hash, %6.3f %s/byte, %6.3f byte/%s\n\n\n", value,
+         mera.units, value / len, mera.units, len / value, mera.units);
+  fflush(NULL);
+}

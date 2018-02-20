@@ -249,48 +249,6 @@ static const uint64_t refval_ia32aes_b[80] = {
 /* *INDENT-ON* */
 /* clang-format on */
 
-#if T1HA_IA32_AVAILABLE
-
-#ifdef __GNUC__
-#include <cpuid.h>
-#include <x86intrin.h>
-#elif defined(_MSC_VER)
-#include <intrin.h>
-#endif
-
-static uint64_t x86_cpu_features(bool *rdtscp_available) {
-  uint32_t features = 0;
-  uint32_t extended = 0;
-  *rdtscp_available = false;
-#ifdef __GNUC__
-  uint32_t eax, ebx, ecx, edx;
-  const unsigned cpuid_max = __get_cpuid_max(0, NULL);
-  if (cpuid_max >= 1) {
-    __cpuid(0x80000001, eax, ebx, ecx, edx);
-    *rdtscp_available = (edx & (1 << 27)) ? true : false;
-    __cpuid_count(1, 0, eax, ebx, features, edx);
-    if (cpuid_max >= 7)
-      __cpuid_count(7, 0, eax, extended, ecx, edx);
-  }
-#elif defined(_MSC_VER)
-  int info[4];
-  __cpuid(info, 0);
-  const unsigned cpuid_max = info[0];
-  if (cpuid_max >= 1) {
-    __cpuid(info, 0x80000001);
-    *rdtscp_available = (info[3] & (1 << 27)) ? true : false;
-    __cpuidex(info, 1, 0);
-    features = info[2];
-    if (cpuid_max >= 7) {
-      __cpuidex(info, 7, 0);
-      extended = info[1];
-    }
-  }
-#endif
-  return features | (uint64_t)extended << 32;
-}
-#endif /* T1HA_IA32_AVAILABLE */
-
 /***************************************************************************/
 
 static uint64_t thunk_t1ha2_atonce128(const void *data, size_t len,
@@ -314,58 +272,6 @@ static uint64_t thunk_t1ha2_stream128(const void *data, size_t len,
   t1ha2_update(&ctx, data, len);
   uint64_t unused;
   return t1ha2_final(&ctx, &unused);
-}
-
-#if T1HA_IA32_AVAILABLE
-unsigned bench(const char *caption,
-               uint64_t (*hash)(const void *, size_t, uint64_t),
-               const void *data, unsigned len, uint64_t seed) {
-
-  printf("%-24s: ", caption);
-  fflush(NULL);
-
-  uint64_t min_ticks = UINT64_MAX;
-  unsigned stable_counter = 0;
-
-  unsigned start_cpu, stop_cpu;
-  uint64_t start_tsc, stop_tsc;
-
-  while (1) {
-    int unused[4];
-#ifdef _MSC_VER
-    __cpuid(unused, 0);
-#else
-    __cpuid(0, unused[0], unused[1], unused[2], unused[3]);
-#endif
-
-    start_tsc = __rdtscp(&start_cpu);
-    hash(data, len, seed);
-    stop_tsc = __rdtscp(&stop_cpu);
-#ifdef _MSC_VER
-    __cpuid(unused, 0);
-#else
-    __cpuid(0, unused[0], unused[1], unused[2], unused[3]);
-#endif
-
-    if (start_cpu != stop_cpu || stop_tsc <= start_tsc)
-      continue;
-
-    uint64_t ticks = stop_tsc - start_tsc;
-    if (min_ticks > ticks) {
-      min_ticks = ticks;
-      stable_counter = 0;
-      continue;
-    }
-
-    if (++stable_counter == 10000)
-      break;
-  }
-
-  printf("%7" PRIu64 " ticks, %7.3f clk/byte, %7.3f Gb/s @3GHz\n", min_ticks,
-         (double)min_ticks / len, 3.0 * len / min_ticks);
-  fflush(NULL);
-
-  return (min_ticks < INT32_MAX) ? (unsigned)min_ticks : UINT32_MAX;
 }
 
 enum bench_flags {
@@ -424,13 +330,12 @@ static void bench_size(const unsigned size, const char *caption,
 
   free(buffer);
 }
-#endif /* T1HA_IA32_AVAILABLE */
 
 int main(int argc, const char *argv[]) {
   (void)argc;
   (void)argv;
-  bool failed = false;
 
+  bool failed = false;
   skip = true;
   failed |= test("t1ha2_atonce", t1ha2_atonce, refval_2atonce);
   failed |= test("t1ha2_atonce128", thunk_t1ha2_atonce128, refval_2atonce128);
@@ -442,46 +347,57 @@ int main(int argc, const char *argv[]) {
   failed |= test("t1ha0_32le", t1ha0_32le, refval_32le);
   failed |= test("t1ha0_32be", t1ha0_32be, refval_32be);
 
-#if T1HA_IA32_AVAILABLE
-  bool rdtscp_available;
-  const uint64_t features = x86_cpu_features(&rdtscp_available);
-
 #ifdef T1HA0_AESNI_AVAILABLE
-  if (features & UINT32_C(0x02000000)) {
+  if (ia32_cpu_features.basic.ecx & UINT32_C(0x02000000)) {
     failed |=
         test("t1ha0_ia32aes_noavx", t1ha0_ia32aes_noavx, refval_ia32aes_a);
-    if ((features & UINT32_C(0x1A000000)) == UINT32_C(0x1A000000)) {
+    if ((ia32_cpu_features.basic.ecx & UINT32_C(0x1A000000)) ==
+        UINT32_C(0x1A000000)) {
       failed |= test("t1ha0_ia32aes_avx", t1ha0_ia32aes_avx, refval_ia32aes_a);
-      if ((features >> 32) & 32)
+      if (ia32_cpu_features.extended_7.ebx & 32)
         failed |=
             test("t1ha0_ia32aes_avx2", t1ha0_ia32aes_avx2, refval_ia32aes_b);
     }
   }
-#else
-  (void)features;
+#endif /* T1HA0_AESNI_AVAILABLE */
+
+  printf("\nPreparing to benchmarking...\n");
+  fflush(NULL);
+  mera_init();
+  if (mera.cpunum >= 0)
+    printf(" - running on CPU#%d\n", mera.cpunum);
+  printf(" - use %s as clock source for benchmarking\n", mera.source);
+  printf(" - assume it %s and %s\n",
+         (mera.flags & timestamp_clock_cheap) ? "cheap" : "costly",
+         (mera.flags & timestamp_clock_stable) ? "stable" : "FLOATING!");
+  fflush(NULL);
+
+  // mats = MeasurAble TimeSlice
+  double mats = bench_mats();
+  printf("Measure granularity and overhead: %g %s, %g iteration/%s.\n", mats,
+         mera.units, 1 / mats, mera.units);
+  fflush(NULL);
+  unsigned bench_all = ~0u;
+
+#ifdef T1HA0_AESNI_AVAILABLE
+  if ((ia32_cpu_features.basic.ecx & UINT32_C(0x02000000)) == 0)
+    bench_all -= bench_aes;
+  if ((ia32_cpu_features.basic.ecx & UINT32_C(0x1A000000)) !=
+      UINT32_C(0x1A000000))
+    bench_all -= bench_avx;
+  if ((ia32_cpu_features.extended_7.ebx & 32) == 0)
+    bench_all -= bench_avx2;
 #endif /* T1HA0_AESNI_AVAILABLE */
 
 #if !defined(__OPTIMIZE__) && (defined(_MSC_VER) && defined(_DEBUG))
+  bench_size(1, "Non-optimized/Debug", bench_all);
   printf("\nNon-optimized/Debug build, skip benchmark\n");
 #else
-  if (!rdtscp_available) {
-    printf("\nNo RDTSCP available on CPU, skip benchmark\n");
-  } else {
-    unsigned bench_all = ~0u;
-    if ((features & UINT32_C(0x02000000)) == 0)
-      bench_all -= bench_aes;
-    if ((features & UINT32_C(0x1A000000)) != UINT32_C(0x1A000000))
-      bench_all -= bench_avx;
-    if (((features >> 32) & 32) == 0)
-      bench_all -= bench_avx2;
-
-    bench_size(5, "tiny", bench_all);
-    bench_size(31, "small", bench_all & ~(bench_be | bench_32));
-    bench_size(1024, "medium", bench_all & ~(bench_be | bench_32));
-    bench_size(1024 * 256, "large", bench_all);
-  }
+  bench_size(5, "tiny", bench_all);
+  bench_size(31, "small", bench_all & ~(bench_be | bench_32));
+  bench_size(1024, "medium", bench_all & ~(bench_be | bench_32));
+  bench_size(1024 * 256, "large", bench_all);
 #endif /* __OPTIMIZE__ */
-#endif /* T1HA_IA32_AVAILABLE */
 
   return failed ? EXIT_FAILURE : EXIT_SUCCESS;
 }

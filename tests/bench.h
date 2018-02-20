@@ -96,3 +96,10 @@ typedef struct _ia32_cpu_features {
 
 extern ia32_cpu_features_t ia32_cpu_features;
 #endif /* T1HA_IA32_AVAILABLE */
+
+/*****************************************************************************/
+
+double bench_mats(void);
+void bench(const char *caption,
+           uint64_t (*hash)(const void *, size_t, uint64_t), const void *data,
+           unsigned len, uint64_t seed);

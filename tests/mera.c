@@ -173,9 +173,8 @@ static __inline void compiler_barrier(void) {
 
 #if defined(_WIN64) || defined(_WIN32) || defined(__TOS_WIN__) ||              \
     defined(__WINDOWS__)
-static unsigned seh_deside() {
-  switch (
-      GetExceptionCode() /* fatal error C1001: An internal error has occurred in the compiler */) {
+static unsigned seh_filter(unsigned exception_code) {
+  switch (exception_code) {
   case EXCEPTION_ILLEGAL_INSTRUCTION:
   case EXCEPTION_PRIV_INSTRUCTION:
   case EXCEPTION_ACCESS_VIOLATION:
@@ -232,7 +231,7 @@ static int probe(unsigned (*start)(timestamp_t *),
 
 #if defined(_WIN64) || defined(_WIN32) || defined(__TOS_WIN__) ||              \
     defined(__WINDOWS__)
-  } __except (EXCEPTION_EXECUTE_HANDLER /* seh_deside() */) {
+  } __except (seh_filter(GetExceptionCode())) {
     return -1;
   }
 #endif

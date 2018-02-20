@@ -254,14 +254,17 @@ static int set_single_affinity(void) {
   const int current_cpu = sched_getcpu();
   if (current_cpu < 0) {
     perror("sched_getcpu()");
+    CPU_FREE(affinity);
     return -1;
   }
   CPU_ZERO_S(cpuset_size, affinity);
   CPU_SET_S(current_cpu, cpuset_size, affinity);
   if (sched_setaffinity(0, sizeof(affinity), affinity)) {
     perror("sched_setaffinity()");
+    CPU_FREE(affinity);
     return -1;
   }
+  CPU_FREE(affinity);
   return 0;
 #elif defined(__APPLE__) || defined(__MACH__)
   return -1;

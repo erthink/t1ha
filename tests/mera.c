@@ -806,8 +806,12 @@ static void fetch_cpu_features(void) {
 /*****************************************************************************/
 
 #ifdef __NR_perf_event_open
-static int perf_fd;
+static int perf_fd, perf_error;
+#if T1HA_IA32_AVAILABLE
 static const struct perf_event_mmap_page volatile *perf_page;
+#else
+#define perf_page NULL
+#endif
 static long perf_event_open(struct perf_event_attr *event_attr, pid_t pid,
                             int cpu, int group_fd, unsigned long flags) {
   return syscall(__NR_perf_event_open, event_attr, pid, cpu, group_fd, flags);
@@ -840,24 +844,30 @@ static int perf_setup(void) {
   perf_fd = perf_event_open(&attr, 0 /* current process */, -1 /* any cpu */,
                             -1 /* no group */, PERF_FLAG_FD_CLOEXEC);
   if (perf_fd < 0) {
-    perror("perf_event_open()");
+    perf_error = errno;
+    if (perf_error != EACCES /* will handle later */)
+      perror("perf_event_open()");
     return -1;
   }
 
+#if T1HA_IA32_AVAILABLE
   perf_page = (struct perf_event_mmap_page *)mmap(
       NULL, getpagesize(), PROT_WRITE | PROT_READ, MAP_SHARED, perf_fd, 0);
   if (perf_page == MAP_FAILED) {
+    perf_error = errno;
     perror("mmap(perf_event_mmap_page)");
-    close(perf_fd);
-    return -2;
+    perf_page = NULL;
   }
+#endif /* T1HA_IA32_AVAILABLE */
 
   if (ioctl(perf_fd, PERF_EVENT_IOC_ENABLE, 0) /* Start counters */) {
+    perf_error = errno;
     perror("ioctl(PERF_EVENT_IOC_ENABLE)");
     close(perf_fd);
     perf_fd = -1;
-    return -3;
+    return -1;
   }
+  perf_error = 0;
   return 0;
 }
 
@@ -897,6 +907,7 @@ unsigned perf_rdpmc_finish(timestamp_t *now) {
 /*****************************************************************************/
 
 void mera_init(void) {
+  mera.flags = 0;
   mera.cpunum = set_single_affinity();
 
 #ifdef PR_SET_TSC
@@ -931,7 +942,6 @@ void mera_init(void) {
       mera.units = "clk";
       mera.source = "PMCCNTR";
       mera.flags = timestamp_clock_stable | timestamp_clock_cheap;
-      return;
     }
   }
 #endif /* __ARM_ARCH >= 6 || _M_ARM64 */
@@ -956,91 +966,88 @@ void mera_init(void) {
         mera.units = "clk";
         mera.source = "ZBUS-Timer(0x10030000)";
         mera.flags = timestamp_clock_stable | timestamp_clock_cheap;
-        return;
       }
     }
   }
 #endif /* MIPS */
 
 #if __NR_perf_event_open
-  bool perf_available = false;
   if (perf_setup() == 0) {
 #if T1HA_IA32_AVAILABLE
-    if (perf_page->cap_bit0_is_deprecated && perf_page->cap_user_rdpmc &&
-        perf_page->index) {
-      perf_rdpmc_index = perf_page->index - 1;
-      if (probe(perf_rdpmc_start, perf_rdpmc_finish) == 0) {
-        mera.convert = convert_1to1;
-        mera.units = "clk";
-        mera.flags = timestamp_clock_stable | timestamp_clock_cheap;
-        mera.start = perf_rdpmc_start;
-        mera.finish = perf_rdpmc_finish;
-        mera.source = "RDPMC_perf";
-        return;
+    if (perf_page) {
+      if (perf_page->cap_bit0_is_deprecated && perf_page->cap_user_rdpmc &&
+          perf_page->index) {
+        perf_rdpmc_index = perf_page->index - 1;
+        if (probe(perf_rdpmc_start, perf_rdpmc_finish) == 0) {
+          mera.convert = convert_1to1;
+          mera.units = "clk";
+          mera.flags = timestamp_clock_stable | timestamp_clock_cheap;
+          mera.start = perf_rdpmc_start;
+          mera.finish = perf_rdpmc_finish;
+          mera.source = "RDPMC_perf";
+        }
+        munmap((void *)perf_page, getpagesize());
+        perf_page = NULL;
       }
     }
 #endif /* #T1HA_IA32_AVAILABLE */
-    if (probe(clock_perf, clock_perf) == 0)
-      perf_available = true;
+    if (probe(clock_perf, clock_perf) != 0) {
+      close(perf_fd);
+      perf_fd = -1;
+    }
   }
-#else
-#define perf_available false
 #endif /* __NR_perf_event_open */
 
 #if T1HA_IA32_AVAILABLE && !defined(__native_client__)
   fetch_cpu_features();
-  if (ia32_cpu_features.basic.edx & (1 << 4)) {
+  if (!mera.flags && (ia32_cpu_features.basic.edx & (1 << 4))) {
     mera.convert = convert_1to1;
+    mera.flags = timestamp_clock_stable | timestamp_clock_cheap;
     mera.units = "clk";
     if (probe(clock_rdpmc_start, clock_rdpmc_finish) == 0) {
       mera.start = clock_rdpmc_start;
       mera.finish = clock_rdpmc_finish;
       mera.source = "RDPMC_40000001";
-      mera.flags = timestamp_clock_stable | timestamp_clock_cheap;
-      return;
-    }
-
-    mera.flags = timestamp_clock_stable | timestamp_clock_cheap;
-    if (ia32_cpu_features.extended_80000007.edx & (1 << 8)) {
-      /* The TSC rate is invariant, i.e. not a CPU cycles! */
-      mera.flags -= timestamp_clock_stable;
-      mera.units = "tick";
-    }
-
-    if (!perf_available || (mera.flags & timestamp_clock_stable)) {
+    } else {
+      if (ia32_cpu_features.extended_80000007.edx & (1 << 8)) {
+        /* The TSC rate is invariant, i.e. not a CPU cycles! */
+        mera.flags -= timestamp_clock_stable;
+        mera.units = "tick";
+      }
       if ((ia32_cpu_features.extended_80000001.edx & (1 << 27)) &&
           probe(clock_rdtscp_start, clock_rdtscp_fihish) == 0) {
         mera.start = clock_rdtscp_start;
         mera.finish = clock_rdtscp_fihish;
         mera.source = "RDTSCP";
-        return;
-      }
-      if (probe(clock_rdtsc_start, clock_rdtsc_finish)) {
+      } else if (probe(clock_rdtsc_start, clock_rdtsc_finish)) {
         mera.start = clock_rdtsc_start;
         mera.finish = clock_rdtsc_finish;
         mera.source = "RDTSC";
-        return;
       }
     }
   }
 #endif /* T1HA_IA32_AVAILABLE */
 
 #if __NR_perf_event_open
-  if (perf_available) {
-    mera.start = mera.finish = clock_perf;
-    mera.convert = convert_1to1;
-    mera.units = "clk";
-    mera.source = "PERF_COUNT_HW_CPU_CYCLES";
-    mera.flags = timestamp_clock_stable;
-    return;
+  if ((mera.flags & timestamp_clock_stable) == 0) {
+    if (perf_fd >= 0) {
+      mera.start = mera.finish = clock_perf;
+      mera.convert = convert_1to1;
+      mera.units = "clk";
+      mera.source = "PERF_COUNT_HW_CPU_CYCLES";
+      mera.flags = timestamp_clock_stable;
+    }
   }
 #endif /* __NR_perf_event_open */
 
-  mera.start = mera.finish = clock_fallback;
-  mera.convert = convert_fallback;
-  mera.units = FALLBACK_UNITS;
-  mera.source = FALLBACK_SOURCE;
-  mera.flags = FALLBACK_FLAGS;
+  if (!mera.flags || ((FALLBACK_FLAGS & timestamp_clock_stable) &&
+                      (mera.flags & timestamp_clock_stable) == 0)) {
+    mera.start = mera.finish = clock_fallback;
+    mera.convert = convert_fallback;
+    mera.units = FALLBACK_UNITS;
+    mera.source = FALLBACK_SOURCE;
+    mera.flags = FALLBACK_FLAGS;
+  }
 }
 
 static unsigned fuse_timestamp(timestamp_t *unused) {

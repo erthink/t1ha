@@ -598,10 +598,11 @@ static double convert_pmccntr_x64(timestamp_t timestamp) {
 #if defined(__mips__) && defined(PROT_READ) && defined(MAP_SHARED)
 static volatile uint64_t *mips_tsc_addr;
 
-static void clock_zbustimer(timestamp_t *now) {
+static unsigned clock_zbustimer(timestamp_t *now) {
   compiler_barrier();
   *now = *mips_tsc_addr;
   compiler_barrier();
+  return 0;
 }
 
 #endif /* MIPS */
@@ -952,9 +953,13 @@ void mera_init(void) {
   int mem_fd = open("/dev/mem", O_RDONLY | O_SYNC, 0);
 
   if (mem_fd < 0)
-    perror("open(/dev/mem)");
+    if (errno == EACCES)
+      printf(" - suggest run from super-user for access to /dev/mem "
+             "(MIPS_ZBUS_TIMER)\n");
+    else
+      perror("open(/dev/mem)");
   else {
-    mips_tsc_addr = mmap(nullptr, getpagesize(), PROT_READ, MAP_SHARED, mem_fd,
+    mips_tsc_addr = mmap(NULL, getpagesize(), PROT_READ, MAP_SHARED, mem_fd,
                          0x10030000 /* MIPS_ZBUS_TIMER */);
     if (mips_tsc_addr == MAP_FAILED) {
       perror("mmap(MIPS_ZBUS_TIMER)");

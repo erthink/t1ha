@@ -53,17 +53,24 @@
 
 typedef uint64_t timestamp_t;
 
+enum mera_flags {
+  timestamp_clock_cheap = 1u << 0,
+  timestamp_clock_stable = 1u << 1,
+};
+
 typedef struct {
   unsigned (*start)(timestamp_t *);
   unsigned (*finish)(timestamp_t *);
   double (*convert)(timestamp_t);
   const char *units;
   const char *source;
-  bool cheap;
+  unsigned flags;
 } mera_t;
 
 extern mera_t mera;
 void mera_init(void);
+
+/*****************************************************************************/
 
 #if T1HA_IA32_AVAILABLE
 typedef struct _ia32_cpu_features {
@@ -78,6 +85,12 @@ typedef struct _ia32_cpu_features {
     uint32_t ecx;
     uint32_t edx;
   } extended_80000001 /* https://en.wikipedia.org/wiki/CPUID#EAX=80000001h:_Extended_Processor_Info_and_Feature_Bits */;
+
+  struct {
+    uint32_t ecx;
+    uint32_t edx;
+  } extended_80000007 /*  Advanced Power Management Information */;
+
 } ia32_cpu_features_t;
 
 extern ia32_cpu_features_t ia32_cpu_features;

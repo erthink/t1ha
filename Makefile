@@ -59,9 +59,12 @@ libt1ha.so: $(OBJ_LIST) test Makefile
 mera.o: tests/bench.h tests/mera.c Makefile
 	$(CC) $(CFLAGS_TEST) -save-temps -c -o $@ tests/mera.c
 
-test: $(OBJ_LIST) $(BENCH_EXTRA) tests/main.c Makefile mera.o tests/bench.h
+bench.o: tests/bench.h tests/bench.c Makefile
+	$(CC) $(CFLAGS_TEST) -c -o $@ tests/bench.c
+
+test: $(OBJ_LIST) $(BENCH_EXTRA) tests/main.c Makefile tests/bench.h mera.o bench.o
 	@echo "Target-ARCHx86: $(TARGET_ARCHx86)" || true
-	$(CC) $(CFLAGS_TEST) -o $@ tests/main.c $(OBJ_LIST) $(BENCH_EXTRA) mera.o
+	$(CC) $(CFLAGS_TEST) -o $@ tests/main.c $(OBJ_LIST) $(BENCH_EXTRA) bench.o mera.o
 
 check: test
 	./test || rm -rf libt1ha.a libt1ha.so

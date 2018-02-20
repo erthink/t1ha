@@ -301,6 +301,7 @@
     </ClCompile>
     <ClCompile Include="tests\main.c" />
     <ClCompile Include="tests\mera.c" />
+    <ClCompile Include="tests\bench.c" />
     <ClCompile Include="tests\4bench_t1ha0_ia32aes_noavx.c">
       <EnableEnhancedInstructionSet Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">NoExtensions</EnableEnhancedInstructionSet>
       <EnableEnhancedInstructionSet Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">NoExtensions</EnableEnhancedInstructionSet>

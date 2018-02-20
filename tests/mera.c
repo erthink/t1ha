@@ -408,7 +408,7 @@ static unsigned clock_fallback(timestamp_t *now) {
 #define FALLBACK_FLAGS (timestamp_clock_stable | timestamp_clock_cheap)
 #define RATIO 1
   uint8_t clk[16];
-  __asm __volatile("stcke %0" : "=Q"(&clk) : : "cc");
+  __asm __volatile("stcke %0" : "=Q"(clk) : : "cc");
   *now = *((unsigned long long *)&clk[1]) >> 2;
 
 #elif defined(__alpha__)

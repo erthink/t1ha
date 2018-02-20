@@ -244,17 +244,17 @@ static int set_single_affinity(void) {
     defined(__WINDOWS__)
   return -1;
 #elif defined(__GLIBC__) || defined(__GNU_LIBRARY__) || defined(__ANDROID__)
+  const int current_cpu = sched_getcpu();
+  if (current_cpu < 0) {
+    if (errno != ENOSYS)
+      perror("sched_getcpu()");
+    return -1;
+  }
   const int ncpu = sysconf(_SC_NPROCESSORS_CONF);
   const unsigned cpuset_size = CPU_ALLOC_SIZE(ncpu);
   cpu_set_t *affinity = CPU_ALLOC(ncpu);
   if (!affinity) {
     perror("CPU_ALLOC()");
-    return -1;
-  }
-  const int current_cpu = sched_getcpu();
-  if (current_cpu < 0) {
-    perror("sched_getcpu()");
-    CPU_FREE(affinity);
     return -1;
   }
   CPU_ZERO_S(cpuset_size, affinity);
@@ -853,7 +853,7 @@ static int perf_setup(void) {
                             -1 /* no group */, PERF_FLAG_FD_CLOEXEC);
   if (perf_fd < 0) {
     perf_error = errno;
-    if (perf_error != EACCES /* will handle later */)
+    if (perf_error != ENOSYS && perf_error != EACCES /* will handle later */)
       perror("perf_event_open()");
     return -1;
   }
@@ -921,7 +921,7 @@ void mera_init(void) {
 #ifdef PR_SET_TSC
   int tsc_mode = PR_TSC_SIGSEGV;
   if (prctl(PR_GET_TSC, &tsc_mode, 0, 0, 0)) {
-    if (errno != ENOSYS)
+    if (errno != ENOSYS && errno != EFAULT)
       perror("prctl(PR_GET_TSC)");
   } else if (tsc_mode != PR_TSC_ENABLE &&
              prctl(PR_SET_TSC, PR_TSC_ENABLE, 0, 0, 0))

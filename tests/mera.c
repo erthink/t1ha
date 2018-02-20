@@ -400,19 +400,6 @@ static unsigned clock_fallback(timestamp_t *now) {
 #endif
   *now = ticks;
 
-#elif defined(__aarch64__)
-/* System timer of ARMv8 runs at a different frequency than the CPU's.
- * The frequency is fixed, typically in the range 1-50MHz.  It can be
- * read at CNTFRQ special register.  We assume the OS has set up
- * the virtual timer properly. */
-#define FALLBACK_UNITS "tick"
-#define FALLBACK_SOURCE "VirtualTimer"
-#define FALLBACK_FLAGS timestamp_clock_cheap
-#define RATIO 1
-  uint64_t virtual_timer;
-  __asm __volatile("mrs %0, cntvct_el0" : "=r"(virtual_timer));
-  *now = virtual_timer;
-
 #elif defined(__s390__)
 #define FALLBACK_UNITS "clk"
 #define FALLBACK_SOURCE "STCKE"
@@ -536,7 +523,6 @@ static double convert_fallback(timestamp_t timestamp) {
 #elif (defined(__EDG_VERSION) || defined(__ECC)) && defined(__ia64__)
 #elif defined(__hpux) && defined(__ia64)
 #elif (defined(__hppa__) || defined(__hppa)) && defined(__GNUC__)
-#elif defined(__aarch64__)
 #elif defined(__s390__)
 #elif defined(__alpha__)
 #elif defined(TIMEBASE_SZ) || defined(__OS400__)
@@ -594,6 +580,26 @@ static double convert_pmccntr_x64(timestamp_t timestamp) {
   return timestamp * 64.0;
 }
 #endif /* __ARM_ARCH >= 6 || _M_ARM */
+
+#if defined(__aarch64__) || (defined(__ARM_ARCH) && __ARM_ARCH > 7) ||         \
+    defined(_M_ARM64)
+static unsigned clock_cntvct_el0(timestamp_t *now) {
+  compiler_barrier();
+/* System timer of ARMv8 runs at a different frequency than the CPU's.
+ * The frequency is fixed, typically in the range 1-50MHz.  It can be
+ * read at CNTFRQ special register.  We assume the OS has set up
+ * the virtual timer properly. */
+#ifdef _M_ARM64
+  *now = _ReadStatusReg(42 /* FIXME: cntvct_el0 */);
+#else
+  uint64_t virtual_timer;
+  __asm __volatile("mrs %0, cntvct_el0" : "=r"(virtual_timer));
+  *now = virtual_timer;
+#endif
+  compiler_barrier();
+  return 0;
+}
+#endif /* __aarch64__ || __ARM_ARCH > 7 || _M_ARM64 */
 
 #if defined(__mips__) && defined(PROT_READ) && defined(MAP_SHARED)
 static volatile uint64_t *mips_tsc_addr;
@@ -947,6 +953,21 @@ void mera_init(void) {
     }
   }
 #endif /* (__ARM_ARCH > 5 && __ARM_ARCH < 8) || _M_ARM */
+
+#if defined(__aarch64__) || (defined(__ARM_ARCH) && __ARM_ARCH > 7) ||         \
+    defined(_M_ARM64)
+  /* System timer of ARMv8 runs at a different frequency than the CPU's.
+   * The frequency is fixed, typically in the range 1-50MHz.  It can be
+   * read at CNTFRQ special register.  We assume the OS has set up
+   * the virtual timer properly. */
+  if (!mera.flags && probe(clock_cntvct_el0, clock_cntvct_el0) == 0) {
+    mera.start = mera.finish = clock_cntvct_el0;
+    mera.convert = convert_1to1;
+    mera.units = "tick";
+    mera.source = "CNTVCT_EL0";
+    mera.flags = timestamp_clock_cheap;
+  }
+#endif /* __aarch64__ || __ARM_ARCH > 7 || _M_ARM64 */
 
 #if defined(__mips__) && defined(PROT_READ) && defined(MAP_SHARED)
   uint64_t *mips_tsc_addr;

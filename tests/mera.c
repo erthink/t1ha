@@ -568,7 +568,7 @@ static double convert_fallback(timestamp_t timestamp) {
 #elif defined(CLOCK_MONOTONIC)
 #else /* gettimeofday() */
 #endif
-  return timestamp * RATIO;
+  return (double)timestamp * RATIO;
 }
 
 /*****************************************************************************/

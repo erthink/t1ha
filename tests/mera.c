@@ -1010,6 +1010,12 @@ void mera_init(void) {
       mera.source = "RDPMC_40000001";
     } else {
       if (ia32_cpu_features.extended_80000007.edx & (1 << 8)) {
+#ifdef F_OK
+        if (access("/sys/devices/cpu/rdpmc", F_OK) == 0) {
+          printf(" - suggest enable rdpmc for usermode (echo 2 | sudo tee "
+                 "/sys/devices/cpu/rdpmc)\n");
+        }
+#endif /* F_OK */
         /* The TSC rate is invariant, i.e. not a CPU cycles! */
         mera.flags -= timestamp_clock_stable;
         mera.units = "tick";
@@ -1036,6 +1042,10 @@ void mera_init(void) {
       mera.units = "clk";
       mera.source = "PERF_COUNT_HW_CPU_CYCLES";
       mera.flags = timestamp_clock_stable;
+    } else if (perf_error == EACCES &&
+               access("/proc/sys/kernel/perf_event_paranoid", F_OK) == 0) {
+      printf(" - suggest enable perf for non-admin users (echo 2 | sudo tee "
+             "/proc/sys/kernel/perf_event_paranoid)\n");
     }
   }
 #endif /* __NR_perf_event_open */

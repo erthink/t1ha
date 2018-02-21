@@ -191,26 +191,42 @@ static void sigaction_handler(int signum, siginfo_t *info, void *context) {
 }
 #endif
 
-static int probe(unsigned (*start)(timestamp_t *),
-                 unsigned (*fihish)(timestamp_t *)) {
+static bool probe(unsigned (*start)(timestamp_t *),
+                  unsigned (*fihish)(timestamp_t *),
+                  double (*convert)(timestamp_t), unsigned flags,
+                  const char *source_name, const char *time_units) {
+  flags |= timestamp_clock_have;
+  if (mera.flags >= flags)
+    return false;
+
 #if defined(_WIN64) || defined(_WIN32) || defined(__TOS_WIN__) ||              \
     defined(__WINDOWS__)
   __try {
 #else
-  struct sigaction act;
+  struct sigaction act, prev_sigsegv, prev_sigill, prev_sigbus;
   memset(&act, 0, sizeof(act));
   act.sa_sigaction = sigaction_handler;
-  if (sigaction(SIGSEGV, &act, NULL) || sigaction(SIGILL, &act, NULL) ||
-      sigaction(SIGBUS, &act, NULL)) {
+  if (sigaction(SIGSEGV, &act, &prev_sigsegv)) {
     perror("sigaction(SIGSEGV)");
-    return 1;
+    return false;
+  }
+  if (sigaction(SIGILL, &act, &prev_sigill)) {
+    perror("sigaction(SIGILL)");
+    return false;
+  }
+  if (sigaction(SIGBUS, &act, &prev_sigbus)) {
+    perror("sigaction(SIGBUS)");
+    return false;
   }
 
-  if (sigsetjmp(sigaction_jump, 0) != 0)
-    return -1;
+  if (sigsetjmp(sigaction_jump, 0) != 0) {
+    sigaction(SIGSEGV, &prev_sigsegv, NULL);
+    sigaction(SIGILL, &prev_sigill, NULL);
+    sigaction(SIGBUS, &prev_sigbus, NULL);
+    return false;
+  }
 #endif
 
-    int rc = -1;
     for (unsigned n = 0; n < 42; ++n) {
       timestamp_t timestamp_start, timestamp_fihish;
       unsigned coreid = start(&timestamp_start);
@@ -221,20 +237,36 @@ static int probe(unsigned (*start)(timestamp_t *),
     usleep(42);
 #endif
       if (coreid != fihish(&timestamp_fihish))
-        rc = -2;
-      else if (timestamp_fihish <= timestamp_start)
-        rc = -3;
-      else
-        return 0;
+        continue;
+      if (timestamp_fihish > timestamp_start) {
+        mera.start = start;
+        mera.finish = fihish;
+        mera.source = source_name;
+        mera.convert = convert;
+        if (flags & timestamp_cycles)
+          mera.units = "cycle";
+        else if (flags & timestamp_ticks)
+          mera.units = "tick";
+        else
+          mera.units = time_units;
+        mera.flags = flags;
+        return true;
+      }
+      if (timestamp_fihish == timestamp_start || n > 5)
+        break;
     }
-    return rc;
 
 #if defined(_WIN64) || defined(_WIN32) || defined(__TOS_WIN__) ||              \
     defined(__WINDOWS__)
   } __except (seh_filter(GetExceptionCode())) {
-    return -1;
+    return false;
   }
+#else
+  sigaction(SIGSEGV, &prev_sigsegv, NULL);
+  sigaction(SIGILL, &prev_sigill, NULL);
+  sigaction(SIGBUS, &prev_sigbus, NULL);
 #endif
+  return false;
 }
 
 /*****************************************************************************/
@@ -246,8 +278,7 @@ static int set_single_affinity(void) {
 #elif defined(__GLIBC__) || defined(__GNU_LIBRARY__) || defined(__ANDROID__)
   const int current_cpu = sched_getcpu();
   if (current_cpu < 0) {
-    if (errno != ENOSYS)
-      perror("sched_getcpu()");
+    perror("sched_getcpu()");
     return -1;
   }
   const int ncpu = sysconf(_SC_NPROCESSORS_CONF);
@@ -286,145 +317,83 @@ union timestamp {
   } u32;
 };
 
-static unsigned clock_fallback(timestamp_t *now) {
+#if defined(EMSCRIPTEN)
+static unsigned clock_emscripten(timestamp_t *now) {
   compiler_barrier();
-  unsigned coreid = 0;
+  *now = (timestamp_t)(emscripten_get_now() * 1e6);
+  compiler_barrier();
+  return 0;
+}
+#endif /* EMSCRIPTEN */
 
 #if defined(__APPLE__) || defined(__MACH__)
-#define FALLBACK_UNITS "ns"
-#define FALLBACK_SOURCE "mach_absolute_time()"
-#define FALLBACK_FLAGS 0
-#define RATIO runtime
-
+static unsigned clock_mach(timestamp_t *now) {
+  compiler_barrier();
   *now = mach_absolute_time();
+  compiler_barrier();
+  return 0;
+}
 
-#elif defined(EMSCRIPTEN)
-#define FALLBACK_UNITS "ns"
-#define FALLBACK_SOURCE "emscripten_get_now()"
-#define FALLBACK_FLAGS 0
-#define RATIO 1e6
-  *now = (timestamp_t)(emscripten_get_now() * 1e6);
+static double convert_mach(timestamp_t timestamp) {
+  static double ratio /* from mach_absolute_time() to seconds */;
+  if (!ratio) {
+    mach_timebase_info_data_t ti;
+    if (mach_timebase_info(&ti) != 0) {
+      perror("mach_timebase_info()");
+      return -1;
+    }
+    ratio = (double)ti.numer / ti.denom;
+  }
+  return ratio * (double)timestamp;
+}
+#endif /* defined(__APPLE__) || defined(__MACH__) */
 
-#elif defined(__e2k__)
-#define FALLBACK_UNITS "clk"
-#define FALLBACK_SOURCE "RDTSCP"
-#define FALLBACK_FLAGS (timestamp_clock_stable | timestamp_clock_cheap)
-#define RATIO 1
-  *now = __rdtscp(&coreid);
+#if defined(_WIN64) || defined(_WIN32) || defined(__TOS_WIN__) ||              \
+    defined(__WINDOWS__)
+static unsigned clock_windows(timestamp_t *now) {
+  compiler_barrier();
+  if (!QueryPerformanceCounter((LARGE_INTEGER *)now)) {
+    perror("QueryPerformanceCounter()");
+    *now = 42;
+  }
+  compiler_barrier();
+  return 0;
+}
 
-#elif (defined(__powerpc64__) || defined(__ppc64__) || defined(__ppc64) ||     \
-       defined(__powerpc64)) &&                                                \
-    defined(__GNUC__)
-#define FALLBACK_UNITS "clk"
-#define FALLBACK_SOURCE "MFSPR(268)"
-#define FALLBACK_FLAGS (timestamp_clock_stable | timestamp_clock_cheap)
-#define RATIO 1
-  uint64_t ticks;
-  __asm __volatile("mfspr %0, 268" : "=r"(ticks));
-  *now = ticks;
+static double convert_windows(timestamp_t timestamp) {
+  static double ratio /* from QueryPerformanceCounter() to seconds */;
+  if (!ratio) {
+    LARGE_INTEGER frequency;
+    if (!QueryPerformanceFrequency(&frequency)) {
+      perror("QueryPerformanceFrequency()");
+      return -1;
+    }
+    ratio = 1e9 / frequency.QuadPart;
+  }
+  return ratio * (double)timestamp;
+}
 
-#elif (defined(__powerpc__) || defined(__ppc__)) && defined(__GNUC__)
-/* A time-base timer, which is not always precisely a cycle-count. */
-#if UINTPTR_MAX > 0xffffFFFFul || ULONG_MAX > 0xffffFFFFul
-#define FALLBACK_UNITS "tick"
-#define FALLBACK_SOURCE "MFTB"
-#define FALLBACK_FLAGS timestamp_clock_cheap
-#define RATIO 1
-  uint64_t ticks;
-  __asm __volatile("mftb  %0" : "=r"(ticks));
-  *now = ticks;
-#else
-#define FALLBACK_UNITS "tick"
-#define FALLBACK_SOURCE "MFTB+MFTBU"
-#define FALLBACK_FLAGS (timestamp_clock_stable | timestamp_clock_cheap)
-#define RATIO 1
-  unsigned long low, high_before, high_after;
-  __asm __volatile("mftbu %0; mftb  %1; mftbu %2"
-                   : "=r"(high_before), "=r"(low), "=r"(high_after));
-  union timestamp *u = (union timestamp *)now;
-  u->u32.h = high_after;
-  u->u32.l = low & /* zeroes if high part has changed */
-             ~(high_before - high_after);
-#endif
+#else /* Windows */
 
-#elif defined(__sparc_v9__) && defined(__GNUC__)
-#define FALLBACK_UNITS "clk"
-#define FALLBACK_SOURCE "tick register"
-#define FALLBACK_FLAGS (timestamp_clock_stable | timestamp_clock_cheap)
-#define RATIO 1
-  uint64_t cycles;
-  __asm __volatile("rd %%tick, %0" : "=r"(cycles));
-  *now = cycles;
+static unsigned clock_gettimeofday(timestamp_t *now) {
+  compiler_barrier();
+  struct timeval tv;
+  if (gettimeofday(&tv, NULL)) {
+    perror("gettimeofday()");
+    tv.tv_sec = tv.tv_usec = 0;
+  }
+  *now = tv.tv_sec * UINT64_C(1000000) + tv.tv_usec;
+  compiler_barrier();
+  return 0;
+}
 
-#elif (defined(__sparc__) || defined(__sparc)) && defined(__GNUC__)
-#define FALLBACK_UNITS "clk"
-#define FALLBACK_SOURCE "tick register"
-#define FALLBACK_FLAGS (timestamp_clock_stable | timestamp_clock_cheap)
-#define RATIO 1
-  uint64_t ticks;
-  __asm __volatile(".byte 0x83, 0x41, 0x00, 0x00; mov %%g1, %0"
-                   : "=r"(ticks)::"%g1");
-  *now = ticks;
+static double convert_us2ns(timestamp_t timestamp) { return 1e3 * timestamp; }
 
-#elif (defined(__ia64__) || defined(__ia64)) && defined(__GNUC__)
-#define FALLBACK_UNITS "clk"
-#define FALLBACK_SOURCE "ITC"
-#define FALLBACK_FLAGS (timestamp_clock_stable | timestamp_clock_cheap)
-#define RATIO 1
-  uint64_t ticks;
-  __asm __volatile("mov %0 = ar.itc" : "=r"(ticks));
-  *now = ticks;
-#elif (defined(__EDG_VERSION) || defined(__ECC)) && defined(__ia64__)
-#define FALLBACK_UNITS "clk"
-#define FALLBACK_SOURCE "ITC"
-#define FALLBACK_FLAGS (timestamp_clock_stable | timestamp_clock_cheap)
-#define RATIO 1
-  *now = __getReg(_IA64_REG_AR_ITC);
-#elif defined(__hpux) && defined(__ia64)
-#define RATIO 1
-#define FALLBACK_SOURCE "ITC"
-#define FALLBACK_FLAGS (timestamp_clock_stable | timestamp_clock_cheap)
-#define FALLBACK_UNITS "clk"
-  *now = _Asm_mov_from_ar(_AREG_ITC);
+#endif /* ! Windows */
 
-#elif (defined(__hppa__) || defined(__hppa) || defined(__hppa64__) ||          \
-       defined(__hppa64)) &&                                                   \
-    defined(__GNUC__)
-#define FALLBACK_UNITS "clk"
-#define FALLBACK_SOURCE "MFCTL(16)"
-#define FALLBACK_FLAGS (timestamp_clock_stable | timestamp_clock_cheap)
-#define RATIO 1
-  uint64_t ticks;
-#ifdef __GNUC__
-  __asm __volatile("mfctl 16, %0" : "=r"(ticks));
-#else
-  _MFCTL(16, ticks);
-#endif
-  *now = ticks;
-
-#elif defined(__s390__)
-#define FALLBACK_UNITS "clk"
-#define FALLBACK_SOURCE "STCKE"
-#define FALLBACK_FLAGS (timestamp_clock_stable | timestamp_clock_cheap)
-#define RATIO 1
-  uint8_t clk[16];
-  __asm __volatile("stcke %0" : "=Q"(clk) : : "cc");
-  *now = *((unsigned long long *)&clk[1]) >> 2;
-
-#elif defined(__alpha__)
-#define FALLBACK_UNITS "clk"
-#define FALLBACK_SOURCE "RPCC"
-#define FALLBACK_FLAGS (timestamp_clock_stable | timestamp_clock_cheap)
-#define RATIO 1
-  unsigned long cycles;
-  __asm__ __volatile("rpcc %0" : "=r"(cycles));
-  *now = cycles & 0xFFFFffff;
-
-#elif defined(TIMEBASE_SZ) || defined(__OS400__)
-#define FALLBACK_UNITS "ns"
-#define FALLBACK_SOURCE "read_wall_time(TIMEBASE_SZ)"
-#define FALLBACK_FLAGS (timestamp_clock_stable | timestamp_clock_cheap)
-#define RATIO runtime
+#if defined(TIMEBASE_SZ) || defined(__OS400__)
+static unsigned clock_os400(timestamp_t *now) {
+  compiler_barrier();
   timebasestruct_t tb;
   if (read_wall_time(&tb, TIMEBASE_SZ) != 0) {
     perror("read_wall_time(TIMEBASE_SZ)");
@@ -433,103 +402,13 @@ static unsigned clock_fallback(timestamp_t *now) {
   union timestamp *u = (union timestamp *)now;
   u->u32.h = tb.tb_high;
   u->u32.l = tb.tb_low;
-
-#elif defined(__sun__) || defined(__sun)
-#define FALLBACK_UNITS "ns"
-#define FALLBACK_SOURCE "gethrtime()"
-#define FALLBACK_FLAGS 0
-#define RATIO 1
-  *now = gethrtime();
-
-#elif defined(_WIN64) || defined(_WIN32) || defined(__TOS_WIN__) ||            \
-    defined(__WINDOWS__)
-#define FALLBACK_UNITS "ns"
-#define FALLBACK_SOURCE "QueryPerformanceCounter()"
-#define FALLBACK_FLAGS 0
-#define RATIO runtime
-  if (!QueryPerformanceCounter((LARGE_INTEGER *)now)) {
-    perror("QueryPerformanceCounter()");
-    abort();
-  }
-
-#elif defined(CLOCK_SGI_CYCLE)
-#define FALLBACK_UNITS "ns"
-#define FALLBACK_SOURCE "clock_gettime(CLOCK_SGI_CYCLE)"
-#define FALLBACK_FLAGS 0
-#define RATIO 1
-  struct timespec ts;
-  if (clock_gettime(CLOCK_SGI_CYCLE, &ts) == 0) {
-    *now = ts.tv_sec * UINT64_C(1000000000) + ts.tv_nsec;
-  } else {
-    perror("clock_gettime(CLOCK_SGI_CYCLE)");
-    abort();
-  }
-
-#elif defined(CLOCK_MONOTONIC_RAW)
-#define FALLBACK_UNITS "ns"
-#define FALLBACK_SOURCE "clock_gettime(CLOCK_MONOTONIC_RAW)"
-#define FALLBACK_FLAGS 0
-#define RATIO 1
-  struct timespec ts;
-  if (clock_gettime(CLOCK_MONOTONIC_RAW, &ts) == 0) {
-    *now = ts.tv_sec * UINT64_C(1000000000) + ts.tv_nsec;
-  } else {
-    perror("clock_gettime(CLOCK_MONOTONIC_RAW)");
-    abort();
-  }
-
-#elif defined(CLOCK_MONOTONIC)
-#define FALLBACK_UNITS "ns"
-#define FALLBACK_SOURCE "clock_gettime(CLOCK_MONOTONIC)"
-#define FALLBACK_FLAGS 0
-#define RATIO 1
-  struct timespec ts;
-  if (clock_gettime(CLOCK_MONOTONIC, &ts) == 0) {
-    *now = ts.tv_sec * UINT64_C(1000000000) + ts.tv_nsec;
-  } else {
-    perror("clock_gettime(CLOCK_MONOTONIC)");
-    abort();
-  }
-
-#else
-#define FALLBACK_UNITS "ns"
-#define FALLBACK_SOURCE "gettimeofday()"
-#define FALLBACK_FLAGS 0
-#define RATIO 1e3
-  struct timeval tv;
-  gettimeofday(&tv, NULL);
-  *now = tv.tv_sec * UINT64_C(1000000) + tv.tv_usec;
-#endif
-  return coreid;
+  compiler_barrier();
+  return 0;
 }
 
-/*****************************************************************************/
-
-static double convert_fallback(timestamp_t timestamp) {
-#if defined(__APPLE__) || defined(__MACH__)
-  static double runtime /* from mach_absolute_time() to seconds */;
-  if (!runtime) {
-    mach_timebase_info_data_t ti;
-    if (mach_timebase_info(&ti) != 0) {
-      perror("mach_timebase_info()");
-      abort();
-    }
-    runtime = (double)ti.numer / ti.denom;
-  }
-#elif defined(EMSCRIPTEN)
-#elif defined(__e2k__)
-#elif (defined(__powerpc__) || defined(__ppc__)) && defined(__GNUC__)
-#elif defined(__sparc_v9__) && defined(__GNUC__)
-#elif (defined(__sparc__) || defined(__sparc)) && defined(__GNUC__)
-#elif (defined(__ia64__) || defined(__ia64)) && defined(__GNUC__)
-#elif (defined(__EDG_VERSION) || defined(__ECC)) && defined(__ia64__)
-#elif defined(__hpux) && defined(__ia64)
-#elif (defined(__hppa__) || defined(__hppa)) && defined(__GNUC__)
-#elif defined(__s390__)
-#elif defined(__alpha__)
-#elif defined(TIMEBASE_SZ) || defined(__OS400__)
-  static double runtime /* from read_wall_time() to seconds */;
-  if (!runtime) {
+static double convert_os400(timestamp_t timestamp) {
+  static double ratio /* from read_wall_time() to seconds */;
+  if (!ratio) {
     timebasestruct_t tb;
     tb.tb_high = 0x7fff;
     tb.tb_low = 0;
@@ -537,27 +416,184 @@ static double convert_fallback(timestamp_t timestamp) {
       perror("time_base_to_time()");
       abort();
     }
-    runtime = (tb.tb_high * 1e9 + tb.tb_low) / UINT64_C(0x7fff00000000);
+    ratio = (tb.tb_high * 1e9 + tb.tb_low) / UINT64_C(0x7fff00000000);
   }
-#elif defined(__sun__) || defined(__sun)
-#elif defined(_WIN64) || defined(_WIN32) || defined(__TOS_WIN__) ||            \
-    defined(__WINDOWS__)
-  static double runtime /* from QueryPerformanceCounter() to seconds */;
-  if (!runtime) {
-    LARGE_INTEGER frequency;
-    if (!QueryPerformanceFrequency(&frequency)) {
-      perror("QueryPerformanceFrequency()");
-      abort();
-    }
-    runtime = 1e9 / frequency.QuadPart;
-  }
-#elif defined(CLOCK_SGI_CYCLE)
-#elif defined(CLOCK_MONOTONIC_RAW)
-#elif defined(CLOCK_MONOTONIC)
-#else /* gettimeofday() */
-#endif
-  return (double)timestamp * RATIO;
+  return ratio * (double)timestamp;
 }
+#endif /* __OS400__ */
+
+#if defined(CLOCK_MONOTONIC) || defined(CLOCK_MONOTONIC_RAW) ||                \
+    defined(CLOCK_SGI_CYCLE)
+static clockid_t posix_clockid = CLOCK_REALTIME;
+static unsigned clock_posix(timestamp_t *now) {
+  compiler_barrier();
+  struct timespec ts;
+  if (clock_gettime(posix_clockid, &ts)) {
+    perror("clock_gettime()");
+    ts.tv_sec = ts.tv_nsec = 0;
+  }
+  *now = ts.tv_sec * UINT64_C(1000000000) + ts.tv_nsec;
+  compiler_barrier();
+  return 0;
+}
+#endif /* CLOCK_MONOTONIC || CLOCK_MONOTONIC_RAW || CLOCK_SGI_CYCLE */
+
+#if defined(__sun__) || defined(__sun)
+static unsigned clock_solaris(timestamp_t *now) {
+  compiler_barrier();
+  *now = gethrtime();
+  compiler_barrier();
+}
+#endif /* __sun__ */
+
+/*****************************************************************************/
+
+#if defined(__e2k__) || defined(__elbrus__)
+static unsigned clock_elbrus(timestamp_t *now) {
+  compiler_barrier();
+  unsigned coreid;
+  *now = __rdtscp(&coreid);
+  compiler_barrier();
+  return coreid;
+}
+#endif /* __e2k__ || __elbrus__ */
+
+#if (defined(__powerpc64__) || defined(__ppc64__) || defined(__ppc64) ||       \
+     defined(__powerpc64))
+static unsigned clock_powerpc64_mfspr268(timestamp_t *now) {
+  compiler_barrier();
+#if defined(__GNUC__)
+  uint64_t ticks;
+  __asm __volatile("mfspr %0, 268" : "=r"(ticks));
+  *now = ticks;
+#else
+  *now = 42 /* FIXME */;
+#endif
+  compiler_barrier();
+  return 0;
+}
+#endif /* __powerpc64__  */
+
+#if (defined(__powerpc__) || defined(__ppc__) || defined(__powerpc) ||         \
+     defined(__ppc))
+static unsigned clock_powerpc_mftb(timestamp_t *now) {
+  /* A time-base timer, which is not always precisely a cycle-count. */
+  compiler_barrier();
+#if UINTPTR_MAX > 0xffffFFFFul || ULONG_MAX > 0xffffFFFFul
+#if defined(__GNUC__)
+  uint64_t ticks;
+  __asm __volatile("mftb  %0" : "=r"(ticks));
+  *now = ticks;
+#else
+  *now = 42 /* FIXME */;
+#endif
+
+#else
+
+#if defined(__GNUC__)
+  uint32_t low, high_before, high_after;
+  __asm __volatile("mftbu %0; mftb  %1; mftbu %2"
+                   : "=r"(high_before), "=r"(low), "=r"(high_after));
+  union timestamp *u = (union timestamp *)now;
+  u->u32.h = high_after;
+  u->u32.l = low & /* zeroes if high part has changed */
+             ~(high_before - high_after);
+#else
+  *now = 42 /* FIXME */;
+#endif
+#endif
+  compiler_barrier();
+  return 0;
+}
+#endif /* __powerpc__ */
+
+#if (defined(__sparc_v9__) || defined(__sparc_v9) || defined(__sparc__) ||     \
+     defined(__sparc))
+static unsigned clock_sparc(timestamp_t *now) {
+  compiler_barrier();
+#if defined(__GNUC__)
+  uint64_t cycles;
+#if defined(__sparc_v9__) || defined(__sparc_v9)
+  __asm __volatile("rd %%tick, %0" : "=r"(cycles));
+#else
+  __asm __volatile(".byte 0x83, 0x41, 0x00, 0x00; mov %%g1, %0"
+                   : "=r"(cycles)
+                   :
+                   : "%g1");
+#endif
+  *now = cycles;
+#else
+  *now = 42 /* FIXME */;
+#endif
+  compiler_barrier();
+  return 0;
+}
+#endif /* __sparc__ */
+
+#if defined(__ia64__) || defined(__ia64)
+static unsigned clock_ia64(timestamp_t *now) {
+  compiler_barrier();
+#if defined(__GNUC__)
+  uint64_t ticks;
+  __asm __volatile("mov %0 = ar.itc" : "=r"(ticks));
+  *now = ticks;
+#elif defined(__EDG_VERSION) || defined(__ECC) || defined(IA64_REG_AR_ITC)
+  *now = __getReg(_IA64_REG_AR_ITC);
+#elif defined(__hpux) || defined(_AREG_ITC)
+  *now = _Asm_mov_from_ar(_AREG_ITC);
+#else
+  *now = 42 /* FIXME */;
+#endif
+  compiler_barrier();
+  return 0;
+}
+#endif /* __ia64__ */
+
+#if (defined(__hppa__) || defined(__hppa) || defined(__hppa64__) ||            \
+     defined(__hppa64))
+static unsigned clock_hppa(timestamp_t *now) {
+  compiler_barrier();
+  uint64_t cycles;
+#ifdef __GNUC__
+  __asm __volatile("mfctl 16, %0" : "=r"(cycles));
+#else
+  _MFCTL(16, ticks);
+#endif
+  *now = cycles;
+  compiler_barrier();
+  return 0;
+}
+#endif /* __hppa__ */
+
+#if defined(__s390__) || defined(__s390)
+static unsigned clock_s390(timestamp_t *now) {
+  compiler_barrier();
+#ifdef __GNUC__
+  uint8_t clk[16];
+  __asm __volatile("stcke %0" : "=Q"(clk) : : "cc");
+  *now = *((unsigned long long *)&clk[1]) >> 2;
+#else
+  *now = 42 /* FIXME */;
+#endif
+  compiler_barrier();
+  return 0;
+}
+#endif /* __s390__  */
+
+#if defined(__alpha__) || defined(__alpha)
+static unsigned clock_alpha(timestamp_t *now) {
+  compiler_barrier();
+#ifdef __GNUC__
+  unsigned long cycles;
+  __asm__ __volatile("rpcc %0" : "=r"(cycles));
+  *now = cycles & 0xFFFFfffful;
+#else
+  *now = 42 /* FIXME */;
+#endif
+  compiler_barrier();
+  return 0;
+}
+#endif /* __alpha__ */
 
 /*****************************************************************************/
 
@@ -640,10 +676,10 @@ static unsigned clock_rdpmc_start(timestamp_t *now) {
   compiler_barrier();
 #if __GNUC__
   uint32_t low, high;
-  __asm __volatile("cpuid; mov %2, %%ecx; rdpmc"
+  __asm __volatile("cpuid" ::: "%eax", "%ebx", "%ecx", "%edx");
+  __asm __volatile("rdpmc"
                    : "=a"(low), "=d"(high)
-                   : "i"(ia32_COUNT_HW_CPU_CYCLES)
-                   : "%ebx", "%ecx");
+                   : "c"(ia32_COUNT_HW_CPU_CYCLES));
   union timestamp *u = (union timestamp *)now;
   u->u32.l = low;
   u->u32.h = high;
@@ -855,7 +891,7 @@ static int perf_setup(void) {
                             -1 /* no group */, PERF_FLAG_FD_CLOEXEC);
   if (perf_fd < 0) {
     perf_error = errno;
-    if (perf_error != ENOSYS && perf_error != EACCES /* will handle later */)
+    if (perf_error != EACCES /* will handle later */)
       perror("perf_event_open()");
     return -1;
   }
@@ -916,23 +952,129 @@ unsigned perf_rdpmc_finish(timestamp_t *now) {
 
 /*****************************************************************************/
 
-void mera_init(void) {
+bool mera_init(void) {
   mera.flags = 0;
   mera.cpunum = set_single_affinity();
 
 #ifdef PR_SET_TSC
   int tsc_mode = PR_TSC_SIGSEGV;
   if (prctl(PR_GET_TSC, &tsc_mode, 0, 0, 0)) {
-    if (errno != ENOSYS && errno != EFAULT)
+    if (errno != ENOSYS)
       perror("prctl(PR_GET_TSC)");
   } else if (tsc_mode != PR_TSC_ENABLE &&
              prctl(PR_SET_TSC, PR_TSC_ENABLE, 0, 0, 0))
     perror("prctl(PR_SET_TSC, PR_TSC_ENABLE)");
 #endif /* PR_SET_TSC */
 
+#if defined(EMSCRIPTEN)
+  return probe(clock_emscripten, clock_emscripten, convert_1to1, 0,
+               "emscripten_get_now()", "ns");
+#endif
+
+#if defined(TIMEBASE_SZ) || defined(__OS400__)
+  probe(clock_os400, clock_os400, convert_os400, 0,
+        "read_wall_time(TIMEBASE_SZ)", "ns");
+#endif
+
+#if defined(__APPLE__) || defined(__MACH__)
+  probe(clock_mach, clock_mach, convert_mach, 0, "mach_absolute_time()", "ns");
+#endif
+
+#if defined(__sun__) || defined(__sun)
+  probe(clock_solaris, clock_solaris, convert_1to1, 0, "gethrtime()", "ns");
+#endif /* __sun__ */
+
+#if defined(CLOCK_SGI_CYCLE)
+  if (posix_clockid == CLOCK_REALTIME) {
+    posix_clockid = CLOCK_SGI_CYCLE;
+    if (!probe(clock_posix, clock_posix, convert_1to1, 0,
+               "clock_gettime(CLOCK_SGI_CYCLE)", "ns"))
+      posix_clockid = CLOCK_REALTIME;
+  }
+#endif /* CLOCK_SGI_CYCLE */
+#if defined(CLOCK_MONOTONIC_RAW)
+  if (posix_clockid == CLOCK_REALTIME) {
+    posix_clockid = CLOCK_MONOTONIC_RAW;
+    if (!probe(clock_posix, clock_posix, convert_1to1, 0,
+               "clock_gettime(CLOCK_MONOTONIC_RAW)", "ns"))
+      posix_clockid = CLOCK_REALTIME;
+  }
+#endif /* CLOCK_MONOTONIC_RAW */
+#if defined(CLOCK_MONOTONIC)
+  if (posix_clockid == CLOCK_REALTIME) {
+    posix_clockid = CLOCK_MONOTONIC;
+    if (!probe(clock_posix, clock_posix, convert_1to1, 0,
+               "clock_gettime(CLOCK_MONOTONIC)", "ns"))
+      posix_clockid = CLOCK_REALTIME;
+  }
+#endif /* CLOCK_MONOTONIC */
+
+#if defined(_WIN64) || defined(_WIN32) || defined(__TOS_WIN__) ||              \
+    defined(__WINDOWS__)
+  probe(clock_windows, clock_windows, convert_windows, 0,
+        "QueryPerformanceCounter()", "ns");
+#else
+  probe(clock_gettimeofday, clock_gettimeofday, convert_us2ns, 0,
+        "gettimeofday()", "ns");
+#endif /* Windows */
+
+/***************************************************************************/
+
+#ifndef __native_client__
+#if defined(__elbrus__) || defined(__e2k__)
+  probe(clock_elbrus, clock_elbrus, convert_1to1,
+        timestamp_clock_cheap | timestamp_cycles | timestamp_clock_stable,
+        "Elbrus_TSCP", "cycle");
+#endif /* __elbrus__ */
+
+#if (defined(__powerpc64__) || defined(__ppc64__) || defined(__ppc64) ||       \
+     defined(__powerpc64))
+  probe(clock_powerpc64_mfspr268, clock_powerpc64_mfspr268, convert_1to1,
+        timestamp_clock_cheap | timestamp_cycles | timestamp_clock_stable,
+        "MFSPR(268)", "cycle");
+#endif /* __powerpc64__ */
+
+#if (defined(__powerpc__) || defined(__ppc__) || defined(__powerpc) ||         \
+     defined(__ppc))
+  probe(clock_powerpc_mftb, clock_powerpc_mftb, convert_1to1,
+        timestamp_clock_cheap | timestamp_ticks, "MFTB", "tick");
+#endif /* __powerpc__ */
+
+#if (defined(__sparc_v9__) || defined(__sparc_v9) || defined(__sparc__) ||     \
+     defined(__sparc))
+  probe(clock_sparc, clock_sparc, convert_1to1,
+        timestamp_clock_cheap | timestamp_cycles | timestamp_clock_stable,
+        "tick_register", "cycle");
+#endif /* __sparc__ */
+
+#if defined(__ia64__) || defined(__ia64)
+  probe(clock_ia64, clock_ia64, convert_1to1,
+        timestamp_clock_cheap | timestamp_cycles | timestamp_clock_stable,
+        "ITC", "cycle");
+#endif /* __ia64__ */
+
+#if (defined(__hppa__) || defined(__hppa) || defined(__hppa64__) ||            \
+     defined(__hppa64))
+  probe(clock_hppa, clock_hppa, convert_1to1,
+        timestamp_clock_cheap | timestamp_cycles | timestamp_clock_stable,
+        "MFCTL(16)", "cycle");
+#endif /* __hppa__ */
+
+#if defined(__s390__)
+  probe(clock_s390, clock_s390, convert_1to1,
+        timestamp_clock_cheap | timestamp_cycles | timestamp_clock_stable,
+        "STCKE", "cycle");
+#endif /* __s390__ */
+
+#if defined(__alpha__) || defined(__alpha)
+  probe(clock_alpha, clock_alpha, convert_1to1,
+        timestamp_clock_cheap | timestamp_cycles | timestamp_clock_stable,
+        "RPCC", "cycle");
+#endif /* __alpha__ */
+
 #if (defined(__ARM_ARCH) && __ARM_ARCH > 5 && __ARM_ARCH < 8) || defined(_M_ARM)
+  /* Read the user mode perf monitor counter access permissions. */
   uint32_t pmuseren;
-/* Read the user mode perf monitor counter access permissions. */
 #ifdef _M_ARM
   pmuseren = _MoveFromCoprocessor(15, 0, 9, 14, 0);
 #else
@@ -945,14 +1087,10 @@ void mera_init(void) {
 #else
     __asm("mrc p15, 0, %0, c9, c12, 1" : "=r"(pmcntenset));
 #endif
-    if ((pmcntenset & 0x80000000ul /* Is it counting? */) &&
-        probe(clock_pmccntr, clock_pmccntr) == 0) {
-      mera.start = mera.finish = clock_pmccntr;
-      mera.convert = convert_pmccntr_x64;
-      mera.units = "clk";
-      mera.source = "PMCCNTR";
-      mera.flags = timestamp_clock_stable | timestamp_clock_cheap;
-    }
+    if (pmcntenset & 0x80000000ul /* Is it counting? */)
+      probe(clock_pmccntr, clock_pmccntr, convert_pmccntr_x64,
+            timestamp_clock_stable | timestamp_cycles | timestamp_clock_cheap,
+            "PMCCNTR", "clk");
   }
 #endif /* (__ARM_ARCH > 5 && __ARM_ARCH < 8) || _M_ARM */
 
@@ -962,13 +1100,9 @@ void mera_init(void) {
    * The frequency is fixed, typically in the range 1-50MHz.  It can be
    * read at CNTFRQ special register.  We assume the OS has set up
    * the virtual timer properly. */
-  if (!mera.flags && probe(clock_cntvct_el0, clock_cntvct_el0) == 0) {
-    mera.start = mera.finish = clock_cntvct_el0;
-    mera.convert = convert_1to1;
-    mera.units = "tick";
-    mera.source = "CNTVCT_EL0";
-    mera.flags = timestamp_clock_cheap;
-  }
+  probe(clock_cntvct_el0, clock_cntvct_el0, convert_1to1,
+        timestamp_clock_stable | timestamp_ticks | timestamp_clock_cheap,
+        "CNTVCT_EL0", "tick");
 #endif /* __aarch64__ || __ARM_ARCH > 7 || _M_ARM64 */
 
 #if defined(__mips__) && defined(PROT_READ) && defined(MAP_SHARED)
@@ -989,104 +1123,84 @@ void mera_init(void) {
       close(mem_fd);
     } else {
       close(mem_fd);
-      if (probe(clock_zbustimer, clock_zbustimer) == 0) {
-        mera.start = mera.finish = clock_zbustimer;
-        mera.convert = convert_1to1;
-        mera.units = "clk";
-        mera.source = "ZBUS-Timer(0x10030000)";
-        mera.flags = timestamp_clock_stable | timestamp_clock_cheap;
+      if (!probe(clock_zbustimer, clock_zbustimer, convert_1to1,
+                 timestamp_clock_stable | timestamp_clock_cheap |
+                     timestamp_ticks,
+                 "ZBUS-Timer(0x10030000)", "tick")) {
+
+        munmap(mips_tsc_addr, getpagesize());
+        mips_tsc_addr = NULL;
       }
     }
   }
-#endif /* MIPS */
+#endif /* __mips__ */
+
+#if T1HA_IA32_AVAILABLE
+  fetch_cpu_features();
+  if (ia32_cpu_features.basic.edx & (1 << 4)) {
+    probe(clock_rdpmc_start, clock_rdpmc_finish, convert_1to1,
+          timestamp_clock_stable | timestamp_clock_cheap | timestamp_cycles,
+          "RDPMC_40000001", "cycle");
+    const unsigned tsc_flags =
+        (ia32_cpu_features.extended_80000007.edx & (1 << 8))
+            /* The TSC rate is invariant, i.e. not a CPU cycles! */
+            ? timestamp_clock_cheap | timestamp_ticks
+            : timestamp_clock_cheap | timestamp_cycles | timestamp_clock_stable;
+
+#ifdef F_OK
+    if (!(tsc_flags & timestamp_clock_stable) &&
+        !(mera.flags & timestamp_clock_stable) &&
+        access("/sys/devices/cpu/rdpmc", F_OK) == 0) {
+      printf(" - suggest enable rdpmc for usermode (echo 2 | sudo tee "
+             "/sys/devices/cpu/rdpmc)\n");
+    }
+#endif /* F_OK */
+
+    if (ia32_cpu_features.extended_80000001.edx & (1 << 27))
+      probe(clock_rdtscp_start, clock_rdtscp_fihish, convert_1to1, tsc_flags,
+            "RDTSCP", NULL);
+    probe(clock_rdtsc_start, clock_rdtsc_finish, convert_1to1, tsc_flags,
+          "RDTSC", NULL);
+  }
+#endif /* T1HA_IA32_AVAILABLE */
 
 #if __NR_perf_event_open
   if (perf_setup() == 0) {
+    bool perf_used = probe(clock_perf, clock_perf, convert_1to1,
+                           timestamp_cycles | timestamp_clock_stable,
+                           "PERF_COUNT_HW_CPU_CYCLES", "cycle");
 #if T1HA_IA32_AVAILABLE
     if (perf_page) {
+      bool perf_used_page = false;
       if (perf_page->cap_bit0_is_deprecated && perf_page->cap_user_rdpmc &&
           perf_page->index) {
         perf_rdpmc_index = perf_page->index - 1;
-        if (probe(perf_rdpmc_start, perf_rdpmc_finish) == 0) {
-          mera.convert = convert_1to1;
-          mera.units = "clk";
-          mera.flags = timestamp_clock_stable | timestamp_clock_cheap;
-          mera.start = perf_rdpmc_start;
-          mera.finish = perf_rdpmc_finish;
-          mera.source = "RDPMC_perf";
-        }
+        perf_used_page = probe(
+            perf_rdpmc_start, perf_rdpmc_finish, convert_1to1,
+            timestamp_clock_stable | timestamp_clock_cheap | timestamp_cycles,
+            "RDPMC_perf", "cycle");
+      }
+      if (perf_used_page)
+        perf_used = true;
+      else {
         munmap((void *)perf_page, getpagesize());
         perf_page = NULL;
       }
     }
 #endif /* #T1HA_IA32_AVAILABLE */
-    if (probe(clock_perf, clock_perf) != 0) {
+    if (!perf_used) {
       close(perf_fd);
       perf_fd = -1;
     }
+  } else if (!(mera.flags & timestamp_clock_stable) && perf_error == EACCES &&
+             access("/proc/sys/kernel/perf_event_paranoid", F_OK) == 0) {
+    printf(" - suggest enable perf for non-admin users (echo 2 | sudo tee "
+           "/proc/sys/kernel/perf_event_paranoid)\n");
   }
 #endif /* __NR_perf_event_open */
 
-#if T1HA_IA32_AVAILABLE && !defined(__native_client__)
-  fetch_cpu_features();
-  if (!mera.flags && (ia32_cpu_features.basic.edx & (1 << 4))) {
-    mera.convert = convert_1to1;
-    mera.flags = timestamp_clock_stable | timestamp_clock_cheap;
-    mera.units = "clk";
-    if (probe(clock_rdpmc_start, clock_rdpmc_finish) == 0) {
-      mera.start = clock_rdpmc_start;
-      mera.finish = clock_rdpmc_finish;
-      mera.source = "RDPMC_40000001";
-    } else {
-      if (ia32_cpu_features.extended_80000007.edx & (1 << 8)) {
-#ifdef F_OK
-        if (access("/sys/devices/cpu/rdpmc", F_OK) == 0) {
-          printf(" - suggest enable rdpmc for usermode (echo 2 | sudo tee "
-                 "/sys/devices/cpu/rdpmc)\n");
-        }
-#endif /* F_OK */
-        /* The TSC rate is invariant, i.e. not a CPU cycles! */
-        mera.flags -= timestamp_clock_stable;
-        mera.units = "tick";
-      }
-      if ((ia32_cpu_features.extended_80000001.edx & (1 << 27)) &&
-          probe(clock_rdtscp_start, clock_rdtscp_fihish) == 0) {
-        mera.start = clock_rdtscp_start;
-        mera.finish = clock_rdtscp_fihish;
-        mera.source = "RDTSCP";
-      } else if (probe(clock_rdtsc_start, clock_rdtsc_finish)) {
-        mera.start = clock_rdtsc_start;
-        mera.finish = clock_rdtsc_finish;
-        mera.source = "RDTSC";
-      }
-    }
-  }
-#endif /* T1HA_IA32_AVAILABLE */
-
-#if __NR_perf_event_open
-  if ((mera.flags & timestamp_clock_stable) == 0) {
-    if (perf_fd >= 0) {
-      mera.start = mera.finish = clock_perf;
-      mera.convert = convert_1to1;
-      mera.units = "clk";
-      mera.source = "PERF_COUNT_HW_CPU_CYCLES";
-      mera.flags = timestamp_clock_stable;
-    } else if (perf_error == EACCES &&
-               access("/proc/sys/kernel/perf_event_paranoid", F_OK) == 0) {
-      printf(" - suggest enable perf for non-admin users (echo 2 | sudo tee "
-             "/proc/sys/kernel/perf_event_paranoid)\n");
-    }
-  }
-#endif /* __NR_perf_event_open */
-
-  if (!mera.flags || ((FALLBACK_FLAGS & timestamp_clock_stable) &&
-                      (mera.flags & timestamp_clock_stable) == 0)) {
-    mera.start = mera.finish = clock_fallback;
-    mera.convert = convert_fallback;
-    mera.units = FALLBACK_UNITS;
-    mera.source = FALLBACK_SOURCE;
-    mera.flags = FALLBACK_FLAGS;
-  }
+#endif /* ! __native_client__ */
+  return (mera.flags & timestamp_clock_have) ? true : false;
 }
 
 static unsigned fuse_timestamp(timestamp_t *unused) {

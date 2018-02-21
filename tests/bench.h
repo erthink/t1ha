@@ -54,8 +54,11 @@
 typedef uint64_t timestamp_t;
 
 enum mera_flags {
-  timestamp_clock_cheap = 1u << 0,
-  timestamp_clock_stable = 1u << 1,
+  timestamp_clock_have = 1u << 0,
+  timestamp_clock_cheap = 1u << 1,
+  timestamp_ticks = 1u << 2,
+  timestamp_cycles = 1u << 3,
+  timestamp_clock_stable = 1u << 4,
 };
 
 typedef struct {
@@ -69,7 +72,7 @@ typedef struct {
 } mera_t;
 
 extern mera_t mera;
-void mera_init(void);
+bool mera_init(void);
 
 /*****************************************************************************/
 

@@ -361,9 +361,16 @@ int main(int argc, const char *argv[]) {
   }
 #endif /* T1HA0_AESNI_AVAILABLE */
 
+  if (failed)
+    return EXIT_FAILURE;
+
   printf("\nPreparing to benchmarking...\n");
   fflush(NULL);
-  mera_init();
+  if (!mera_init()) {
+    printf(" - sorry, usable clock-source unavailable\n");
+    return EXIT_SUCCESS;
+  }
+
   if (mera.cpunum >= 0)
     printf(" - running on CPU#%d\n", mera.cpunum);
   printf(" - use %s as clock source for benchmarking\n", mera.source);
@@ -399,5 +406,5 @@ int main(int argc, const char *argv[]) {
   bench_size(1024 * 256, "large", bench_all);
 #endif /* __OPTIMIZE__ */
 
-  return failed ? EXIT_FAILURE : EXIT_SUCCESS;
+  return EXIT_SUCCESS;
 }

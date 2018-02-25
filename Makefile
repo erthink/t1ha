@@ -64,10 +64,28 @@ bench.o: tests/bench.h tests/bench.c Makefile
 
 test: $(OBJ_LIST) $(BENCH_EXTRA) tests/main.c Makefile tests/bench.h mera.o bench.o
 	@echo "Target-ARCHx86: $(TARGET_ARCHx86)" || true
-	$(CC) $(CFLAGS_TEST) -static -o $@ tests/main.c $(OBJ_LIST) $(BENCH_EXTRA) bench.o mera.o
+	$(CC) $(CFLAGS_TEST) -o $@ tests/main.c $(OBJ_LIST) $(BENCH_EXTRA) bench.o mera.o
 
 check: test
 	./test || rm -rf libt1ha.a libt1ha.so
 
 clean:
 	rm -f test test32 test64 *.i *.bc *.s *.o *.a *.so
+
+###############################################################################
+
+# sparc64-linux-gnu-gcc	- qemu troubles (sigaction, etc...)
+# hppa-linux-gnu-gcc	- don't supported by qemu
+# hppa64-linux-gnu-gcc	- gcc unable to cross-compiler
+# s390x-linux-gnu-gcc	- qemu troubles (hang)
+
+CROSS_LIST = sh4-linux-gnu-gcc alpha-linux-gnu-gcc \
+	powerpc64-linux-gnu-gcc powerpc-linux-gnu-gcc \
+	mips64-linux-gnuabi64-gcc mips-linux-gnu-gcc \
+	arm-linux-gnueabihf-gcc aarch64-linux-gnu-gcc
+
+cross-gcc:
+	for CC in $(CROSS_LIST); do make clean && CC=$$CC make all || exit $$?; done
+
+cross-qemu:
+	for CC in $(CROSS_LIST); do make clean && CC=$$CC CFLAGS_TEST="-std=c99 -static" make check || exit $$?; done

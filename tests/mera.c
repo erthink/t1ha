@@ -956,13 +956,12 @@ bool mera_init(void) {
   mera.flags = 0;
   mera.cpunum = set_single_affinity();
 
-#ifdef PR_SET_TSC
+#if defined(PR_SET_TSC) && T1HA_IA32_AVAILABLE
   int tsc_mode = PR_TSC_SIGSEGV;
-  if (prctl(PR_GET_TSC, &tsc_mode, 0, 0, 0)) {
-    if (errno != ENOSYS)
-      perror("prctl(PR_GET_TSC)");
-  } else if (tsc_mode != PR_TSC_ENABLE &&
-             prctl(PR_SET_TSC, PR_TSC_ENABLE, 0, 0, 0))
+  if (prctl(PR_GET_TSC, &tsc_mode, 0, 0, 0))
+    perror("prctl(PR_GET_TSC)");
+  else if (tsc_mode != PR_TSC_ENABLE &&
+           prctl(PR_SET_TSC, PR_TSC_ENABLE, 0, 0, 0))
     perror("prctl(PR_SET_TSC, PR_TSC_ENABLE)");
 #endif /* PR_SET_TSC */
 

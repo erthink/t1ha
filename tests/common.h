@@ -47,9 +47,13 @@ enum test_flags {
   bench_64 = 1 << 3,
   bench_le = 1 << 4,
   bench_be = 1 << 5,
+#ifdef T1HA0_AESNI_AVAILABLE
   bench_aes = 1 << 6,
   bench_avx = 1 << 7,
+#ifndef __e2k__
   bench_avx2 = 1 << 8,
+#endif /* !__e2k__ */
+#endif /* T1HA0_AESNI_AVAILABLE */
 
   bench_tiny = 1 << 9,
   bench_small = 1 << 10,
@@ -75,12 +79,16 @@ extern const uint64_t refval_32be[80];
 #ifdef T1HA0_AESNI_AVAILABLE
 uint64_t t1ha0_ia32aes_noavx_a(const void *data, size_t length, uint64_t seed);
 uint64_t t1ha0_ia32aes_avx_a(const void *data, size_t length, uint64_t seed);
+#ifndef __e2k__
 uint64_t t1ha0_ia32aes_avx2_a(const void *data, size_t length, uint64_t seed);
+#endif /* !__e2k__ */
 extern const uint64_t refval_ia32aes_a[80];
 
 uint64_t t1ha0_ia32aes_noavx_b(const void *data, size_t length, uint64_t seed);
 uint64_t t1ha0_ia32aes_avx_b(const void *data, size_t length, uint64_t seed);
+#ifndef __e2k__
 uint64_t t1ha0_ia32aes_avx2_b(const void *data, size_t length, uint64_t seed);
+#endif /* !__e2k__ */
 extern const uint64_t refval_ia32aes_b[80];
 #endif /* T1HA0_AESNI_AVAILABLE */
 

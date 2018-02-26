@@ -89,11 +89,13 @@ void bench_size(const unsigned size, const char *caption) {
       bench("t1ha0_ia32aes_avx_b", t1ha0_ia32aes_avx_b, buffer, size, seed);
       bench("t1ha0_ia32aes_avx", t1ha0_ia32aes_avx, buffer, size, seed);
     }
+#ifndef __e2k__
     if (is_option_set(bench_avx2)) {
       bench("t1ha0_ia32aes_avx2_a", t1ha0_ia32aes_avx2_a, buffer, size, seed);
       bench("t1ha0_ia32aes_avx2_b", t1ha0_ia32aes_avx2_b, buffer, size, seed);
       bench("t1ha0_ia32aes_avx2", t1ha0_ia32aes_avx2, buffer, size, seed);
     }
+#endif /* !__e2k__ */
   }
 #endif /* T1HA0_AESNI_AVAILABLE */
 

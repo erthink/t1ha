@@ -142,9 +142,6 @@ const uint64_t refval_32be[80] = {
 };
 
 #ifdef T1HA0_AESNI_AVAILABLE
-uint64_t t1ha0_ia32aes_noavx_a(const void *data, size_t length, uint64_t seed);
-uint64_t t1ha0_ia32aes_avx_a(const void *data, size_t length, uint64_t seed);
-uint64_t t1ha0_ia32aes_avx2_a(const void *data, size_t length, uint64_t seed);
 const uint64_t refval_ia32aes_a[80] = {
   0x4DE42DAE10FAB4D6, 0x25AADCE36A1D661D, 0xD9F87681CBBD0526, 0x2AD24CCD17D8478A,
   0xBEB68103CE241ADF, 0x42B2C3EF775510E0, 0x1AEB8CA76C60DF39, 0xBD89A22CC2CFC161,
@@ -168,9 +165,6 @@ const uint64_t refval_ia32aes_a[80] = {
   0x5A42DEABB396266C, 0x663262CB32B7B6AC, 0x241F5BC2A1430D39, 0xC34697D55EFB8870
 };
 
-uint64_t t1ha0_ia32aes_noavx_b(const void *data, size_t length, uint64_t seed);
-uint64_t t1ha0_ia32aes_avx_b(const void *data, size_t length, uint64_t seed);
-uint64_t t1ha0_ia32aes_avx2_b(const void *data, size_t length, uint64_t seed);
 const uint64_t refval_ia32aes_b[80] = {
   0x4DE42DAE10FAB4D6, 0xD43E785727EC1D9E, 0xD9F87681CBBD0526, 0x2AD24CCD17D8478A,
   0xBEB68103CE241ADF, 0x42B2C3EF775510E0, 0x1AEB8CA76C60DF39, 0xBD89A22CC2CFC161,

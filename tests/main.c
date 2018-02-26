@@ -26,8 +26,14 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-unsigned option_flags = bench_64 | bench_le | bench_aes | bench_avx |
-                        bench_avx2 | bench_tiny | bench_medium | bench_verbose;
+unsigned option_flags = bench_32 | bench_64 | bench_le
+#ifdef T1HA0_AESNI_AVAILABLE
+                        | bench_aes | bench_avx
+#ifndef __e2k__
+                        | bench_avx2
+#endif /* !__e2k__ */
+#endif /* T1HA0_AESNI_AVAILABLE */
+                        | bench_tiny | bench_medium | bench_verbose;
 
 int main(int argc, const char *argv[]) {
   (void)argc;
@@ -45,7 +51,12 @@ int main(int argc, const char *argv[]) {
   failed |= verify("t1ha0_32le", t1ha0_32le, refval_32le, false);
   failed |= verify("t1ha0_32be", t1ha0_32be, refval_32be, false);
 
-#ifdef T1HA0_AESNI_AVAILABLE
+#ifdef __e2k__
+  failed |= verify("t1ha0_ia32aes_noavx", t1ha0_ia32aes_noavx, refval_ia32aes_a,
+                   false);
+  failed |=
+      verify("t1ha0_ia32aes_avx", t1ha0_ia32aes_avx, refval_ia32aes_a, false);
+#elif defined(T1HA0_AESNI_AVAILABLE)
   if (ia32_cpu_features.basic.ecx & UINT32_C(0x02000000)) {
     failed |= verify("t1ha0_ia32aes_noavx", t1ha0_ia32aes_noavx,
                      refval_ia32aes_a, false);
@@ -98,7 +109,7 @@ int main(int argc, const char *argv[]) {
   }
   fflush(NULL);
 
-#ifdef T1HA0_AESNI_AVAILABLE
+#if defined(T1HA0_AESNI_AVAILABLE) && !defined(__e2k__)
   if ((ia32_cpu_features.basic.ecx & UINT32_C(0x02000000)) == 0)
     option_flags &= ~bench_aes;
   if ((ia32_cpu_features.basic.ecx & UINT32_C(0x1A000000)) !=

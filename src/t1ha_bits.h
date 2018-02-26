@@ -88,8 +88,11 @@
 #if __GNUC_PREREQ(4, 4) || defined(__clang__)
 
 #if defined(__ia32__) || defined(__e2k__)
-#include <cpuid.h>
 #include <x86intrin.h>
+#endif
+
+#if defined(__ia32__)
+#include <cpuid.h>
 #endif
 
 #ifndef likely

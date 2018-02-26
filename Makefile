@@ -22,6 +22,8 @@ CFLAGS_LIB ?= -Wall -ffunction-sections -O3 -fPIC -g $(CFLAGS) -fvisibility=hidd
 
 all: test libt1ha.a libt1ha.so
 
+clean:
+	rm -f test test32 test64 *.i *.bc *.s *.o *.a *.so
 
 t1ha0.o: t1ha.h src/t1ha_bits.h src/t1ha0.c Makefile
 	$(CC) $(CFLAGS_LIB) -c -o $@ src/t1ha0.c
@@ -50,27 +52,34 @@ t1ha1.o: t1ha.h src/t1ha_bits.h src/t1ha1.c Makefile
 t1ha2.o: t1ha.h src/t1ha_bits.h src/t1ha2.c Makefile
 	$(CC) $(CFLAGS_LIB) -c -o $@ src/t1ha2.c
 
-libt1ha.a: $(OBJ_LIST) test Makefile
+libt1ha.a: $(OBJ_LIST) Makefile
 	$(AR) rs $@ $(OBJ_LIST)
 
-libt1ha.so: $(OBJ_LIST) test Makefile
+libt1ha.so: $(OBJ_LIST) Makefile
 	$(CC) $(CFLAGS) -shared -s -o $@ $(OBJ_LIST)
 
-mera.o: tests/bench.h tests/mera.c Makefile
+###############################################################################
+
+mera.o: t1ha.h tests/mera.h tests/mera.c \
+		Makefile
 	$(CC) $(CFLAGS_TEST) -save-temps -c -o $@ tests/mera.c
 
-bench.o: tests/bench.h tests/bench.c Makefile
+bench.o: t1ha.h tests/common.h tests/mera.h tests/bench.c \
+		Makefile
 	$(CC) $(CFLAGS_TEST) -c -o $@ tests/bench.c
 
-test: $(OBJ_LIST) $(BENCH_EXTRA) tests/main.c Makefile tests/bench.h mera.o bench.o
+test.o: t1ha.h tests/common.h tests/mera.h tests/test.c \
+		Makefile
+	$(CC) $(CFLAGS_TEST) -c -o $@ tests/test.c
+
+test: $(OBJ_LIST) $(BENCH_EXTRA) tests/main.c Makefile \
+		t1ha.h tests/common.h tests/mera.h \
+		mera.o bench.o test.o
 	@echo "Target-ARCHx86: $(TARGET_ARCHx86)" || true
-	$(CC) $(CFLAGS_TEST) -o $@ tests/main.c $(OBJ_LIST) $(BENCH_EXTRA) bench.o mera.o
+	$(CC) $(CFLAGS_TEST) -o $@ tests/main.c $(OBJ_LIST) $(BENCH_EXTRA) bench.o mera.o test.o
 
 check: test
 	./test || rm -rf libt1ha.a libt1ha.so
-
-clean:
-	rm -f test test32 test64 *.i *.bc *.s *.o *.a *.so
 
 ###############################################################################
 

@@ -103,7 +103,9 @@
 #include <unistd.h>
 #endif /* OS */
 
-#include "bench.h"
+#include "mera.h"
+#include <memory.h>
+#include <stdio.h>
 
 /*****************************************************************************/
 
@@ -166,6 +168,22 @@ static __inline void compiler_barrier(void) {
 #error "Could not guess the kind of compiler, please report to us."
 #endif
 }
+
+#ifndef likely
+#if defined(__GNUC__) || defined(__clang__)
+#define likely(cond) __builtin_expect(!!(cond), 1)
+#else
+#define likely(x) (x)
+#endif
+#endif /* likely */
+
+#ifndef unlikely
+#if defined(__GNUC__) || defined(__clang__)
+#define unlikely(cond) __builtin_expect(!!(cond), 0)
+#else
+#define unlikely(x) (x)
+#endif
+#endif /* unlikely */
 
 /*****************************************************************************/
 
@@ -1214,3 +1232,229 @@ static double fuse_convert(timestamp_t unused) {
 
 mera_t mera = {
     fuse_timestamp, fuse_timestamp, fuse_convert, "void", "none", 0, -1};
+
+/*****************************************************************************/
+
+mera_bci_t mera_bci;
+
+double mera_bench(MERA_BENCH_TARGET target, MERA_BENCH_SELF_ARGS) {
+  const time_t timeout_fuse = time(NULL);
+  unsigned target_loops = 1;
+  unsigned retry_count = 0, restart_count = 0;
+
+  timestamp_t overhead_best = INT64_MAX;
+  timestamp_t overhead_gate = 0;
+  unsigned overhead_loops_max = 0;
+
+  restart_count -= 1;
+restart_top:;
+  timestamp_t overhead_sum = 0;
+  unsigned overhead_total_count = 0;
+  unsigned overhead_best_count = 1;
+  unsigned overhead_worthless_loops = 0;
+  unsigned overhead_accounted_loops = 0;
+
+restart_middle:;
+  timestamp_t target_best = INT64_MAX;
+  timestamp_t target_gate = 0;
+  unsigned tail_loops_max = 0;
+
+restart_bottom:;
+  timestamp_t target_brutto_sum = 0;
+  unsigned target_overhead_count = 0;
+  unsigned target_best_count = 1;
+  unsigned target_total_count = 0;
+  unsigned target_worthless_loops = 0;
+  unsigned target_accounted_loops = 0;
+  unsigned stable = 0;
+  restart_count += 1;
+
+  retry_count -= 1;
+retry:
+  retry_count += 1;
+
+  while (true) {
+    /* measure the overhead of measurement */
+    unsigned coreid;
+    {
+      /* wait for edge of tick */
+      timestamp_t snap, start, finish;
+      coreid = mera.start(&snap);
+      do {
+        if (unlikely(coreid != mera.start(&start) || snap > start))
+          goto retry;
+      } while (snap == start);
+
+      /* first iteration */
+      unsigned loops = 1;
+      if (unlikely(coreid != mera.finish(&finish) || start > finish))
+        goto retry;
+
+      /* loop until end of tick */
+      while (start == finish) {
+        loops += 1;
+        if (unlikely(coreid != mera.start(&snap) || start > snap))
+          goto retry;
+        if (unlikely(coreid != mera.finish(&finish) || snap > finish))
+          goto retry;
+      }
+      const timestamp_t elapsed = finish - start;
+      if (unlikely(overhead_best > elapsed || overhead_loops_max < loops)) {
+        if (overhead_best > elapsed) {
+          overhead_gate = overhead_best + (overhead_best - elapsed + 1) / 2;
+          if (overhead_gate > elapsed * 129 / 128)
+            overhead_gate = elapsed * 129 / 128;
+          if (overhead_gate < elapsed * 1025 / 1024 + 1)
+            overhead_gate = elapsed * 1025 / 1024 + 1;
+          overhead_best = elapsed;
+        }
+        overhead_loops_max =
+            (overhead_loops_max > loops) ? overhead_loops_max : loops;
+        goto restart_top;
+      } else if (likely(elapsed <= overhead_gate &&
+                        loops + 1 >= overhead_loops_max)) {
+        if (elapsed == overhead_best && loops == overhead_loops_max)
+          overhead_best_count += 1;
+        overhead_sum += elapsed;
+        overhead_total_count += loops;
+        overhead_accounted_loops += 1;
+      } else {
+        overhead_worthless_loops += 1;
+      }
+    }
+
+    /* measure the target */
+    if (target) {
+      /* wait for edge of tick */
+      timestamp_t snap, start, finish;
+      if (unlikely(coreid != mera.start(&snap)))
+        goto retry;
+      do {
+        if (unlikely(coreid != mera.start(&start) || snap > start))
+          goto retry;
+      } while (snap == start);
+
+      unsigned loops = 0;
+      do
+        target(MERA_BENCH_TARGET_ARGS);
+      while (++loops < target_loops);
+
+      loops = 1;
+      if (unlikely(coreid != mera.finish(&finish) || snap > finish))
+        goto retry;
+
+      /* wait for next tick */
+      while (true) {
+        if (unlikely(coreid != mera.start(&snap) || finish > snap))
+          goto retry;
+        if (finish != snap)
+          break;
+        if (unlikely(coreid != mera.finish(&snap) || finish > snap))
+          goto retry;
+        if (finish != snap)
+          break;
+        loops += 1;
+      }
+
+      const timestamp_t elapsed = finish - start;
+      if (unlikely(target_best > elapsed ||
+                   (target_best == elapsed && tail_loops_max < loops))) {
+        if (target_best > elapsed) {
+          target_gate = target_best + (target_best - elapsed + 1) / 2;
+          if (target_gate > elapsed * 129 / 128)
+            target_gate = elapsed * 129 / 128;
+          if (target_gate < elapsed * 1025 / 1024 + 1)
+            target_gate = elapsed * 1025 / 1024 + 1;
+          target_best = elapsed;
+        }
+        tail_loops_max = loops;
+        goto restart_bottom;
+      } else if (likely(elapsed <= target_gate &&
+                        (tail_loops_max - loops /* overflow is ok */) < 2)) {
+        if (elapsed == target_best && loops == tail_loops_max)
+          target_best_count += 1;
+        target_total_count += target_loops;
+        target_brutto_sum += elapsed;
+        target_overhead_count += loops;
+        target_accounted_loops += 1;
+      } else {
+        target_worthless_loops += 1;
+      }
+    }
+
+    /* checkpoint */
+    if (unlikely((++stable & 1023) == 0)) {
+      if (target) {
+        const timestamp_t wanna = 1042 + overhead_best * overhead_loops_max;
+        if (target_best < wanna) {
+          target_loops += target_loops;
+          goto restart_middle;
+        }
+        if (target_loops > 1 && target_best > wanna * 4) {
+          target_loops >>= 1;
+          goto restart_middle;
+        }
+      }
+
+      const unsigned enough4fuse_seconds = 9;
+      const unsigned enough4best =
+          (mera.flags & timestamp_clock_stable) ? 499 : 1999;
+      const unsigned enough4avg =
+          (mera.flags & timestamp_clock_stable) ? 4999 : 29999;
+      const unsigned enough4bailout =
+          (mera.flags & timestamp_clock_cheap) ? 99999 : 59999;
+
+      const unsigned spent_seconds = (unsigned)(time(NULL) - timeout_fuse);
+
+      const bool enough4overhead = overhead_best_count > enough4best ||
+                                   overhead_accounted_loops > enough4avg ||
+                                   overhead_worthless_loops > enough4bailout ||
+                                   spent_seconds > enough4fuse_seconds;
+
+      const bool enough4target = target_best_count > enough4best ||
+                                 target_accounted_loops > enough4avg ||
+                                 target_worthless_loops > enough4bailout ||
+                                 spent_seconds > enough4fuse_seconds;
+
+      /* calculate results */
+      if (enough4overhead && (!target || enough4target)) {
+        memset(&mera_bci, 0, sizeof(mera_bci));
+        mera_bci.retry_count = retry_count;
+        mera_bci.restart_count = restart_count;
+        mera_bci.spent_seconds = spent_seconds + 1;
+
+        mera_bci.overhead_best = overhead_best;
+        mera_bci.overhead_gate = overhead_gate;
+        mera_bci.overhead_loops_max = overhead_loops_max;
+        mera_bci.overhead_best_count = overhead_best_count;
+        mera_bci.overhead_accounted_loops = overhead_accounted_loops;
+        mera_bci.overhead_worthless_loops = overhead_worthless_loops;
+
+        const double measured_overhead =
+            (overhead_best_count > 2 || overhead_total_count < enough4avg / 2)
+                ? mera.convert(overhead_best) / overhead_loops_max
+                : mera.convert(overhead_sum) / overhead_total_count;
+        if (!target)
+          return measured_overhead;
+
+        mera_bci.target_loops = target_loops;
+        mera_bci.target_best = target_best;
+        mera_bci.target_gate = target_gate;
+        mera_bci.tail_loops_max = tail_loops_max;
+        mera_bci.target_best_count = target_best_count;
+        mera_bci.target_accounted_loops = target_accounted_loops;
+        mera_bci.target_worthless_loops = target_worthless_loops;
+
+        const double measured_target =
+            (target_best_count > 2 || target_total_count < enough4avg / 2)
+                ? (mera.convert(target_best) -
+                   measured_overhead * tail_loops_max) /
+                      target_loops
+                : (mera.convert(target_brutto_sum) -
+                   measured_overhead * target_overhead_count) /
+                      target_total_count;
+        return measured_target;
+      }
+    }
+  }
+}

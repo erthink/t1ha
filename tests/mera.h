@@ -24,30 +24,17 @@
 
 #pragma once
 
-#include <inttypes.h>
-#include <limits.h>
 #include <stdbool.h>
-#include <stddef.h>
 #include <stdint.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
 
 #if defined(_MSC_VER)
-#pragma warning(disable : 4711) /* function 'xyz' selected for                 \
-                                   automatic inline expansion */
 #pragma warning(disable : 4127) /* conditional expression is constant */
-#if _MSC_VER < 1900
-#define snprintf _snprintf
-#pragma warning(disable : 4996) /* '_snprintf': This function or variable      \
-                                   may be unsafe */
-#endif
 #if _MSC_VER > 1800
 #pragma warning(disable : 4464) /* relative include path contains '..' */
 #endif
 #endif /* MSVC */
 
-#include "../t1ha.h"
+#include "../t1ha.h" /* for byteorder and common __ia32__ */
 
 /*****************************************************************************/
 
@@ -74,6 +61,27 @@ typedef struct {
 extern mera_t mera;
 bool mera_init(void);
 
+typedef struct {
+  unsigned retry_count, restart_count;
+  unsigned overhead_loops_max, overhead_best_count, overhead_accounted_loops,
+      overhead_worthless_loops;
+  uint64_t overhead_best, overhead_gate;
+
+  unsigned target_loops, tail_loops_max, target_best_count,
+      target_accounted_loops, target_worthless_loops, spent_seconds;
+  uint64_t target_best, target_gate;
+} mera_bci_t /* bci = Bench Convergence Info */;
+
+extern mera_bci_t mera_bci;
+typedef uint64_t (*mera_bench_target_t)(const void *data, size_t bytes,
+                                        uint64_t seed);
+
+#define MERA_BENCH_TARGET mera_bench_target_t
+#define MERA_BENCH_SELF_ARGS const void *data, size_t bytes, uint64_t seed
+#define MERA_BENCH_TARGET_ARGS data, bytes, seed
+
+double mera_bench(MERA_BENCH_TARGET target, MERA_BENCH_SELF_ARGS);
+
 /*****************************************************************************/
 
 #if defined(__ia32__)
@@ -99,10 +107,3 @@ typedef struct _ia32_cpu_features {
 
 extern ia32_cpu_features_t ia32_cpu_features;
 #endif /* __ia32__ */
-
-/*****************************************************************************/
-
-double bench_mats(void);
-void bench(const char *caption,
-           uint64_t (*hash)(const void *, size_t, uint64_t), const void *data,
-           unsigned len, uint64_t seed);

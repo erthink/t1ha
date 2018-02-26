@@ -1,3 +1,5 @@
+tests/common.h
+tests/test.c
 .travis.yml
 LICENSE
 Makefile
@@ -17,6 +19,6 @@ tests/4bench_t1ha0_ia32aes_avx.c
 tests/4bench_t1ha0_ia32aes_avx2.c
 tests/4bench_t1ha0_ia32aes_noavx.c
 tests/bench.c
-tests/bench.h
 tests/main.c
+tests/mera.h
 tests/mera.c

@@ -42,6 +42,35 @@
  */
 
 #pragma once
+
+#ifndef __has_attribute
+#define __has_attribute(x) (0)
+#endif
+
+#ifndef __has_include
+#define __has_include(x) (0)
+#endif
+
+#ifndef __GNUC_PREREQ
+#if defined(__GNUC__) && defined(__GNUC_MINOR__)
+#define __GNUC_PREREQ(maj, min)                                                \
+  ((__GNUC__ << 16) + __GNUC_MINOR__ >= ((maj) << 16) + (min))
+#else
+#define __GNUC_PREREQ(maj, min) 0
+#endif
+#endif /* __GNUC_PREREQ */
+
+#ifndef __CLANG_PREREQ
+#ifdef __clang__
+#define __CLANG_PREREQ(maj, min)                                               \
+  ((__clang_major__ << 16) + __clang_minor__ >= ((maj) << 16) + (min))
+#else
+#define __CLANG_PREREQ(maj, min) (0)
+#endif
+#endif /* __CLANG_PREREQ */
+
+/*****************************************************************************/
+
 #if defined(__cplusplus) && __cplusplus >= 201103L
 #include <climits>
 #include <cstddef>
@@ -57,14 +86,28 @@
 #if !defined(__BYTE_ORDER__) || !defined(__ORDER_LITTLE_ENDIAN__) ||           \
     !defined(__ORDER_BIG_ENDIAN__)
 
-#if defined(__GLIBC__) || defined(__GNU_LIBRARY__) || defined(__ANDROID__)
+/* *INDENT-OFF* */
+/* clang-format off */
+
+#if defined(__GLIBC__) || defined(__GNU_LIBRARY__) || defined(__ANDROID__) ||  \
+    __has_include(<endian.h>)
 #include <endian.h>
-#elif defined(__APPLE__) || defined(__MACH__) || defined(__OpenBSD__)
+#elif defined(__APPLE__) || defined(__MACH__) || defined(__OpenBSD__) ||       \
+    __has_include(<machine/endian.h>)
 #include <machine/endian.h>
+#elif __has_include(<sys/isa_defs.h>)
+#include <sys/isa_defs.h>
+#elif __has_include(<sys/types.h>) && __has_include(<sys/endian.h>)
+#include <sys/endian.h>
+#include <sys/types.h>
 #elif defined(__bsdi__) || defined(__DragonFly__) || defined(__FreeBSD__) ||   \
-    defined(__NETBSD__) || defined(__NetBSD__)
+    defined(__NETBSD__) || defined(__NetBSD__) ||                              \
+    __has_include(<sys/param.h>)
 #include <sys/param.h>
 #endif /* OS */
+
+/* *INDENT-ON* */
+/* clang-format on */
 
 #if defined(__BYTE_ORDER) && defined(__LITTLE_ENDIAN) && defined(__BIG_ENDIAN)
 #define __ORDER_LITTLE_ENDIAN__ __LITTLE_ENDIAN
@@ -114,28 +157,6 @@
 #endif /* __BYTE_ORDER__ || __ORDER_LITTLE_ENDIAN__ || __ORDER_BIG_ENDIAN__ */
 
 /*****************************************************************************/
-
-#ifndef __has_attribute
-#define __has_attribute(x) (0)
-#endif
-
-#ifndef __GNUC_PREREQ
-#if defined(__GNUC__) && defined(__GNUC_MINOR__)
-#define __GNUC_PREREQ(maj, min)                                                \
-  ((__GNUC__ << 16) + __GNUC_MINOR__ >= ((maj) << 16) + (min))
-#else
-#define __GNUC_PREREQ(maj, min) 0
-#endif
-#endif /* __GNUC_PREREQ */
-
-#ifndef __CLANG_PREREQ
-#ifdef __clang__
-#define __CLANG_PREREQ(maj, min)                                               \
-  ((__clang_major__ << 16) + __clang_minor__ >= ((maj) << 16) + (min))
-#else
-#define __CLANG_PREREQ(maj, min) (0)
-#endif
-#endif /* __CLANG_PREREQ */
 
 #ifndef __dll_export
 #if defined(_WIN32) || defined(_WIN64) || defined(__CYGWIN__)

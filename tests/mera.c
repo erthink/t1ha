@@ -108,15 +108,13 @@
 /*****************************************************************************/
 
 /* Compiler's includes for builtins/intrinsics */
-#ifdef _MSC_VER
+#if defined(_MSC_VER) || defined(__INTEL_COMPILER)
 #include <intrin.h>
 #elif __GNUC_PREREQ(4, 4) || defined(__clang__)
-#if T1HA_IA32_AVAILABLE || defined(__e2k__)
+#if defined(__ia32__) || defined(__e2k__)
 #include <cpuid.h>
 #include <x86intrin.h>
-#endif /* T1HA_IA32_AVAILABLE */
-#elif defined(__INTEL_COMPILER)
-#include <intrin.h>
+#endif /* __ia32__ */
 #elif defined(__SUNPRO_C) || defined(__sun) || defined(sun)
 #include <mbarrier.h>
 #elif (defined(_HPUX_SOURCE) || defined(__hpux) || defined(__HP_aCC)) &&       \
@@ -651,7 +649,7 @@ static unsigned clock_zbustimer(timestamp_t *now) {
 
 #endif /* MIPS */
 
-#if T1HA_IA32_AVAILABLE
+#if defined(__ia32__)
 
 enum ia32_fixed_perfomance_counters {
   /* count of retired instructions on the current core in the low-order 48 bits
@@ -847,13 +845,13 @@ static void fetch_cpu_features(void) {
 #endif
 }
 
-#endif /* T1HA_IA32_AVAILABLE */
+#endif /* __ia32__ */
 
 /*****************************************************************************/
 
 #ifdef __NR_perf_event_open
 static int perf_fd, perf_error;
-#if T1HA_IA32_AVAILABLE
+#if defined(__ia32__)
 static const struct perf_event_mmap_page volatile *perf_page;
 #else
 #define perf_page NULL
@@ -896,7 +894,7 @@ static int perf_setup(void) {
     return -1;
   }
 
-#if T1HA_IA32_AVAILABLE
+#if defined(__ia32__)
   perf_page = (struct perf_event_mmap_page *)mmap(
       NULL, getpagesize(), PROT_WRITE | PROT_READ, MAP_SHARED, perf_fd, 0);
   if (perf_page == MAP_FAILED) {
@@ -904,7 +902,7 @@ static int perf_setup(void) {
     perror("mmap(perf_event_mmap_page)");
     perf_page = NULL;
   }
-#endif /* T1HA_IA32_AVAILABLE */
+#endif /* __ia32__ */
 
   if (ioctl(perf_fd, PERF_EVENT_IOC_ENABLE, 0) /* Start counters */) {
     perf_error = errno;
@@ -917,7 +915,7 @@ static int perf_setup(void) {
   return 0;
 }
 
-#if T1HA_IA32_AVAILABLE
+#if defined(__ia32__)
 static unsigned perf_rdpmc_index;
 unsigned perf_rdpmc_start(timestamp_t *now) {
   compiler_barrier();
@@ -944,7 +942,7 @@ unsigned perf_rdpmc_finish(timestamp_t *now) {
   u->u32.h = high;
   return 0;
 }
-#endif /* T1HA_IA32_AVAILABLE */
+#endif /* __ia32__ */
 
 #else
 #define perf_fd (-1)
@@ -956,7 +954,7 @@ bool mera_init(void) {
   mera.flags = 0;
   mera.cpunum = set_single_affinity();
 
-#if defined(PR_SET_TSC) && T1HA_IA32_AVAILABLE
+#if defined(PR_SET_TSC) && defined(__ia32__)
   int tsc_mode = PR_TSC_SIGSEGV;
   if (prctl(PR_GET_TSC, &tsc_mode, 0, 0, 0))
     perror("prctl(PR_GET_TSC)");
@@ -1134,7 +1132,7 @@ bool mera_init(void) {
   }
 #endif /* __mips__ */
 
-#if T1HA_IA32_AVAILABLE
+#if defined(__ia32__)
   fetch_cpu_features();
   if (ia32_cpu_features.basic.edx & (1 << 4)) {
     probe(clock_rdpmc_start, clock_rdpmc_finish, convert_1to1,
@@ -1161,14 +1159,14 @@ bool mera_init(void) {
     probe(clock_rdtsc_start, clock_rdtsc_finish, convert_1to1, tsc_flags,
           "RDTSC", NULL);
   }
-#endif /* T1HA_IA32_AVAILABLE */
+#endif /* __ia32__ */
 
 #if __NR_perf_event_open
   if (perf_setup() == 0) {
     bool perf_used = probe(clock_perf, clock_perf, convert_1to1,
                            timestamp_cycles | timestamp_clock_stable,
                            "PERF_COUNT_HW_CPU_CYCLES", "cycle");
-#if T1HA_IA32_AVAILABLE
+#if defined(__ia32__)
     if (perf_page) {
       bool perf_used_page = false;
       if (perf_page->cap_bit0_is_deprecated && perf_page->cap_user_rdpmc &&
@@ -1186,7 +1184,7 @@ bool mera_init(void) {
         perf_page = NULL;
       }
     }
-#endif /* #T1HA_IA32_AVAILABLE */
+#endif /* __ia32__ */
     if (!perf_used) {
       close(perf_fd);
       perf_fd = -1;

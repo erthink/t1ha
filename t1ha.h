@@ -83,6 +83,25 @@
 
 /*****************************************************************************/
 
+#if defined(i386) || defined(__386) || defined(__i386) || defined(__i386__) || \
+    defined(i486) || defined(__i486) || defined(__i486__) ||                   \
+    defined(i586) | defined(__i586) || defined(__i586__) || defined(i686) ||   \
+    defined(__i686) || defined(__i686__) || defined(_M_IX86) ||                \
+    defined(_X86_) || defined(__THW_INTEL__) || defined(__I86__) ||            \
+    defined(__INTEL__) || defined(__x86_64) || defined(__x86_64__) ||          \
+    defined(__amd64__) || defined(__amd64) || defined(_M_X64) ||               \
+    defined(_M_AMD64) || defined(__IA32__) || defined(__INTEL__)
+#ifndef __ia32__
+/* LY: define neutral __ia32__ for x86 and x86-64 archs */
+#define __ia32__ 1
+#endif /* __ia32__ */
+#if !defined(__amd64__) && (defined(__x86_64) || defined(__x86_64__) ||        \
+                            defined(__amd64) || defined(_M_X64))
+/* LY: define trusty __amd64__ for all AMD64/x86-64 arch */
+#define __amd64__ 1
+#endif /* __amd64__ */
+#endif /* all x86 */
+
 #if !defined(__BYTE_ORDER__) || !defined(__ORDER_LITTLE_ENDIAN__) ||           \
     !defined(__ORDER_BIG_ENDIAN__)
 
@@ -129,12 +148,7 @@
     defined(__elbrus_4c__) || defined(__elbrus_8c__) || defined(__bfin__) ||   \
     defined(__BFIN__) || defined(__ia64__) || defined(_IA64) ||                \
     defined(__IA64__) || defined(__ia64) || defined(_M_IA64) ||                \
-    defined(__itanium__) || defined(i386) || defined(__i386__) ||              \
-    defined(__i486__) || defined(__i586__) || defined(__i686__) ||             \
-    defined(__i386) || defined(_M_IX86) || defined(_X86_) ||                   \
-    defined(__THW_INTEL__) || defined(__I86__) || defined(__INTEL__) ||        \
-    defined(__x86_64) || defined(__x86_64__) || defined(__amd64__) ||          \
-    defined(__amd64) || defined(_M_X64) || defined(__CYGWIN__) ||              \
+    defined(__itanium__) || defined(__ia32__) || defined(__CYGWIN__) ||        \
     defined(_WIN64) || defined(_WIN32) || defined(__TOS_WIN__) ||              \
     defined(__WINDOWS__)
 #define __BYTE_ORDER__ __ORDER_LITTLE_ENDIAN__
@@ -196,24 +210,13 @@
 #define T1HA_API
 #endif /* T1HA_API */
 
-#if defined(i386) || defined(__i386__) || defined(__i486__) ||                 \
-    defined(__i586__) || defined(__i686__) || defined(__i386) ||               \
-    defined(_M_IX86) || defined(_X86_) || defined(__THW_INTEL__) ||            \
-    defined(__I86__) || defined(__INTEL__) || defined(__x86_64) ||             \
-    defined(__x86_64__) || defined(__amd64__) || defined(__amd64) ||           \
-    defined(_M_X64)
-#define T1HA_IA32_AVAILABLE 1
-#else
-#define T1HA_IA32_AVAILABLE 0
-#endif /* x86 */
-
-#if defined(_M_IX86) || defined(_M_X64)
+#if defined(_MSC_VER) && defined(__ia32__)
 #define T1HA_ALIGN_PREFIX __declspec(align(32)) /* required only for SIMD */
 #else
 #define T1HA_ALIGN_PREFIX
 #endif /* _MSC_VER */
 
-#if defined(__GNUC__) && T1HA_IA32_AVAILABLE
+#if defined(__GNUC__) && defined(__ia32__)
 #define T1HA_ALIGN_SUFFIX                                                      \
   __attribute__((aligned(32))) /* required only for SIMD */
 #else
@@ -301,13 +304,13 @@ static __inline uint64_t t1ha(const void *data, size_t length, uint64_t seed) {
 uint64_t t1ha0_32le(const void *data, size_t length, uint64_t seed);
 uint64_t t1ha0_32be(const void *data, size_t length, uint64_t seed);
 
-#if T1HA_IA32_AVAILABLE && (!defined(_M_IX86) || _MSC_VER > 1800)
+#if defined(__ia32__) && (!defined(_M_IX86) || _MSC_VER > 1800)
 #define T1HA0_AESNI_AVAILABLE
 #define T1HA0_RUNTIME_SELECT
 uint64_t t1ha0_ia32aes_noavx(const void *data, size_t length, uint64_t seed);
 uint64_t t1ha0_ia32aes_avx(const void *data, size_t length, uint64_t seed);
 uint64_t t1ha0_ia32aes_avx2(const void *data, size_t length, uint64_t seed);
-#endif /* T1HA_IA32_AVAILABLE */
+#endif /* __ia32__ */
 
 #ifdef T1HA0_RUNTIME_SELECT
 #ifdef __ELF__

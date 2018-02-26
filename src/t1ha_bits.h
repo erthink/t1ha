@@ -71,7 +71,7 @@
 #endif
 
 #if !defined(UNALIGNED_OK)
-#if T1HA_IA32_AVAILABLE || defined(__e2k__)
+#if defined(__ia32__) || defined(__e2k__)
 #define UNALIGNED_OK 1
 #define PAGESIZE 4096
 #else
@@ -87,7 +87,7 @@
 
 #if __GNUC_PREREQ(4, 4) || defined(__clang__)
 
-#if T1HA_IA32_AVAILABLE
+#if defined(__ia32__) || defined(__e2k__)
 #include <cpuid.h>
 #include <x86intrin.h>
 #endif

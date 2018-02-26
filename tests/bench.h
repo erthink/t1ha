@@ -76,7 +76,7 @@ bool mera_init(void);
 
 /*****************************************************************************/
 
-#if T1HA_IA32_AVAILABLE
+#if defined(__ia32__)
 typedef struct _ia32_cpu_features {
   struct {
     uint32_t ebx;
@@ -98,7 +98,7 @@ typedef struct _ia32_cpu_features {
 } ia32_cpu_features_t;
 
 extern ia32_cpu_features_t ia32_cpu_features;
-#endif /* T1HA_IA32_AVAILABLE */
+#endif /* __ia32__ */
 
 /*****************************************************************************/
 

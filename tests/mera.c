@@ -225,15 +225,15 @@ static bool probe(unsigned (*start)(timestamp_t *),
   memset(&act, 0, sizeof(act));
   act.sa_sigaction = sigaction_handler;
   if (sigaction(SIGSEGV, &act, &prev_sigsegv)) {
-    perror("sigaction(SIGSEGV)");
+    perror(MERA_PERROR_PREFIX "sigaction(SIGSEGV)");
     return false;
   }
   if (sigaction(SIGILL, &act, &prev_sigill)) {
-    perror("sigaction(SIGILL)");
+    perror(MERA_PERROR_PREFIX "sigaction(SIGILL)");
     return false;
   }
   if (sigaction(SIGBUS, &act, &prev_sigbus)) {
-    perror("sigaction(SIGBUS)");
+    perror(MERA_PERROR_PREFIX "sigaction(SIGBUS)");
     return false;
   }
 
@@ -296,20 +296,20 @@ static int set_single_affinity(void) {
 #elif defined(__GLIBC__) || defined(__GNU_LIBRARY__) || defined(__ANDROID__)
   const int current_cpu = sched_getcpu();
   if (current_cpu < 0) {
-    perror("sched_getcpu()");
+    perror(MERA_PERROR_PREFIX "sched_getcpu()");
     return -1;
   }
   const int ncpu = sysconf(_SC_NPROCESSORS_CONF);
   const unsigned cpuset_size = CPU_ALLOC_SIZE(ncpu);
   cpu_set_t *affinity = CPU_ALLOC(ncpu);
   if (!affinity) {
-    perror("CPU_ALLOC()");
+    perror(MERA_PERROR_PREFIX "CPU_ALLOC()");
     return -1;
   }
   CPU_ZERO_S(cpuset_size, affinity);
   CPU_SET_S(current_cpu, cpuset_size, affinity);
   if (sched_setaffinity(0, sizeof(affinity), affinity)) {
-    perror("sched_setaffinity()");
+    perror(MERA_PERROR_PREFIX "sched_setaffinity()");
     CPU_FREE(affinity);
     return -1;
   }
@@ -357,7 +357,7 @@ static double convert_mach(timestamp_t timestamp) {
   if (!ratio) {
     mach_timebase_info_data_t ti;
     if (mach_timebase_info(&ti) != 0) {
-      perror("mach_timebase_info()");
+      perror(MERA_PERROR_PREFIX "mach_timebase_info()");
       return -1;
     }
     ratio = (double)ti.numer / ti.denom;
@@ -371,7 +371,7 @@ static double convert_mach(timestamp_t timestamp) {
 static unsigned clock_windows(timestamp_t *now) {
   compiler_barrier();
   if (!QueryPerformanceCounter((LARGE_INTEGER *)now)) {
-    perror("QueryPerformanceCounter()");
+    perror(MERA_PERROR_PREFIX "QueryPerformanceCounter()");
     *now = 42;
   }
   compiler_barrier();
@@ -383,7 +383,7 @@ static double convert_windows(timestamp_t timestamp) {
   if (!ratio) {
     LARGE_INTEGER frequency;
     if (!QueryPerformanceFrequency(&frequency)) {
-      perror("QueryPerformanceFrequency()");
+      perror(MERA_PERROR_PREFIX "QueryPerformanceFrequency()");
       return -1;
     }
     ratio = 1e9 / frequency.QuadPart;
@@ -397,7 +397,7 @@ static unsigned clock_gettimeofday(timestamp_t *now) {
   compiler_barrier();
   struct timeval tv;
   if (gettimeofday(&tv, NULL)) {
-    perror("gettimeofday()");
+    perror(MERA_PERROR_PREFIX "gettimeofday()");
     tv.tv_sec = tv.tv_usec = 0;
   }
   *now = tv.tv_sec * UINT64_C(1000000) + tv.tv_usec;
@@ -414,7 +414,7 @@ static unsigned clock_os400(timestamp_t *now) {
   compiler_barrier();
   timebasestruct_t tb;
   if (read_wall_time(&tb, TIMEBASE_SZ) != 0) {
-    perror("read_wall_time(TIMEBASE_SZ)");
+    perror(MERA_PERROR_PREFIX "read_wall_time(TIMEBASE_SZ)");
     abort();
   }
   union timestamp *u = (union timestamp *)now;
@@ -431,7 +431,7 @@ static double convert_os400(timestamp_t timestamp) {
     tb.tb_high = 0x7fff;
     tb.tb_low = 0;
     if (time_base_to_time(&tb, TIMEBASE_SZ) != 0) {
-      perror("time_base_to_time()");
+      perror(MERA_PERROR_PREFIX "time_base_to_time()");
       abort();
     }
     ratio = (tb.tb_high * 1e9 + tb.tb_low) / UINT64_C(0x7fff00000000);
@@ -447,7 +447,7 @@ static unsigned clock_posix(timestamp_t *now) {
   compiler_barrier();
   struct timespec ts;
   if (clock_gettime(posix_clockid, &ts)) {
-    perror("clock_gettime()");
+    perror(MERA_PERROR_PREFIX "clock_gettime()");
     ts.tv_sec = ts.tv_nsec = 0;
   }
   *now = ts.tv_sec * UINT64_C(1000000000) + ts.tv_nsec;
@@ -889,7 +889,7 @@ static unsigned clock_perf(timestamp_t *now) {
 static int perf_setup(void) {
 #ifdef PR_TASK_PERF_EVENTS_ENABLE
   if (prctl(PR_TASK_PERF_EVENTS_ENABLE, 1, 0, 0, 0))
-    perror("prctl(PR_TASK_PERF_EVENTS_ENABLE)");
+    perror(MERA_PERROR_PREFIX "prctl(PR_TASK_PERF_EVENTS_ENABLE)");
 #endif /* PR_TASK_PERF_EVENTS_ENABLE */
 
   struct perf_event_attr attr;
@@ -910,7 +910,7 @@ static int perf_setup(void) {
   if (perf_fd < 0) {
     perf_error = errno;
     if (perf_error != EACCES /* will handle later */)
-      perror("perf_event_open()");
+      perror(MERA_PERROR_PREFIX "perf_event_open()");
     return -1;
   }
 
@@ -919,14 +919,14 @@ static int perf_setup(void) {
       NULL, getpagesize(), PROT_WRITE | PROT_READ, MAP_SHARED, perf_fd, 0);
   if (perf_page == MAP_FAILED) {
     perf_error = errno;
-    perror("mmap(perf_event_mmap_page)");
+    perror(MERA_PERROR_PREFIX "mmap(perf_event_mmap_page)");
     perf_page = NULL;
   }
 #endif /* __ia32__ */
 
   if (ioctl(perf_fd, PERF_EVENT_IOC_ENABLE, 0) /* Start counters */) {
     perf_error = errno;
-    perror("ioctl(PERF_EVENT_IOC_ENABLE)");
+    perror(MERA_PERROR_PREFIX "ioctl(PERF_EVENT_IOC_ENABLE)");
     close(perf_fd);
     perf_fd = -1;
     return -1;
@@ -977,10 +977,10 @@ bool mera_init(void) {
 #if defined(PR_SET_TSC) && defined(__ia32__)
   int tsc_mode = PR_TSC_SIGSEGV;
   if (prctl(PR_GET_TSC, &tsc_mode, 0, 0, 0))
-    perror("prctl(PR_GET_TSC)");
+    perror(MERA_PERROR_PREFIX "prctl(PR_GET_TSC)");
   else if (tsc_mode != PR_TSC_ENABLE &&
            prctl(PR_SET_TSC, PR_TSC_ENABLE, 0, 0, 0))
-    perror("prctl(PR_SET_TSC, PR_TSC_ENABLE)");
+    perror(MERA_PERROR_PREFIX "prctl(PR_SET_TSC, PR_TSC_ENABLE)");
 #endif /* PR_SET_TSC */
 
 #if defined(EMSCRIPTEN)
@@ -1131,12 +1131,12 @@ bool mera_init(void) {
       printf(" - suggest run from super-user for access to /dev/mem "
              "(MIPS_ZBUS_TIMER)\n");
     else
-      perror("open(/dev/mem)");
+      perror(MERA_PERROR_PREFIX "open(/dev/mem)");
   else {
     mips_tsc_addr = mmap(NULL, getpagesize(), PROT_READ, MAP_SHARED, mem_fd,
                          0x10030000 /* MIPS_ZBUS_TIMER */);
     if (mips_tsc_addr == MAP_FAILED) {
-      perror("mmap(MIPS_ZBUS_TIMER)");
+      perror(MERA_PERROR_PREFIX "mmap(MIPS_ZBUS_TIMER)");
       close(mem_fd);
     } else {
       close(mem_fd);

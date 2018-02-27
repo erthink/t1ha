@@ -79,6 +79,7 @@ typedef uint64_t (*mera_bench_target_t)(const void *data, size_t bytes,
 #define MERA_BENCH_TARGET mera_bench_target_t
 #define MERA_BENCH_SELF_ARGS const void *data, size_t bytes, uint64_t seed
 #define MERA_BENCH_TARGET_ARGS data, bytes, seed
+#define MERA_PERROR_PREFIX " - "
 
 double mera_bench(MERA_BENCH_TARGET target, MERA_BENCH_SELF_ARGS);
 

@@ -114,9 +114,10 @@
 #endif
 
 #ifdef _MSC_VER
-/* LY: set default warning level */
+/* LY: just disable warnings */
 #pragma warning(push, 1)
-#endif /* MSVC */
+#pragma warning(disable : 4715) /* not all control paths return a value */
+#endif                          /* MSVC */
 
 /* *************************************
 *  Includes & Memory related functions

@@ -88,7 +88,7 @@ test.o: t1ha.h tests/common.h tests/mera.h tests/test.c \
 
 4bench_xxhash.o: tests/xxhash/xxhash.h tests/xxhash/xxhash.c \
 		Makefile
-	$(CC) $(CFLAGS_TEST) -c -o $@ tests/xxhash/xxhash.c
+	$(CC) $(CFLAGS_TEST) -Wno-error -c -o $@ tests/xxhash/xxhash.c
 
 test: $(OBJ_LIST) $(BENCH_EXTRA) tests/main.c Makefile \
 		t1ha.h tests/common.h tests/mera.h \

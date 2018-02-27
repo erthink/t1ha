@@ -36,8 +36,15 @@ void bench(const char *caption,
   fflush(NULL);
 
   double value = mera_bench(hash, data, len, seed);
-  printf("%10.3f %s/hash, %6.3f %s/byte, %6.3f byte/%s\n", value, mera.units,
+  printf("%10.3f %s/hash, %6.3f %s/byte, %6.3f byte/%s", value, mera.units,
          value / len, mera.units, len / value, mera.units);
+
+  if (mera.flags & timestamp_cycles) {
+    printf(", %6.3f Gb/s @3GHz", 3.0 * len / value);
+  } else if ((mera.flags & timestamp_ticks) == 0) {
+    printf(", %6.3f Gb/s", len / value);
+  }
+  printf(" %s\n", (mera.flags & timestamp_clock_stable) ? "" : "roughly");
 
   if (is_option_set(bench_verbose)) {
     printf(" - convergence: ");

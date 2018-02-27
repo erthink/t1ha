@@ -106,6 +106,7 @@
 #include "mera.h"
 #include <memory.h>
 #include <stdio.h>
+#include <stdlib.h>
 
 /*****************************************************************************/
 

@@ -806,7 +806,7 @@ static unsigned clock_rdtsc_finish(timestamp_t *now) {
 
 ia32_cpu_features_t ia32_cpu_features;
 
-static void fetch_cpu_features(void) {
+void ia32_fetch_cpu_features(void) {
   memset(&ia32_cpu_features, 0, sizeof(ia32_cpu_features));
 #ifdef __GNUC__
   uint32_t unused_eax, unused_ebx, cpuid_max;
@@ -1153,7 +1153,8 @@ bool mera_init(void) {
 #endif /* __mips__ */
 
 #if defined(__ia32__)
-  fetch_cpu_features();
+  if (ia32_cpu_features.basic.edx == 0)
+    ia32_fetch_cpu_features();
   if (ia32_cpu_features.basic.edx & (1 << 4)) {
     probe(clock_rdpmc_start, clock_rdpmc_finish, convert_1to1,
           timestamp_clock_stable | timestamp_clock_cheap | timestamp_cycles,

@@ -40,31 +40,54 @@
 #include "mera.h"    /* for ia32_cpu_features */
 
 enum test_flags {
-  test_verbose = 1 << 0,
-  bench_verbose = 1 << 1,
+  test_verbose = 1u << 0,
+  bench_verbose = 1u << 1,
+  /* 2, 3, 4, 5, 6, 7 */
 
-  bench_32 = 1 << 2,
-  bench_64 = 1 << 3,
-  bench_le = 1 << 4,
-  bench_be = 1 << 5,
+  bench_0 = 1u << 8,
+  bench_1 = 1u << 9,
+  bench_2 = 1u << 10,
+  bench_3 = 1u << 11,
+  bench_4 = 1u << 12,
+  bench_5 = 1u << 13,
+  bench_6 = 1u << 14,
+  bench_7 = 1u << 15,
+
+  bench_tiny = 1u << 16,
+  bench_small = 1u << 17,
+  bench_medium = 1u << 18,
+  bench_large = 1u << 19,
+  bench_huge = 1u << 20,
+  /* 21, 22, 23 */
+  bench_size_flags =
+      bench_tiny | bench_small | bench_medium | bench_large | bench_huge,
+
+  bench_32 = 1u << 24,
+  bench_64 = 1u << 25,
+  bench_le = 1u << 26,
+  bench_be = 1u << 27,
 #ifdef T1HA0_AESNI_AVAILABLE
-  bench_aes = 1 << 6,
-  bench_avx = 1 << 7,
+  bench_aes = 1u << 28,
+  bench_avx = 1u << 29,
 #ifndef __e2k__
-  bench_avx2 = 1 << 8,
+  bench_avx2 = 1u << 30,
 #endif /* !__e2k__ */
+  user_wanna_aes = 1u << 31,
 #endif /* T1HA0_AESNI_AVAILABLE */
 
-  bench_tiny = 1 << 9,
-  bench_small = 1 << 10,
-  bench_medium = 1 << 11,
-  bench_large = 1 << 12,
+  bench_hash_flags = bench_0 | bench_1 | bench_2 | bench_3 | bench_4 | bench_5 |
+                     bench_6 | bench_7 | bench_32 | bench_64 | bench_le |
+                     bench_be | 1u << 28 | 1u << 29 | 1u << 30 | 1u << 31
 };
 
-extern unsigned option_flags;
+extern unsigned option_flags, disabled_option_flags;
 
 static __inline bool is_option_set(unsigned mask) {
-  return (option_flags & mask) == mask;
+  return (option_flags & mask) != 0;
+}
+
+static __inline bool is_selected(unsigned mask) {
+  return is_option_set(mask) && (disabled_option_flags & mask) == 0;
 }
 
 extern const uint64_t refval_2atonce[80];

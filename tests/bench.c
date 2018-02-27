@@ -65,32 +65,36 @@ void bench_size(const unsigned size, const char *caption) {
   for (unsigned i = 0; i < size; ++i)
     buffer[i] = (char)(rand() + i);
 
-  if (is_option_set(bench_64 | bench_le)) {
+  if (is_selected(bench_64 | bench_le | bench_2)) {
     bench("t1ha2_atonce", t1ha2_atonce, buffer, size, seed);
     bench("t1ha2_atonce128*", thunk_t1ha2_atonce128, buffer, size, seed);
     bench("t1ha2_stream*", thunk_t1ha2_stream, buffer, size, seed);
     bench("t1ha2_stream128*", thunk_t1ha2_stream128, buffer, size, seed);
-    bench("t1ha1_64le", t1ha1_le, buffer, size, seed);
   }
-  if (is_option_set(bench_64 | bench_be))
+
+  if (is_selected(bench_64 | bench_le | bench_1))
+    bench("t1ha1_64le", t1ha1_le, buffer, size, seed);
+  if (is_selected(bench_64 | bench_be | bench_1))
     bench("t1ha1_64be", t1ha1_be, buffer, size, seed);
-  if (is_option_set(bench_32 | bench_le))
+  if (is_selected(bench_0))
+    bench("t1ha0", t1ha0, buffer, size, seed);
+  if (is_selected(bench_32 | bench_le | bench_0))
     bench("t1ha0_32le", t1ha0_32le, buffer, size, seed);
-  if (is_option_set(bench_32 | bench_be))
+  if (is_selected(bench_32 | bench_be | bench_0))
     bench("t1ha0_32be", t1ha0_32be, buffer, size, seed);
 
 #ifdef T1HA0_AESNI_AVAILABLE
-  if (is_option_set(bench_aes)) {
+  if (is_selected(bench_aes)) {
     bench("t1ha0_ia32aes_noavx_a", t1ha0_ia32aes_noavx_a, buffer, size, seed);
     bench("t1ha0_ia32aes_noavx_b", t1ha0_ia32aes_noavx_b, buffer, size, seed);
     bench("t1ha0_ia32aes_noavx", t1ha0_ia32aes_noavx, buffer, size, seed);
-    if (is_option_set(bench_avx)) {
+    if (is_selected(bench_avx)) {
       bench("t1ha0_ia32aes_avx_a", t1ha0_ia32aes_avx_a, buffer, size, seed);
       bench("t1ha0_ia32aes_avx_b", t1ha0_ia32aes_avx_b, buffer, size, seed);
       bench("t1ha0_ia32aes_avx", t1ha0_ia32aes_avx, buffer, size, seed);
     }
 #ifndef __e2k__
-    if (is_option_set(bench_avx2)) {
+    if (is_selected(bench_avx2)) {
       bench("t1ha0_ia32aes_avx2_a", t1ha0_ia32aes_avx2_a, buffer, size, seed);
       bench("t1ha0_ia32aes_avx2_b", t1ha0_ia32aes_avx2_b, buffer, size, seed);
       bench("t1ha0_ia32aes_avx2", t1ha0_ia32aes_avx2, buffer, size, seed);

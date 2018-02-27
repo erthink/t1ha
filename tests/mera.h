@@ -106,4 +106,5 @@ typedef struct _ia32_cpu_features {
 } ia32_cpu_features_t;
 
 extern ia32_cpu_features_t ia32_cpu_features;
+void ia32_fetch_cpu_features(void);
 #endif /* __ia32__ */

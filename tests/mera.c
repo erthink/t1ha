@@ -1161,8 +1161,8 @@ bool mera_init(void) {
           "RDPMC_40000001", "cycle");
     const unsigned tsc_flags =
         (ia32_cpu_features.extended_80000007.edx & (1 << 8))
-            /* The TSC rate is invariant, i.e. not a CPU cycles! */
-            ? timestamp_clock_cheap | timestamp_ticks
+            /* The TSC rate is invariant, i.e. not always on CPU frequency ! */
+            ? timestamp_clock_cheap | timestamp_cycles
             : timestamp_clock_cheap | timestamp_cycles | timestamp_clock_stable;
 
 #ifdef F_OK

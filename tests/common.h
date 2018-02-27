@@ -42,7 +42,8 @@
 enum test_flags {
   test_verbose = 1u << 0,
   bench_verbose = 1u << 1,
-  /* 2, 3, 4, 5, 6, 7 */
+  bench_xxhash = 1u << 2,
+  /* 3, 4, 5, 6, 7 */
 
   bench_0 = 1u << 8,
   bench_1 = 1u << 9,
@@ -78,7 +79,7 @@ enum test_flags {
   bench_funcs_flags = bench_0 | bench_1 | bench_2 | bench_3 | bench_4 |
                       bench_5 | bench_6 | bench_7 | bench_32 | bench_64 |
                       bench_le | bench_be | 1u << 28 | 1u << 29 | 1u << 30 |
-                      1u << 31
+                      1u << 31 | bench_xxhash
 };
 
 extern unsigned option_flags, disabled_option_flags;
@@ -129,3 +130,8 @@ void bench(const char *caption,
            unsigned len, uint64_t seed);
 
 void bench_size(const unsigned size, const char *caption);
+
+/*****************************************************************************/
+/* xxHash - just for comparison */
+uint64_t XXH64(const void *input, size_t length, uint64_t seed);
+uint32_t XXH32(const void *input, size_t length, uint32_t seed);

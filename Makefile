@@ -12,7 +12,7 @@ TARGET_ARCH_e2k = $(shell (export LC_ALL=C; ($(CC) --version 2>&1; $(CC) -v 2>&1
 TARGET_ARCH_ia32 = $(shell (export LC_ALL=C; ($(CC) --version 2>&1; $(CC) -v 2>&1) | grep -q -i -e '^Target: \(x86_64\)\|\([iI][3-6]86\)-.*' && echo yes || echo no))
 
 OBJ_LIST := t1ha0.o t1ha1.o t1ha2.o
-BENCH_EXTRA :=
+BENCH_EXTRA := bench.o mera.o test.o 4bench_xxhash.o
 ifeq ($(TARGET_ARCH_e2k),yes)
 TARGET_ARCH := e2k
 OBJ_LIST += t1ha0_aes_noavx.o t1ha0_aes_avx.o
@@ -86,11 +86,15 @@ test.o: t1ha.h tests/common.h tests/mera.h tests/test.c \
 		Makefile
 	$(CC) $(CFLAGS_TEST) -c -o $@ tests/test.c
 
+4bench_xxhash.o: tests/xxhash/xxhash.h tests/xxhash/xxhash.c \
+		Makefile
+	$(CC) $(CFLAGS_TEST) -c -o $@ tests/xxhash/xxhash.c
+
 test: $(OBJ_LIST) $(BENCH_EXTRA) tests/main.c Makefile \
 		t1ha.h tests/common.h tests/mera.h \
 		mera.o bench.o test.o
 	@echo "Target-ARCH: $(TARGET_ARCH)" || true
-	$(CC) $(CFLAGS_TEST) -o $@ tests/main.c $(OBJ_LIST) $(BENCH_EXTRA) bench.o mera.o test.o
+	$(CC) $(CFLAGS_TEST) -o $@ tests/main.c $(OBJ_LIST) $(BENCH_EXTRA)
 
 check: test
 	./test || rm -rf libt1ha.a libt1ha.so

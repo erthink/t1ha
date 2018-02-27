@@ -65,6 +65,10 @@ void bench(const char *caption,
   fflush(NULL);
 }
 
+static uint64_t thunk_XXH32(const void *input, size_t length, uint64_t seed) {
+  return XXH32(input, length, (uint32_t)seed);
+}
+
 void bench_size(const unsigned size, const char *caption) {
   printf("\nSimple bench for x86 (%s keys, %u bytes):\n", caption, size);
   const uint64_t seed = 42;
@@ -110,5 +114,9 @@ void bench_size(const unsigned size, const char *caption) {
   }
 #endif /* T1HA0_AESNI_AVAILABLE */
 
+  if (is_selected(bench_xxhash)) {
+    bench("xxhash32", thunk_XXH32, buffer, size, seed);
+    bench("xxhash64", XXH64, buffer, size, (uint32_t)seed);
+  }
   free(buffer);
 }

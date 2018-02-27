@@ -1,3 +1,5 @@
+tests/xxhash/xxhash.h
+tests/xxhash/xxhash.c
 tests/common.h
 tests/test.c
 .travis.yml

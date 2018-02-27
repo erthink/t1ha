@@ -28,7 +28,7 @@
 #include <string.h>
 
 const unsigned default_option_flags =
-    bench_0 | bench_1 | bench_2 | bench_tiny | bench_medium;
+    bench_0 | bench_1 | bench_2 | bench_xxhash | bench_tiny | bench_medium;
 
 const unsigned available_eas_flags =
 #ifdef T1HA0_AESNI_AVAILABLE
@@ -66,9 +66,9 @@ void usage(void) {
       "  --large, --no-large       - include/exclude 16K, i.e large keys\n"
       "  --huge, --no-huge         - include/exclude 256K, i.e huge keys\n"
       "  --all-sizes               - run benchmark for all sizes of keys\n"
-      "  --all-funcs               - run benchmark for all functions\n"
       "\n"
       "Functions choices:\n"
+      "  --all-funcs               - run benchmark for all functions\n"
       "  --0, --no-0               - include/exclude t1ha0\n"
       "  --1, --no-1               - include/exclude t1ha1\n"
       "  --2, --no-2               - include/exclude t1ha2\n"
@@ -84,7 +84,8 @@ void usage(void) {
       "  --aes, --no-aes           - include/exclude AES-NI accelerated,\n"
       "                              i.e. t1ha0_ia32aes_avx(), etc...\n"
 #endif /* T1HA0_AESNI_AVAILABLE */
-      );
+      "  --xxhash, --no-xxhash     - include/exclude xxhash32() and xxhash64(),"
+      "                              just for comparison.\n");
 }
 
 static bool option(const char *arg, const char *opt, unsigned flag) {
@@ -152,6 +153,10 @@ int main(int argc, const char *argv[]) {
         }
         continue;
       }
+
+      if (option(argv[i], "xxhash", bench_xxhash))
+        continue;
+
       if (option(argv[i], "0", bench_0))
         continue;
       if (option(argv[i], "1", bench_1))

@@ -75,9 +75,10 @@ enum test_flags {
   user_wanna_aes = 1u << 31,
 #endif /* T1HA0_AESNI_AVAILABLE */
 
-  bench_hash_flags = bench_0 | bench_1 | bench_2 | bench_3 | bench_4 | bench_5 |
-                     bench_6 | bench_7 | bench_32 | bench_64 | bench_le |
-                     bench_be | 1u << 28 | 1u << 29 | 1u << 30 | 1u << 31
+  bench_funcs_flags = bench_0 | bench_1 | bench_2 | bench_3 | bench_4 |
+                      bench_5 | bench_6 | bench_7 | bench_32 | bench_64 |
+                      bench_le | bench_be | 1u << 28 | 1u << 29 | 1u << 30 |
+                      1u << 31
 };
 
 extern unsigned option_flags, disabled_option_flags;

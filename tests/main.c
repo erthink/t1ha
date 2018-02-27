@@ -66,6 +66,7 @@ void usage(void) {
       "  --large, --no-large       - include/exclude 16K, i.e large keys\n"
       "  --huge, --no-huge         - include/exclude 256K, i.e huge keys\n"
       "  --all-sizes               - run benchmark for all sizes of keys\n"
+      "  --all-funcs               - run benchmark for all functions\n"
       "\n"
       "Functions choices:\n"
       "  --0, --no-0               - include/exclude t1ha0\n"
@@ -121,6 +122,11 @@ int main(int argc, const char *argv[]) {
       if (strcmp("--bench-all", argv[i]) == 0) {
         option_flags |= ~(test_verbose | bench_verbose);
         disabled_option_flags = 0;
+        continue;
+      }
+      if (strcmp("--all-funcs", argv[i]) == 0) {
+        option_flags |= bench_funcs_flags;
+        disabled_option_flags &= ~bench_funcs_flags;
         continue;
       }
       if (strcmp("--all-sizes", argv[i]) == 0) {
@@ -180,8 +186,8 @@ int main(int argc, const char *argv[]) {
         return EXIT_FAILURE;
       }
     }
-    if ((option_flags & bench_hash_flags) == 0)
-      option_flags |= default_option_flags & bench_hash_flags;
+    if ((option_flags & bench_funcs_flags) == 0)
+      option_flags |= default_option_flags & bench_funcs_flags;
     if ((option_flags & bench_size_flags) == 0)
       option_flags |= default_option_flags & bench_size_flags;
   } else {

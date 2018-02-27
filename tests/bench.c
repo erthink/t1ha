@@ -70,7 +70,7 @@ static uint64_t thunk_XXH32(const void *input, size_t length, uint64_t seed) {
 }
 
 void bench_size(const unsigned size, const char *caption) {
-  printf("\nSimple bench for x86 (%s keys, %u bytes):\n", caption, size);
+  printf("\nBench for %s keys (%u bytes):\n", caption, size);
   const uint64_t seed = 42;
   char *buffer = malloc(size);
   for (unsigned i = 0; i < size; ++i)

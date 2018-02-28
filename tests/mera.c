@@ -211,7 +211,7 @@ static void sigaction_handler(int signum, siginfo_t *info, void *context) {
 #endif
 
 static bool probe(unsigned (*start)(timestamp_t *),
-                  unsigned (*fihish)(timestamp_t *),
+                  unsigned (*finish)(timestamp_t *),
                   double (*convert)(timestamp_t), unsigned flags,
                   const char *source_name, const char *time_units) {
   flags |= timestamp_clock_have;
@@ -247,7 +247,7 @@ static bool probe(unsigned (*start)(timestamp_t *),
 #endif
 
     for (unsigned n = 0; n < 42; ++n) {
-      timestamp_t timestamp_start, timestamp_fihish;
+      timestamp_t timestamp_start, timestamp_finish;
       unsigned coreid = start(&timestamp_start);
 #if defined(_WIN64) || defined(_WIN32) || defined(__TOS_WIN__) ||              \
     defined(__WINDOWS__)
@@ -255,11 +255,11 @@ static bool probe(unsigned (*start)(timestamp_t *),
 #else
     usleep(42);
 #endif
-      if (coreid != fihish(&timestamp_fihish))
+      if (coreid != finish(&timestamp_finish))
         continue;
-      if (timestamp_fihish > timestamp_start) {
+      if (timestamp_finish > timestamp_start) {
         mera.start = start;
-        mera.finish = fihish;
+        mera.finish = finish;
         mera.source = source_name;
         mera.convert = convert;
         if (flags & timestamp_cycles)
@@ -271,7 +271,7 @@ static bool probe(unsigned (*start)(timestamp_t *),
         mera.flags = flags;
         return true;
       }
-      if (timestamp_fihish == timestamp_start || n > 5)
+      if (timestamp_finish == timestamp_start || n > 5)
         break;
     }
 
@@ -741,7 +741,7 @@ static unsigned clock_rdtscp_start(timestamp_t *now) {
   return coreid;
 }
 
-static unsigned clock_rdtscp_fihish(timestamp_t *now) {
+static unsigned clock_rdtscp_finish(timestamp_t *now) {
   compiler_barrier();
 #if __GNUC__
   uint32_t low, high, coreid;
@@ -1176,7 +1176,7 @@ bool mera_init(void) {
 #endif /* F_OK */
 
     if (ia32_cpu_features.extended_80000001.edx & (1 << 27))
-      probe(clock_rdtscp_start, clock_rdtscp_fihish, convert_1to1, tsc_flags,
+      probe(clock_rdtscp_start, clock_rdtscp_finish, convert_1to1, tsc_flags,
             "RDTSCP", NULL);
     probe(clock_rdtsc_start, clock_rdtsc_finish, convert_1to1, tsc_flags,
           "RDTSC", NULL);

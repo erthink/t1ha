@@ -210,14 +210,9 @@ static void sigaction_handler(int signum, siginfo_t *info, void *context) {
 }
 #endif
 
-static bool probe(unsigned (*start)(timestamp_t *),
-                  unsigned (*finish)(timestamp_t *),
-                  double (*convert)(timestamp_t), unsigned flags,
-                  const char *source_name, const char *time_units) {
-  flags |= timestamp_clock_have;
-  if (mera.flags >= flags)
-    return false;
-
+/* LY: dedicated function to avoid clobber args by ‘longjmp’ */
+static bool do_probe(unsigned (*start)(timestamp_t *),
+                     unsigned (*finish)(timestamp_t *)) {
 #if defined(_WIN64) || defined(_WIN32) || defined(__TOS_WIN__) ||              \
     defined(__WINDOWS__)
   __try {
@@ -257,20 +252,8 @@ static bool probe(unsigned (*start)(timestamp_t *),
 #endif
       if (coreid != finish(&timestamp_finish))
         continue;
-      if (timestamp_finish > timestamp_start) {
-        mera.start = start;
-        mera.finish = finish;
-        mera.source = source_name;
-        mera.convert = convert;
-        if (flags & timestamp_cycles)
-          mera.units = "cycle";
-        else if (flags & timestamp_ticks)
-          mera.units = "tick";
-        else
-          mera.units = time_units;
-        mera.flags = flags;
+      if (timestamp_finish > timestamp_start)
         return true;
-      }
       if (timestamp_finish == timestamp_start || n > 5)
         break;
     }
@@ -285,6 +268,31 @@ static bool probe(unsigned (*start)(timestamp_t *),
   sigaction(SIGILL, &prev_sigill, NULL);
   sigaction(SIGBUS, &prev_sigbus, NULL);
 #endif
+  return false;
+}
+
+static bool probe(unsigned (*start)(timestamp_t *),
+                  unsigned (*finish)(timestamp_t *),
+                  double (*convert)(timestamp_t), unsigned flags,
+                  const char *source_name, const char *time_units) {
+  flags |= timestamp_clock_have;
+  if (mera.flags >= flags)
+    return false;
+
+  if (do_probe(start, finish)) {
+    mera.start = start;
+    mera.finish = finish;
+    mera.source = source_name;
+    mera.convert = convert;
+    if (flags & timestamp_cycles)
+      mera.units = "cycle";
+    else if (flags & timestamp_ticks)
+      mera.units = "tick";
+    else
+      mera.units = time_units;
+    mera.flags = flags;
+    return true;
+  }
   return false;
 }
 

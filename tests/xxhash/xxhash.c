@@ -762,26 +762,33 @@ static U64 XXH64_finalize(U64 h64, const void *ptr, size_t len,
   switch (len & 31) {
   case 24:
     PROCESS8_64;
+  /* fall through */
   case 16:
     PROCESS8_64;
+  /* fall through */
   case 8:
     PROCESS8_64;
     return XXH64_avalanche(h64);
 
   case 28:
     PROCESS8_64;
+  /* fall through */
   case 20:
     PROCESS8_64;
+  /* fall through */
   case 12:
     PROCESS8_64;
+  /* fall through */
   case 4:
     PROCESS4_64;
     return XXH64_avalanche(h64);
 
   case 25:
     PROCESS8_64;
+  /* fall through */
   case 17:
     PROCESS8_64;
+  /* fall through */
   case 9:
     PROCESS8_64;
     PROCESS1_64;
@@ -789,10 +796,13 @@ static U64 XXH64_finalize(U64 h64, const void *ptr, size_t len,
 
   case 29:
     PROCESS8_64;
+  /* fall through */
   case 21:
     PROCESS8_64;
+  /* fall through */
   case 13:
     PROCESS8_64;
+  /* fall through */
   case 5:
     PROCESS4_64;
     PROCESS1_64;
@@ -800,8 +810,10 @@ static U64 XXH64_finalize(U64 h64, const void *ptr, size_t len,
 
   case 26:
     PROCESS8_64;
+  /* fall through */
   case 18:
     PROCESS8_64;
+  /* fall through */
   case 10:
     PROCESS8_64;
     PROCESS1_64;
@@ -810,10 +822,13 @@ static U64 XXH64_finalize(U64 h64, const void *ptr, size_t len,
 
   case 30:
     PROCESS8_64;
+  /* fall through */
   case 22:
     PROCESS8_64;
+  /* fall through */
   case 14:
     PROCESS8_64;
+  /* fall through */
   case 6:
     PROCESS4_64;
     PROCESS1_64;
@@ -822,8 +837,10 @@ static U64 XXH64_finalize(U64 h64, const void *ptr, size_t len,
 
   case 27:
     PROCESS8_64;
+  /* fall through */
   case 19:
     PROCESS8_64;
+  /* fall through */
   case 11:
     PROCESS8_64;
     PROCESS1_64;
@@ -833,18 +850,25 @@ static U64 XXH64_finalize(U64 h64, const void *ptr, size_t len,
 
   case 31:
     PROCESS8_64;
+  /* fall through */
   case 23:
     PROCESS8_64;
+  /* fall through */
   case 15:
     PROCESS8_64;
+  /* fall through */
   case 7:
     PROCESS4_64;
+  /* fall through */
   case 3:
     PROCESS1_64;
+  /* fall through */
   case 2:
     PROCESS1_64;
+  /* fall through */
   case 1:
     PROCESS1_64;
+  /* fall through */
   case 0:
     return XXH64_avalanche(h64);
   }

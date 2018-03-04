@@ -202,12 +202,12 @@ int main(int argc, const char *argv[]) {
 
   bool failed = false;
   /* Nowadays t1ha2 not frozen */
-  failed |= verify("t1ha2_atonce", t1ha2_atonce, refval_2atonce, true);
-  failed |=
-      verify("t1ha2_atonce128", thunk_t1ha2_atonce128, refval_2atonce128, true);
-  failed |= verify("t1ha2_stream", thunk_t1ha2_stream, refval_2stream, true);
-  failed |=
-      verify("t1ha2_stream128", thunk_t1ha2_stream128, refval_2stream128, true);
+  failed |= verify("t1ha2_atonce", t1ha2_atonce, refval_2atonce, false);
+  failed |= verify("t1ha2_atonce128", thunk_t1ha2_atonce128, refval_2atonce128,
+                   false);
+  failed |= verify("t1ha2_stream", thunk_t1ha2_stream, refval_2stream, false);
+  failed |= verify("t1ha2_stream128", thunk_t1ha2_stream128, refval_2stream128,
+                   false);
 
   /* Stable t1ha1 and t1ha0 */
   failed |= verify("t1ha1_64le", t1ha1_le, refval_64le, false);

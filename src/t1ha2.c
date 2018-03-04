@@ -175,9 +175,9 @@ static __always_inline void tail_abcd(t1ha_state256_t *__restrict s,
 static __always_inline uint64_t final128(uint64_t a, uint64_t b, uint64_t c,
                                          uint64_t d, uint64_t *h) {
   mixup64(&a, &b, rot64(c, 23) ^ d, prime_0);
-  mixup64(&b, &c, rot64(d, 23) ^ a, prime_4);
+  mixup64(&b, &c, rot64(d, 29) ^ a, prime_4);
   mixup64(&c, &d, rot64(a, 23) ^ b, prime_5);
-  mixup64(&d, &a, rot64(b, 23) ^ c, prime_6);
+  mixup64(&d, &a, rot64(b, 27) ^ c, prime_6);
   *h = c + d;
   return a ^ b;
 }
@@ -191,7 +191,7 @@ uint64_t t1ha2_atonce(const void *data, size_t length, uint64_t seed) {
   const int need_copy4align = (((uintptr_t)data) & 7) != 0 && !UNALIGNED_OK;
   uint64_t buffer4align[4];
 
-  if (unlikely(length >= 32)) {
+  if (unlikely(length > 32)) {
     init_cd(&state, seed, length);
     data = loop(need_copy4align, buffer4align, &state, data, length);
     squash(&state);
@@ -216,7 +216,7 @@ uint64_t t1ha2_atonce128(uint64_t *__restrict extra_result,
   const int need_copy4align = (((uintptr_t)data) & 7) != 0 && !UNALIGNED_OK;
   uint64_t buffer4align[4];
 
-  if (unlikely(length >= 32)) {
+  if (unlikely(length > 32)) {
     data = loop(need_copy4align, buffer4align, &state, data, length);
     length &= 31;
   }
@@ -263,10 +263,11 @@ void t1ha2_update(t1ha_context_t *__restrict ctx, const void *__restrict data,
       data = loop(true, ctx->buffer.u64, &ctx->state, data, length);
     else
       data = loop(false, NULL, &ctx->state, data, length);
+    length &= 31;
   }
 
   if (length)
-    memcpy(ctx->buffer.bytes, data, ctx->partial = length & 31);
+    memcpy(ctx->buffer.bytes, data, ctx->partial = length);
 }
 
 uint64_t t1ha2_final(t1ha_context_t *__restrict ctx,

@@ -5,7 +5,7 @@
 # So, define it to 0 for calmness if doubt.
 T1HA_USE_FAST_ONESHOT_READ ?=1
 
-CFLAGS ?= -std=c99 -O3 -g
+CFLAGS ?= -std=c99 -O3 -DNDEBUG
 CC ?= gcc
 
 TARGET_ARCH_e2k = $(shell (export LC_ALL=C; ($(CC) --version 2>&1; $(CC) -v 2>&1) | grep -q -i 'e2k' && echo yes || echo no))

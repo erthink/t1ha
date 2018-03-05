@@ -322,7 +322,7 @@ int main(int argc, const char *argv[]) {
         return EXIT_FAILURE;
       }
 #else
-      if (!fgets(buffer, buffer_size, stdin)) {
+      if (!fgets(buffer, (int)buffer_size, stdin)) {
         if (feof(stdin))
           break;
         perror("fgets(stdin)");

@@ -55,6 +55,7 @@ void usage(void) {
       "                              for current platform\n"
       "Generic options:\n"
       "  --test-quiet              - quiet perform tests and exit with status\n"
+      "  --hash-stdin-strings      - output hash for each line from stdin\n"
       "  --test-only, --no-bench   - perform tests, but don't benchmarking\n"
       "  --test-verbose            - be verbose while testing\n"
       "  --bench-verbose           - be verbose while benchmarking\n"
@@ -106,6 +107,11 @@ int main(int argc, const char *argv[]) {
     for (int i = 1; i < argc; ++i) {
       if (strcmp("--test-quiet", argv[i]) == 0) {
         option_flags = test_quiet;
+        continue;
+      }
+      if (strcmp("--hash-stdin-strings", argv[i]) == 0) {
+        option_flags = (option_flags & bench_funcs_flags) | test_quiet |
+                       hash_stdin_strings;
         continue;
       }
       if (strcmp("--test-only", argv[i]) == 0 ||
@@ -205,6 +211,8 @@ int main(int argc, const char *argv[]) {
     disabled_option_flags = default_disabled_option_flags;
   }
 
+  /*************************************************************************/
+
   bool failed = false;
   /* Nowadays t1ha2 not frozen */
   failed |= verify("t1ha2_atonce", t1ha2_atonce, refval_2atonce);
@@ -249,6 +257,92 @@ int main(int argc, const char *argv[]) {
 
   if (failed)
     return EXIT_FAILURE;
+
+  /*************************************************************************/
+
+  if (is_option_set(hash_stdin_strings)) {
+    uint64_t (*hash_function)(const void *data, size_t length, uint64_t seed) =
+        NULL;
+    const char *hash_name = NULL;
+    if (is_selected(bench_64 | bench_2)) {
+      hash_function = t1ha2_atonce;
+      hash_name = "t1ha2_atonce";
+    } else if (is_selected(bench_64 | bench_le | bench_1)) {
+      hash_function = t1ha1_le;
+      hash_name = "t1ha1_le";
+    } else if (is_selected(bench_64 | bench_be | bench_1)) {
+      hash_function = t1ha1_be;
+      hash_name = "t1ha1_be";
+    } else if (is_selected(bench_32 | bench_le | bench_0)) {
+      hash_function = t1ha0_32le;
+      hash_name = "t1ha0_32le";
+    } else if (is_selected(bench_32 | bench_be | bench_0)) {
+      hash_function = t1ha0_32be;
+      hash_name = "t1ha0_32be";
+    } else if (is_selected(bench_0)) {
+      hash_function = t1ha0;
+      hash_name = "t1ha0";
+    } else if (is_selected(bench_xxhash)) {
+      hash_function = XXH64;
+      hash_name = "xxhash64";
+    } else {
+      hash_function = t1ha;
+      hash_name = "t1ha-default";
+    }
+
+    size_t buffer_size =
+#if defined(_POSIX2_LINE_MAX)
+        _POSIX2_LINE_MAX
+#elif defined(LINE_MAX)
+        LINE_MAX
+#else
+        4096
+#endif
+        ;
+
+    char *buffer = malloc(buffer_size);
+    if (!buffer) {
+      perror("malloc()");
+      return EXIT_FAILURE;
+    }
+
+    if (1 > printf("# %s '--hash-stdin' using %s()\n", argv[0], hash_name)) {
+      perror("printf(stdout)");
+      return EXIT_FAILURE;
+    }
+
+    while (!feof(stdin)) {
+#if (defined(_POSIX_C_SOURCE) && _POSIX_C_SOURCE >= 200809L) ||                \
+    (defined(_XOPEN_SOURCE) && _XOPEN_SOURCE >= 700)
+      ssize_t bytes = getline(&buffer, &buffer_size, stdin);
+      if (bytes < 0) {
+        if (feof(stdin))
+          break;
+        perror("getline(stdin)");
+        return EXIT_FAILURE;
+      }
+#else
+      if (!fgets(buffer, buffer_size, stdin)) {
+        if (feof(stdin))
+          break;
+        perror("fgets(stdin)");
+        return EXIT_FAILURE;
+      }
+      size_t bytes = strlen(buffer);
+#endif
+
+      if (1 > printf("%016" PRIx64 "\n",
+                     hash_function(buffer, bytes, 42 /* seed */))) {
+        perror("printf(stdout)");
+        return EXIT_FAILURE;
+      }
+    }
+
+    free(buffer);
+    return EXIT_SUCCESS;
+  }
+
+  /*************************************************************************/
 
   printf("\nPreparing to benchmarking...\n");
   fflush(NULL);

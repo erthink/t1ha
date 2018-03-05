@@ -41,9 +41,10 @@
 
 enum test_flags {
   test_verbose = 1u << 0,
-  bench_verbose = 1u << 1,
-  bench_xxhash = 1u << 2,
-  /* 3, 4, 5, 6, 7 */
+  test_quiet = 1u << 1,
+  bench_verbose = 1u << 2,
+  bench_xxhash = 1u << 3,
+  /* 4, 5, 6, 7 */
 
   bench_0 = 1u << 8,
   bench_1 = 1u << 9,

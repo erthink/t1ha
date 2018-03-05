@@ -313,14 +313,15 @@ static bool probe(uint64_t (*hash)(const void *, size_t, uint64_t),
       printf("Passed\n");
     return false;
   }
-  if (!ignore_errors)
+  if (!is_option_set(test_quiet))
     printf("Failed! Got %08X%08X\n", (uint32_t)(value >> 32), (uint32_t)value);
   return true;
 }
 
 bool verify(const char *title, uint64_t (*hash)(const void *, size_t, uint64_t),
             const uint64_t *reference_values) {
-  printf("Testing %s...%s", title, is_option_set(test_verbose) ? "\n" : "");
+  if (!is_option_set(test_quiet))
+    printf("Testing %s...%s", title, is_option_set(test_verbose) ? "\n" : "");
 
   const uint64_t zero = 0;
   bool failed = false;
@@ -353,6 +354,7 @@ bool verify(const char *title, uint64_t (*hash)(const void *, size_t, uint64_t),
                     128 + i * 17, seed);
   }
 
-  printf(" %s\n", (!is_option_set(test_verbose) && !failed) ? "Ok" : "");
+  if (!is_option_set(test_quiet))
+    printf(" %s\n", (!is_option_set(test_verbose) && !failed) ? "Ok" : "");
   return failed;
 }

@@ -54,7 +54,8 @@ void usage(void) {
       "By default                  - run reasonable tests and benchmarks\n"
       "                              for current platform\n"
       "Generic options:\n"
-      "  --test-only, --no-bench   - just run tests, but don't benchmarking\n"
+      "  --test-quiet              - quiet perform tests and exit with status\n"
+      "  --test-only, --no-bench   - perform tests, but don't benchmarking\n"
       "  --test-verbose            - be verbose while testing\n"
       "  --bench-verbose           - be verbose while benchmarking\n"
       "  --verbose                 - turn both --test-verbose\n"
@@ -103,6 +104,10 @@ static bool option(const char *arg, const char *opt, unsigned flag) {
 int main(int argc, const char *argv[]) {
   if (argc > 1) {
     for (int i = 1; i < argc; ++i) {
+      if (strcmp("--test-quiet", argv[i]) == 0) {
+        option_flags = test_quiet;
+        continue;
+      }
       if (strcmp("--test-only", argv[i]) == 0 ||
           strcmp("--no-bench", argv[i]) == 0) {
         option_flags &= test_verbose;

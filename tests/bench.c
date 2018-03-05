@@ -76,7 +76,7 @@ void bench_size(const unsigned size, const char *caption) {
   for (unsigned i = 0; i < size; ++i)
     buffer[i] = (char)(rand() + i);
 
-  if (is_selected(bench_64 | bench_le | bench_2)) {
+  if (is_selected(bench_64 | bench_2)) {
     bench("t1ha2_atonce", t1ha2_atonce, buffer, size, seed);
     bench("t1ha2_atonce128*", thunk_t1ha2_atonce128, buffer, size, seed);
     bench("t1ha2_stream*", thunk_t1ha2_stream, buffer, size, seed);

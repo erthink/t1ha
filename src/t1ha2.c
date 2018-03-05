@@ -180,10 +180,10 @@ static __always_inline void tail_abcd(t1ha_state256_t *__restrict s,
 
 static __always_inline uint64_t final128(uint64_t a, uint64_t b, uint64_t c,
                                          uint64_t d, uint64_t *h) {
-  mixup64(&a, &b, rot64(c, 23) ^ d, prime_0);
-  mixup64(&b, &c, rot64(d, 29) ^ a, prime_4);
-  mixup64(&c, &d, rot64(a, 23) ^ b, prime_5);
-  mixup64(&d, &a, rot64(b, 27) ^ c, prime_6);
+  mixup64(&a, &b, rot64(c, 41) ^ d, prime_0);
+  mixup64(&b, &c, rot64(d, 23) ^ a, prime_6);
+  mixup64(&c, &d, rot64(a, 19) ^ b, prime_5);
+  mixup64(&d, &a, rot64(b, 31) ^ c, prime_4);
   *h = c + d;
   return a ^ b;
 }

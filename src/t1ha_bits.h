@@ -518,9 +518,9 @@ static __maybe_unused __always_inline uint64_t mux64(uint64_t v,
 }
 
 static __always_inline uint64_t final64(uint64_t a, uint64_t b) {
-  uint64_t x = (a + rot64(b, 23)) * prime_0;
-  uint64_t y = (rot64(a, 19) + b) * prime_4;
-  return mux64(x ^ y, prime_6);
+  uint64_t x = (a + rot64(b, 41)) * prime_0;
+  uint64_t y = (rot64(a, 23) + b) * prime_6;
+  return mux64(x ^ y, prime_5);
 }
 
 static __always_inline void mixup64(uint64_t *__restrict a,

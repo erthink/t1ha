@@ -303,9 +303,9 @@ uint64_t thunk_t1ha2_stream128(const void *data, size_t len, uint64_t seed) {
 
 static bool probe(uint64_t (*hash)(const void *, size_t, uint64_t),
                   const char *caption, const uint64_t check, const void *data,
-                  unsigned len, uint64_t seed, bool ignore_errors) {
+                  unsigned len, uint64_t seed) {
   uint64_t value = hash(data, len, seed);
-  if (is_option_set(test_verbose) || (value != check && !ignore_errors))
+  if (is_option_set(test_verbose) || (value != check))
     printf("Pattern '%s', reference value %08X%08X: ", caption,
            (uint32_t)(check >> 32), (uint32_t)check);
   if (check == value) {
@@ -319,24 +319,20 @@ static bool probe(uint64_t (*hash)(const void *, size_t, uint64_t),
 }
 
 bool verify(const char *title, uint64_t (*hash)(const void *, size_t, uint64_t),
-            const uint64_t *reference_values, bool ignore_errors) {
+            const uint64_t *reference_values) {
   printf("Testing %s...%s", title, is_option_set(test_verbose) ? "\n" : "");
 
   const uint64_t zero = 0;
   bool failed = false;
-  failed |= probe(hash, "empty-zero", *reference_values++, NULL, 0, zero,
-                  ignore_errors);
-  failed |= probe(hash, "empty-all1", *reference_values++, NULL, 0, ~zero,
-                  ignore_errors);
-  failed |= probe(hash, "bin64-zero", *reference_values++, pattern, 64, zero,
-                  ignore_errors);
+  failed |= probe(hash, "empty-zero", *reference_values++, NULL, 0, zero);
+  failed |= probe(hash, "empty-all1", *reference_values++, NULL, 0, ~zero);
+  failed |= probe(hash, "bin64-zero", *reference_values++, pattern, 64, zero);
 
   char caption[32];
   uint64_t seed = 1;
   for (int i = 1; i < 64; i++) {
     snprintf(caption, sizeof(caption), "bin%02i-1p%02u", i, i & 63);
-    failed |= probe(hash, caption, *reference_values++, pattern, i, seed,
-                    ignore_errors);
+    failed |= probe(hash, caption, *reference_values++, pattern, i, seed);
     seed <<= 1;
   }
 
@@ -344,8 +340,8 @@ bool verify(const char *title, uint64_t (*hash)(const void *, size_t, uint64_t),
   for (int i = 1; i <= 7; i++) {
     seed <<= 1;
     snprintf(caption, sizeof(caption), "align%i_F%u", i, 64 - i);
-    failed |= probe(hash, caption, *reference_values++, pattern + i, 64 - i,
-                    seed, ignore_errors);
+    failed |=
+        probe(hash, caption, *reference_values++, pattern + i, 64 - i, seed);
   }
 
   uint8_t pattern_long[512];
@@ -354,11 +350,9 @@ bool verify(const char *title, uint64_t (*hash)(const void *, size_t, uint64_t),
   for (int i = 0; i <= 7; i++) {
     snprintf(caption, sizeof(caption), "long-%05u", 128 + i * 17);
     failed |= probe(hash, caption, *reference_values++, pattern_long + i,
-                    128 + i * 17, seed, ignore_errors);
+                    128 + i * 17, seed);
   }
 
-  printf(" %s\n", (!is_option_set(test_verbose) && !failed)
-                      ? "Ok"
-                      : (ignore_errors ? "Skipped" : ""));
-  return failed && !ignore_errors;
+  printf(" %s\n", (!is_option_set(test_verbose) && !failed) ? "Ok" : "");
+  return failed;
 }

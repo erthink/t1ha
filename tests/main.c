@@ -202,36 +202,33 @@ int main(int argc, const char *argv[]) {
 
   bool failed = false;
   /* Nowadays t1ha2 not frozen */
-  failed |= verify("t1ha2_atonce", t1ha2_atonce, refval_2atonce, false);
-  failed |= verify("t1ha2_atonce128", thunk_t1ha2_atonce128, refval_2atonce128,
-                   false);
-  failed |= verify("t1ha2_stream", thunk_t1ha2_stream, refval_2stream, false);
-  failed |= verify("t1ha2_stream128", thunk_t1ha2_stream128, refval_2stream128,
-                   false);
+  failed |= verify("t1ha2_atonce", t1ha2_atonce, refval_2atonce);
+  failed |= verify("t1ha2_atonce128", thunk_t1ha2_atonce128, refval_2atonce128);
+  failed |= verify("t1ha2_stream", thunk_t1ha2_stream, refval_2stream);
+  failed |= verify("t1ha2_stream128", thunk_t1ha2_stream128, refval_2stream128);
 
   /* Stable t1ha1 and t1ha0 */
-  failed |= verify("t1ha1_64le", t1ha1_le, refval_64le, false);
-  failed |= verify("t1ha1_64be", t1ha1_be, refval_64be, false);
-  failed |= verify("t1ha0_32le", t1ha0_32le, refval_32le, false);
-  failed |= verify("t1ha0_32be", t1ha0_32be, refval_32be, false);
+  failed |= verify("t1ha1_64le", t1ha1_le, refval_64le);
+  failed |= verify("t1ha1_64be", t1ha1_be, refval_64be);
+  failed |= verify("t1ha0_32le", t1ha0_32le, refval_32le);
+  failed |= verify("t1ha0_32be", t1ha0_32be, refval_32be);
 
 #ifdef __e2k__
-  failed |= verify("t1ha0_ia32aes_noavx", t1ha0_ia32aes_noavx, refval_ia32aes_a,
-                   false);
   failed |=
-      verify("t1ha0_ia32aes_avx", t1ha0_ia32aes_avx, refval_ia32aes_a, false);
+      verify("t1ha0_ia32aes_noavx", t1ha0_ia32aes_noavx, refval_ia32aes_a);
+  failed |= verify("t1ha0_ia32aes_avx", t1ha0_ia32aes_avx, refval_ia32aes_a);
 #elif defined(T1HA0_AESNI_AVAILABLE)
   ia32_fetch_cpu_features();
   if (ia32_cpu_features.basic.ecx & UINT32_C(0x02000000)) {
-    failed |= verify("t1ha0_ia32aes_noavx", t1ha0_ia32aes_noavx,
-                     refval_ia32aes_a, false);
+    failed |=
+        verify("t1ha0_ia32aes_noavx", t1ha0_ia32aes_noavx, refval_ia32aes_a);
     if ((ia32_cpu_features.basic.ecx & UINT32_C(0x1A000000)) ==
         UINT32_C(0x1A000000)) {
-      failed |= verify("t1ha0_ia32aes_avx", t1ha0_ia32aes_avx, refval_ia32aes_a,
-                       false);
+      failed |=
+          verify("t1ha0_ia32aes_avx", t1ha0_ia32aes_avx, refval_ia32aes_a);
       if (ia32_cpu_features.extended_7.ebx & 32)
-        failed |= verify("t1ha0_ia32aes_avx2", t1ha0_ia32aes_avx2,
-                         refval_ia32aes_b, false);
+        failed |=
+            verify("t1ha0_ia32aes_avx2", t1ha0_ia32aes_avx2, refval_ia32aes_b);
     }
   } else {
     if (option_flags & user_wanna_aes)

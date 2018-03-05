@@ -118,7 +118,7 @@ extern const uint64_t refval_ia32aes_b[];
 #endif /* T1HA0_AESNI_AVAILABLE */
 
 bool verify(const char *title, uint64_t (*hash)(const void *, size_t, uint64_t),
-            const uint64_t *reference_values, bool ignore_errors);
+            const uint64_t *reference_values);
 
 uint64_t thunk_t1ha2_atonce128(const void *data, size_t len, uint64_t seed);
 uint64_t thunk_t1ha2_stream(const void *data, size_t len, uint64_t seed);

@@ -108,6 +108,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#include "common.h"
+
 /*****************************************************************************/
 
 /* Compiler's includes for builtins/intrinsics */
@@ -211,8 +213,8 @@ static void sigaction_handler(int signum, siginfo_t *info, void *context) {
 #endif
 
 /* LY: dedicated function to avoid clobber args by ‘longjmp’ */
-static bool do_probe(unsigned (*start)(timestamp_t *),
-                     unsigned (*finish)(timestamp_t *)) {
+static int do_probe(unsigned (*start)(timestamp_t *),
+                    unsigned (*finish)(timestamp_t *)) {
 #if defined(_WIN64) || defined(_WIN32) || defined(__TOS_WIN__) ||              \
     defined(__WINDOWS__)
   __try {
@@ -222,22 +224,22 @@ static bool do_probe(unsigned (*start)(timestamp_t *),
   act.sa_sigaction = sigaction_handler;
   if (sigaction(SIGSEGV, &act, &prev_sigsegv)) {
     perror(MERA_PERROR_PREFIX "sigaction(SIGSEGV)");
-    return false;
+    return -1;
   }
   if (sigaction(SIGILL, &act, &prev_sigill)) {
     perror(MERA_PERROR_PREFIX "sigaction(SIGILL)");
-    return false;
+    return -1;
   }
   if (sigaction(SIGBUS, &act, &prev_sigbus)) {
     perror(MERA_PERROR_PREFIX "sigaction(SIGBUS)");
-    return false;
+    return -1;
   }
 
   if (sigsetjmp(sigaction_jump, 0) != 0) {
     sigaction(SIGSEGV, &prev_sigsegv, NULL);
     sigaction(SIGILL, &prev_sigill, NULL);
     sigaction(SIGBUS, &prev_sigbus, NULL);
-    return false;
+    return -2;
   }
 #endif
 
@@ -253,7 +255,7 @@ static bool do_probe(unsigned (*start)(timestamp_t *),
       if (coreid != finish(&timestamp_finish))
         continue;
       if (timestamp_finish > timestamp_start)
-        return true;
+        return 1;
       if (timestamp_finish == timestamp_start || n > 5)
         break;
     }
@@ -261,25 +263,38 @@ static bool do_probe(unsigned (*start)(timestamp_t *),
 #if defined(_WIN64) || defined(_WIN32) || defined(__TOS_WIN__) ||              \
     defined(__WINDOWS__)
   } __except (seh_filter(GetExceptionCode())) {
-    return false;
+    return -2;
   }
 #else
   sigaction(SIGSEGV, &prev_sigsegv, NULL);
   sigaction(SIGILL, &prev_sigill, NULL);
   sigaction(SIGBUS, &prev_sigbus, NULL);
 #endif
-  return false;
+  return 0;
 }
 
 static bool probe(unsigned (*start)(timestamp_t *),
                   unsigned (*finish)(timestamp_t *),
                   double (*convert)(timestamp_t), unsigned flags,
                   const char *source_name, const char *time_units) {
-  flags |= timestamp_clock_have;
-  if (mera.flags >= flags)
-    return false;
 
-  if (do_probe(start, finish)) {
+  if (is_option_set(bench_verbose)) {
+    printf(" - probe for %s", source_name);
+    fflush(stdout);
+  }
+
+  flags |= timestamp_clock_have;
+  if (mera.flags >= flags) {
+    if (is_option_set(bench_verbose))
+      printf(": Skip (already have)\n");
+    return false;
+  }
+
+  int rc = do_probe(start, finish);
+  switch (rc) {
+  case 1:
+    if (is_option_set(bench_verbose))
+      printf(": Ok\n");
     mera.start = start;
     mera.finish = finish;
     mera.source = source_name;
@@ -292,6 +307,14 @@ static bool probe(unsigned (*start)(timestamp_t *),
       mera.units = time_units;
     mera.flags = flags;
     return true;
+  case 0:
+    if (is_option_set(bench_verbose))
+      printf(": Doesnt work\n");
+    break;
+  case -2:
+    if (is_option_set(bench_verbose))
+      printf(": Not available (SIGSEGV/SIGILL)\n");
+    break;
   }
   return false;
 }

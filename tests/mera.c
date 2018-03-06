@@ -748,7 +748,7 @@ static unsigned clock_zbustimer(timestamp_t *now) {
     defined(__MIPS_ISA2) || defined(__MIPS_ISA3) || defined(__MIPS_ISA4) ||    \
     (defined(__mips_isa_rev) && __mips_isa_rev >= 2)
 
-static unsigned clock_mfc0_25(timestamp_t *now) {
+static unsigned clock_mfc0_25_1(timestamp_t *now) {
   compiler_barrier();
   unsigned long count;
   __asm __volatile("mfc0 %0, $25, 1" : "=r"(count));
@@ -757,10 +757,10 @@ static unsigned clock_mfc0_25(timestamp_t *now) {
   return 0;
 }
 
-static unsigned clock_mfc0_9(timestamp_t *now) {
+static unsigned clock_mfc0_9_0(timestamp_t *now) {
   compiler_barrier();
   unsigned long count;
-  __asm __volatile("mfc0 %0, $9, 1" : "=r"(count));
+  __asm __volatile("mfc0 %0, $9, 0" : "=r"(count));
   *now = count;
   compiler_barrier();
   return 0;
@@ -769,9 +769,8 @@ static unsigned clock_mfc0_9(timestamp_t *now) {
 static unsigned mips_rdhwr_resolution;
 static unsigned clock_rdhwr(timestamp_t *now) {
   compiler_barrier();
-  unsigned long count;
-  unsigned coreid;
-  __asm __volatile("rdhwr %0, $2; rdhwr %0, $1" : "=r"(count), "=r"(coreid));
+  unsigned count, coreid;
+  __asm __volatile("rdhwr %0, $2; rdhwr %1, $0" : "=r"(count), "=r"(coreid));
   *now = count;
   compiler_barrier();
   return coreid;
@@ -1258,9 +1257,9 @@ bool mera_init(void) {
     defined(__MIPS_ISA2) || defined(__MIPS_ISA3) || defined(__MIPS_ISA4) ||    \
     (defined(__mips_isa_rev) && __mips_isa_rev >= 2)
 
-  probe(clock_mfc0_9, clock_mfc0_9, convert_1to1,
+  probe(clock_mfc0_9_0, clock_mfc0_9_0, convert_1to1,
         timestamp_clock_stable | timestamp_clock_cheap | timestamp_cycles,
-        "MFC0(9)", "cycle");
+        "MFC0(9.0)", "cycle");
 
   if (probe(clock_rdhwr, clock_rdhwr, convert_rdhwr,
             timestamp_clock_stable | timestamp_clock_cheap | timestamp_cycles,
@@ -1272,9 +1271,9 @@ bool mera_init(void) {
       mera.convert = convert_1to1;
   }
 
-  probe(clock_mfc0_25, clock_mfc0_25, convert_1to1,
-        timestamp_clock_stable | timestamp_clock_cheap | timestamp_ticks,
-        "MFC0(25)", "tick");
+  probe(clock_mfc0_25_1, clock_mfc0_25_1, convert_1to1,
+        timestamp_clock_stable | timestamp_clock_cheap | timestamp_cycles,
+        "MFC0(25.1)", "cycle");
 #endif /* MIPS >= 2 */
 
 #if defined(PROT_READ) && defined(MAP_SHARED)

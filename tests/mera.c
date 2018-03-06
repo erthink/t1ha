@@ -557,24 +557,43 @@ static unsigned clock_powerpc_mftb(timestamp_t *now) {
 }
 #endif /* __powerpc__ */
 
-#if (defined(__sparc_v9__) || defined(__sparc_v9) || defined(__sparc__) ||     \
-     defined(__sparc))
+#if defined(__sparc__) || defined(__sparc) || defined(__sparc64__) ||          \
+    defined(__sparc64) || defined(__sparc_v8plus__) ||                         \
+    defined(__sparc_v8plus) || defined(__sparc_v8plusa__) ||                   \
+    defined(__sparc_v8plusa) || defined(__sparc_v9__) || defined(__sparc_v9)
 static unsigned clock_sparc(timestamp_t *now) {
   compiler_barrier();
-#if defined(__GNUC__)
-  uint64_t cycles;
-#if defined(__sparc_v9__) || defined(__sparc_v9)
-  __asm __volatile("rd %%tick, %0" : "=r"(cycles));
+  union {
+    uint64_t i64;
+    struct {
+      uint32_t high;
+      uint32_t low;
+    } i32;
+  } cycles;
+#ifndef __GNUC__
+#warning FIXME
+#else
+
+#if defined(__sparc_v8plus__) || defined(__sparc_v8plusa__) ||                 \
+    defined(__sparc_v9__) || defined(__sparc_v8plus) ||                        \
+    defined(__sparc_v8plusa) || defined(__sparc_v9)
+
+#if UINTPTR_MAX > 0xffffFFFFul || ULONG_MAX > 0xffffFFFFul ||                  \
+    defined(__sparc64__) || defined(__sparc64)
+  __asm __volatile("rd %%tick, %0" : "=r"(cycles.i64));
+#else
+  __asm __volatile("rd %%tick, %1; srlx %1, 32, %0"
+                   : "=r"(cycles.i32.high), "=r"(cycles.i32.low));
+#endif /* __sparc64__ */
+
 #else
   __asm __volatile(".byte 0x83, 0x41, 0x00, 0x00; mov %%g1, %0"
-                   : "=r"(cycles)
+                   : "=r"(cycles.ia64)
                    :
                    : "%g1");
-#endif
-  *now = cycles;
-#else
-  *now = 42 /* FIXME */;
-#endif
+#endif /* __sparc8plus__ || __sparc_v9__ */
+#endif /* GCC */
+  *now = cycles.i64;
   compiler_barrier();
   return 0;
 }
@@ -1146,8 +1165,10 @@ bool mera_init(void) {
         timestamp_clock_cheap | timestamp_ticks, "MFTB", "tick");
 #endif /* __powerpc__ */
 
-#if (defined(__sparc_v9__) || defined(__sparc_v9) || defined(__sparc__) ||     \
-     defined(__sparc))
+#if defined(__sparc__) || defined(__sparc) || defined(__sparc64__) ||          \
+    defined(__sparc64) || defined(__sparc_v8plus__) ||                         \
+    defined(__sparc_v8plus) || defined(__sparc_v8plusa__) ||                   \
+    defined(__sparc_v8plusa) || defined(__sparc_v9__) || defined(__sparc_v9)
   probe(clock_sparc, clock_sparc, convert_1to1,
         timestamp_clock_cheap | timestamp_cycles | timestamp_clock_stable,
         "tick_register", "cycle");

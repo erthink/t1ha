@@ -750,8 +750,16 @@ static unsigned clock_zbustimer(timestamp_t *now) {
 
 static unsigned clock_mfc0_25_1(timestamp_t *now) {
   compiler_barrier();
-  unsigned long count;
+#if (defined(_MIPS_SIM) && defined(_ABI64) && _MIPS_SIM == _ABI64) ||          \
+    (defined(_MIPS_SIM) && defined(_ABIO64) && _MIPS_SIM == _ABIO64) ||        \
+    defined(__mips64) || defined(__mips64__) ||                                \
+    (defined(__mips) && (__mips >= 64))
+  uint64_t count;
+  __asm __volatile("dmfc0 %0, $25, 1" : "=r"(count));
+#else
+  uint32_t count;
   __asm __volatile("mfc0 %0, $25, 1" : "=r"(count));
+#endif
   *now = count;
   compiler_barrier();
   return 0;
@@ -759,8 +767,16 @@ static unsigned clock_mfc0_25_1(timestamp_t *now) {
 
 static unsigned clock_mfc0_9_0(timestamp_t *now) {
   compiler_barrier();
-  unsigned long count;
+#if (defined(_MIPS_SIM) && defined(_ABI64) && _MIPS_SIM == _ABI64) ||          \
+    (defined(_MIPS_SIM) && defined(_ABIO64) && _MIPS_SIM == _ABIO64) ||        \
+    defined(__mips64) || defined(__mips64__) ||                                \
+    (defined(__mips) && (__mips >= 64))
+  uint64_t count;
+  __asm __volatile("dmfc0 %0, $9, 0" : "=r"(count));
+#else
+  uint32_t count;
   __asm __volatile("mfc0 %0, $9, 0" : "=r"(count));
+#endif
   *now = count;
   compiler_barrier();
   return 0;

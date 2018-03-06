@@ -730,7 +730,7 @@ static unsigned clock_cntvct_el0(timestamp_t *now) {
 }
 #endif /* __aarch64__ || __ARM_ARCH > 7 || _M_ARM64 */
 
-#if defined(__mips__) || defined(__mips)
+#if defined(__mips__) || defined(__mips) || defined(_R4000)
 
 #if defined(PROT_READ) && defined(MAP_SHARED)
 static volatile uint64_t *mips_tsc_addr;
@@ -741,6 +741,12 @@ static unsigned clock_zbustimer(timestamp_t *now) {
   return 0;
 }
 #endif /* PROT_READ && MAP_SHARED */
+
+#if (defined(_MIPS_ISA) && defined(_MIPS_ISA_MIPS2) &&                         \
+     _MIPS_ISA >= _MIPS_ISA_MIPS2) ||                                          \
+    (defined(__mips) && __mips >= 2 && __mips < 16) || defined(_R4000) ||      \
+    defined(__MIPS_ISA2) || defined(__MIPS_ISA3) || defined(__MIPS_ISA4) ||    \
+    (defined(__mips_isa_rev) && __mips_isa_rev >= 2)
 
 static unsigned clock_mfc0_25(timestamp_t *now) {
   compiler_barrier();
@@ -774,6 +780,7 @@ static unsigned clock_rdhwr(timestamp_t *now) {
 static double convert_rdhwr(timestamp_t timestamp) {
   return (double)timestamp * mips_rdhwr_resolution;
 }
+#endif /* MIPS >= 2 */
 
 #endif /* MIPS */
 
@@ -1245,7 +1252,12 @@ bool mera_init(void) {
 
 #if defined(__mips__) || defined(__mips)
 
-  /* LY: assume _MIPS_ISA >= 2 */
+#if (defined(_MIPS_ISA) && defined(_MIPS_ISA_MIPS2) &&                         \
+     _MIPS_ISA >= _MIPS_ISA_MIPS2) ||                                          \
+    (defined(__mips) && __mips >= 2 && __mips < 16) || defined(_R4000) ||      \
+    defined(__MIPS_ISA2) || defined(__MIPS_ISA3) || defined(__MIPS_ISA4) ||    \
+    (defined(__mips_isa_rev) && __mips_isa_rev >= 2)
+
   probe(clock_mfc0_9, clock_mfc0_9, convert_1to1,
         timestamp_clock_stable | timestamp_clock_cheap | timestamp_cycles,
         "MFC0(9)", "cycle");
@@ -1260,10 +1272,10 @@ bool mera_init(void) {
       mera.convert = convert_1to1;
   }
 
-  /* LY: only MIPS32_34K with echo "3 0x1f 0" > /proc/perf */
   probe(clock_mfc0_25, clock_mfc0_25, convert_1to1,
         timestamp_clock_stable | timestamp_clock_cheap | timestamp_ticks,
         "MFC0(25)", "tick");
+#endif /* MIPS >= 2 */
 
 #if defined(PROT_READ) && defined(MAP_SHARED)
   uint64_t *mips_tsc_addr;

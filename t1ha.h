@@ -243,51 +243,89 @@ typedef struct t1ha_context {
   uint64_t total;
 } t1ha_context_t;
 
+/******************************************************************************
+ *
+ *  t1ha2 = 64 and 128-bit, SLIGHTLY MORE ATTENTION FOR QUALITY AND STRENGTH.
+ *
+ *    - The recommended version of "Fast Positive Hash" with good quality
+ *      for checksum, hash tables and fingerprinting.
+ *    - Portable and extremely efficiency on modern 64-bit CPUs.
+ *      Designed for 64-bit little-endian platforms,
+ *      in other cases will runs slowly.
+ *    - Great quality of hashing and still faster than other non-t1ha hashes.
+ *      Provides streaming mode and 128-bit result.
+ *
+ * Note: Due performance reason 64- and 128-bit results are completely
+ *       different each other, i.e. 64-bit result is NOT any part of 128-bit.
+ */
+
+/* The at-once variant with 64-bit result */
 T1HA_API uint64_t t1ha2_atonce(const void *data, size_t length, uint64_t seed);
 
+/* The at-once variant with 128-bit result.
+ * Argument `extra_result` is NOT optional and MUST be valid.
+ * The high 64-bit part of 128-bit hash will be always unconditionally
+ * stored to the address given by `extra_result` argument. */
 T1HA_API uint64_t t1ha2_atonce128(uint64_t *__restrict extra_result,
                                   const void *__restrict data, size_t length,
                                   uint64_t seed);
 
+/* The init/update/final trinity for streaming.
+ * Return 64 or 128-bit result depentently from `extra_result` argument. */
 T1HA_API void t1ha2_init(t1ha_context_t *ctx, uint64_t seed_x, uint64_t seed_y);
 T1HA_API void t1ha2_update(t1ha_context_t *__restrict ctx,
                            const void *__restrict data, size_t length);
 
+/* Argument `extra_result` is optional and MAY be NULL.
+ *  - If `extra_result` is NOT NULL then the 128-bit hash will be calculated,
+ *    and high 64-bit part of it will be stored to the address given
+ *    by `extra_result` argument.
+ *  - Otherwise the 64-bit hash will be calculated
+ *    and returned from function directly.
+ *
+ * Note: Due performance reason 64- and 128-bit results are completely
+ *       different each other, i.e. 64-bit result is NOT any part of 128-bit. */
 T1HA_API uint64_t t1ha2_final(t1ha_context_t *__restrict ctx,
-                              uint64_t *__restrict extra_result);
+                              uint64_t *__restrict extra_result /* optional */);
 
-/* The legacy low-endian version.
- *  - runs faster on 64-bit low-endian platforms,
- *    in other cases may runs slowly.
- *  - returns same result on all architectures and CPUs,
- *    but it is differs from t1ha0().
- *  - unfortunately it fails the "strict avalanche criteria",
- *    see test results at https://github.com/demerphq/smhasher. */
+/******************************************************************************
+ *
+ *  t1ha1 = 64-bit, BASELINE FAST PORTABLE HASH:
+ *
+ *    - Runs faster on 64-bit platforms in other cases may runs slowly.
+ *    - Portable and stable, returns same 64-bit result
+ *      on all architectures and CPUs.
+ *    - Unfortunately it fails the "strict avalanche criteria",
+ *      see test results at https://github.com/demerphq/smhasher.
+ *
+ *      This flaw is insignificant for the t1ha1() purposes and imperceptible
+ *      from a practical point of view.
+ *      However, nowadays this issue has resolved in the next t1ha2(),
+ *      that was initially planned to providing a bit more quality.
+ */
+
+/* The little-endian variant. */
 T1HA_API uint64_t t1ha1_le(const void *data, size_t length, uint64_t seed);
 
-/* The big-endian legacy version.
- *  - runs faster on 64-bit big-endian platforms,
- *    in other cases may runs slowly.
- *  - returns same result on all architectures and CPUs,
- *    but it is differs from t1ha0().
- *  - unfortunately it fails the "strict avalanche criteria",
- *    see test results at https://github.com/demerphq/smhasher. */
+/* The big-endian variant. */
 T1HA_API uint64_t t1ha1_be(const void *data, size_t length, uint64_t seed);
 
-/* The nicname for generic legacy version of "Fast Positive Hash".
- *  - returns same result on all architectures and CPUs.
- *  - created for 64-bit little-endian platforms,
- *    in other cases may runs slowly.
- *  - unfortunately it fails the "strict avalanche criteria",
- *    see test results at https://github.com/demerphq/smhasher. */
+/* The historical nicname for generic little-endian variant. */
 static __inline uint64_t t1ha(const void *data, size_t length, uint64_t seed) {
   return t1ha1_le(data, length, seed);
 }
 
-/* t1ha0() is a facade that selects most quick-and-dirty hash
- * for the current processor.
+/******************************************************************************
  *
- * BE CAREFUL!!!  This is means:
+ *  t1ha0 = 64-bit, JUST ONLY FASTER:
+ *
+ *    - Provides fast-as-possible hashing for current CPU, including
+ *      32-bit systems and engaging the available hardware acceleration.
+ *    - It is a facade that selects most quick-and-dirty hash
+ *      for the current processor. For instance, on IA32 (x86) actual function
+ *      will be selected in runtime, depending on current CPU capabilities
+ *
+ * BE CAREFUL!!!  THIS IS MEANS:
  *
  *   1. The quality of hash is a subject for tradeoffs with performance.
  *      So, the quality and strength of t1ha0() may be lower than t1ha1(),
@@ -299,9 +337,12 @@ static __inline uint64_t t1ha(const void *data, size_t length, uint64_t seed) {
  *
  *      Briefly, such hash-results and their derivatives, should be
  *      used only in runtime, but should not be persist or transferred
- *      over a network. */
+ *      over a network.
+ */
 
+/* The little-endian variant for 32-bit CPU. */
 uint64_t t1ha0_32le(const void *data, size_t length, uint64_t seed);
+/* The big-endian variant for 32-bit CPU. */
 uint64_t t1ha0_32be(const void *data, size_t length, uint64_t seed);
 
 #if defined(__e2k__)
@@ -318,8 +359,12 @@ uint64_t t1ha0_ia32aes_avx2(const void *data, size_t length, uint64_t seed);
 
 #ifdef T1HA0_RUNTIME_SELECT
 #ifdef __ELF__
+/* ifunc/gnu_indirect_function will be used on ELF.
+ * Please see https://en.wikipedia.org/wiki/Executable_and_Linkable_Format */
 T1HA_API uint64_t t1ha0(const void *data, size_t length, uint64_t seed);
 #else
+/* Otherwise function pointer will be used.
+ * Unfortunately this may cause some overhead calling. */
 T1HA_API extern uint64_t (*t1ha0_funcptr)(const void *data, size_t length,
                                           uint64_t seed);
 static __inline uint64_t t1ha0(const void *data, size_t length, uint64_t seed) {

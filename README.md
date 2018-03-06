@@ -16,7 +16,7 @@ by [Positive Technologies](https://www.ptsecurity.com).
      and all others portable hash-functions (which do not use specific hardware tricks).
   3. Provides a set of _terraced_ hash functions.
   4. Currently not suitable for cryptography.
-  5. Licensed under [Zlib License](https://en.wikipedia.org/wiki/Zlib_License)
+  5. Licensed under [Zlib License](https://en.wikipedia.org/wiki/Zlib_License).
 
 Also pay attention to [Erlang](https://github.com/lemenkov/erlang-t1ha)
 and [Golang](https://github.com/dgryski/go-t1ha) implementations.

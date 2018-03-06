@@ -15,10 +15,12 @@ OBJ_LIST := t1ha0.o t1ha1.o t1ha2.o
 BENCH_EXTRA := bench.o mera.o test.o 4bench_xxhash.o
 ifeq ($(TARGET_ARCH_e2k),yes)
 TARGET_ARCH := e2k
+CFLAGS += -mtune=native
 OBJ_LIST += t1ha0_aes_noavx.o t1ha0_aes_avx.o
 BENCH_EXTRA += 4bench_t1ha0_aes_noavx.o 4bench_t1ha0_aes_avx.o
 else ifeq ($(TARGET_ARCH_ia32),yes)
 TARGET_ARCH := ia32
+CFLAGS += -mtune=native
 OBJ_LIST += t1ha0_aes_noavx.o t1ha0_aes_avx.o t1ha0_aes_avx2.o
 BENCH_EXTRA += 4bench_t1ha0_aes_noavx.o 4bench_t1ha0_aes_avx.o 4bench_t1ha0_aes_avx2.o
 else

@@ -616,14 +616,36 @@ static unsigned clock_hppa(timestamp_t *now) {
 #endif /* __hppa__ */
 
 #if defined(__s390__) || defined(__s390)
-static unsigned clock_s390(timestamp_t *now) {
+static unsigned clock_stcke(timestamp_t *now) {
+  compiler_barrier();
+  uint8_t clk[16];
+#ifdef __GNUC__
+  __asm __volatile("stcke %0" : "=Q"(clk) : : "cc");
+#else
+#warning FIXME
+#endif
+  *now = *((unsigned long long *)&clk[1]) >> 2;
+  compiler_barrier();
+  return (clk[14] << 8) | (clk[15]);
+}
+
+static unsigned clock_stckf(timestamp_t *now) {
   compiler_barrier();
 #ifdef __GNUC__
-  uint8_t clk[16];
-  __asm __volatile("stcke %0" : "=Q"(clk) : : "cc");
-  *now = *((unsigned long long *)&clk[1]) >> 2;
+  __asm __volatile("stckf 0(%1)" : "=m"(*now) : "a"(now) : "cc");
 #else
-  *now = 42 /* FIXME */;
+#warning FIXME
+#endif
+  compiler_barrier();
+  return 0;
+}
+
+static unsigned clock_stck(timestamp_t *now) {
+  compiler_barrier();
+#ifdef __GNUC__
+  __asm __volatile("stck 0(%1)" : "=m"(*now) : "a"(now) : "cc");
+#else
+#warning FIXME
 #endif
   compiler_barrier();
   return 0;
@@ -1144,10 +1166,16 @@ bool mera_init(void) {
         "MFCTL(16)", "cycle");
 #endif /* __hppa__ */
 
-#if defined(__s390__)
-  probe(clock_s390, clock_s390, convert_1to1,
+#if defined(__s390__) || defined(__s390)
+  probe(clock_stcke, clock_stcke, convert_1to1,
         timestamp_clock_cheap | timestamp_cycles | timestamp_clock_stable,
         "STCKE", "cycle");
+  probe(clock_stckf, clock_stckf, convert_1to1,
+        timestamp_clock_cheap | timestamp_cycles | timestamp_clock_stable,
+        "STCKF", "cycle");
+  probe(clock_stck, clock_stck, convert_1to1,
+        timestamp_clock_cheap | timestamp_cycles | timestamp_clock_stable,
+        "STCK", "cycle");
 #endif /* __s390__ */
 
 #if defined(__alpha__) || defined(__alpha)

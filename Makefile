@@ -101,6 +101,9 @@ test: $(OBJ_LIST) $(BENCH_EXTRA) tests/main.c Makefile \
 check: test
 	./test || rm -rf libt1ha.a libt1ha.so
 
+bench-verbose: test
+	./test --bench-verbose || rm -rf libt1ha.a libt1ha.so
+
 ###############################################################################
 
 # sparc64-linux-gnu-gcc	- qemu troubles (sigaction, etc...)
@@ -117,4 +120,4 @@ cross-gcc:
 	for CC in $(CROSS_LIST); do make clean && CC=$$CC make all || exit $$?; done
 
 cross-qemu:
-	for CC in $(CROSS_LIST); do make clean && CC=$$CC CFLAGS_TEST="-std=c99 -static" make check || exit $$?; done
+	for CC in $(CROSS_LIST); do make clean && CC=$$CC CFLAGS_TEST="-std=c99 -static" make bench-verbose || exit $$?; done

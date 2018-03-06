@@ -689,14 +689,49 @@ static unsigned clock_cntvct_el0(timestamp_t *now) {
 }
 #endif /* __aarch64__ || __ARM_ARCH > 7 || _M_ARM64 */
 
-#if defined(__mips__) && defined(PROT_READ) && defined(MAP_SHARED)
-static volatile uint64_t *mips_tsc_addr;
+#if defined(__mips__) || defined(__mips)
 
+#if defined(PROT_READ) && defined(MAP_SHARED)
+static volatile uint64_t *mips_tsc_addr;
 static unsigned clock_zbustimer(timestamp_t *now) {
   compiler_barrier();
   *now = *mips_tsc_addr;
   compiler_barrier();
   return 0;
+}
+#endif /* PROT_READ && MAP_SHARED */
+
+static unsigned clock_mfc0_25(timestamp_t *now) {
+  compiler_barrier();
+  unsigned long count;
+  __asm __volatile("mfc0 %0, $25, 1" : "=r"(count));
+  *now = count;
+  compiler_barrier();
+  return 0;
+}
+
+static unsigned clock_mfc0_9(timestamp_t *now) {
+  compiler_barrier();
+  unsigned long count;
+  __asm __volatile("mfc0 %0, $9, 1" : "=r"(count));
+  *now = count;
+  compiler_barrier();
+  return 0;
+}
+
+static unsigned mips_rdhwr_resolution;
+static unsigned clock_rdhwr(timestamp_t *now) {
+  compiler_barrier();
+  unsigned long count;
+  unsigned coreid;
+  __asm __volatile("rdhwr %0, $2; rdhwr %0, $1" : "=r"(count), "=r"(coreid));
+  *now = count;
+  compiler_barrier();
+  return coreid;
+}
+
+static double convert_rdhwr(timestamp_t timestamp) {
+  return (double)timestamp * mips_rdhwr_resolution;
 }
 
 #endif /* MIPS */
@@ -1154,7 +1189,29 @@ bool mera_init(void) {
         "CNTVCT_EL0", "tick");
 #endif /* __aarch64__ || __ARM_ARCH > 7 || _M_ARM64 */
 
-#if defined(__mips__) && defined(PROT_READ) && defined(MAP_SHARED)
+#if defined(__mips__) || defined(__mips)
+
+  /* LY: assume _MIPS_ISA >= 2 */
+  probe(clock_mfc0_9, clock_mfc0_9, convert_1to1,
+        timestamp_clock_stable | timestamp_clock_cheap | timestamp_cycles,
+        "MFC0(9)", "cycle");
+
+  if (probe(clock_rdhwr, clock_rdhwr, convert_rdhwr,
+            timestamp_clock_stable | timestamp_clock_cheap | timestamp_cycles,
+            "RDHWR(2)", "cycle")) {
+    unsigned rdhwr_3;
+    __asm("rdhwr %0, $3" : "=r"(rdhwr_3));
+    mips_rdhwr_resolution = rdhwr_3;
+    if (mips_rdhwr_resolution < 2)
+      mera.convert = convert_1to1;
+  }
+
+  /* LY: only MIPS32_34K with echo "3 0x1f 0" > /proc/perf */
+  probe(clock_mfc0_25, clock_mfc0_25, convert_1to1,
+        timestamp_clock_stable | timestamp_clock_cheap | timestamp_ticks,
+        "MFC0(25)", "tick");
+
+#if defined(PROT_READ) && defined(MAP_SHARED)
   uint64_t *mips_tsc_addr;
   int mem_fd = open("/dev/mem", O_RDONLY | O_SYNC, 0);
 
@@ -1182,6 +1239,8 @@ bool mera_init(void) {
       }
     }
   }
+#endif /* PROT_READ && MAP_SHARED */
+
 #endif /* __mips__ */
 
 #if defined(__ia32__)

@@ -1224,6 +1224,11 @@ bool mera_init(void) {
       probe(clock_pmccntr, clock_pmccntr, convert_pmccntr_x64,
             timestamp_clock_stable | timestamp_cycles | timestamp_clock_cheap,
             "PMCCNTR", "clk");
+    else {
+      printf(" - suggest enable performance-counter\n");
+    }
+  } else {
+    printf(" - suggest enable access to performance-counters from user-mode\n");
   }
 #endif /* (__ARM_ARCH > 5 && __ARM_ARCH < 8) || _M_ARM */
 

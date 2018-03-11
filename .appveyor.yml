@@ -1,4 +1,4 @@
-version: 1.1.3.{build}
+version: 1.2.0.{build}
 
 environment:
   matrix:
@@ -21,6 +21,14 @@ platform:
 - x86
 - x64
 - ARM
+- ARM64
+
+matrix:
+  exclude:
+    - platform: ARM64
+      TOOLSET: v140
+    - platform: ARM64
+      TOOLSET: v120
 
 build_script:
 - ps: >

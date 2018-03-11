@@ -1,8 +1,8 @@
 /*
- *  Copyright (c) 2016-2017 Positive Technologies, https://www.ptsecurity.com,
+ *  Copyright (c) 2016-2018 Positive Technologies, https://www.ptsecurity.com,
  *  Fast Positive Hash.
  *
- *  Portions Copyright (c) 2010-2017 Leonid Yuriev <leo@yuriev.ru>,
+ *  Portions Copyright (c) 2010-2018 Leonid Yuriev <leo@yuriev.ru>,
  *  The 1Hippeus project (t1h).
  *
  *  This software is provided 'as-is', without any express or implied
@@ -41,16 +41,9 @@
  * for The 1Hippeus project - zerocopy messaging in the spirit of Sparta!
  */
 
-#if defined(_MSC_VER) && _MSC_VER > 1800
-#pragma warning(disable : 4464) /* relative include path contains '..' */
-#endif
-
-#include "../t1ha.h"
 #include "t1ha_bits.h"
 
-#if defined(_X86_64_) || defined(__x86_64__) || defined(_M_X64) ||             \
-    defined(__i386__) || (defined(_M_IX86) && _MSC_VER > 1800) ||              \
-    defined(i386) || defined(_X86_)
+#ifdef T1HA0_AESNI_AVAILABLE
 
 uint64_t T1HA_IA32AES_NAME(const void *data, size_t len, uint64_t seed) {
   uint64_t a = seed;
@@ -58,7 +51,7 @@ uint64_t T1HA_IA32AES_NAME(const void *data, size_t len, uint64_t seed) {
 
   if (unlikely(len > 32)) {
     __m128i x = _mm_set_epi64x(a, b);
-    __m128i y = _mm_aesenc_si128(x, _mm_set_epi64x(p0, p1));
+    __m128i y = _mm_aesenc_si128(x, _mm_set_epi64x(prime_5, prime_6));
 
     const __m128i *__restrict v = (const __m128i *)data;
     const __m128i *__restrict const detent =
@@ -146,7 +139,7 @@ uint64_t T1HA_IA32AES_NAME(const void *data, size_t len, uint64_t seed) {
   const uint64_t *v = (const uint64_t *)data;
   switch (len) {
   default:
-    b += mux64(*v++, p4);
+    mixup64(&a, &b, *v++, prime_4);
   /* fall through */
   case 24:
   case 23:
@@ -156,7 +149,7 @@ uint64_t T1HA_IA32AES_NAME(const void *data, size_t len, uint64_t seed) {
   case 19:
   case 18:
   case 17:
-    a += mux64(*v++, p3);
+    mixup64(&b, &a, *v++, prime_3);
   /* fall through */
   case 16:
   case 15:
@@ -166,7 +159,7 @@ uint64_t T1HA_IA32AES_NAME(const void *data, size_t len, uint64_t seed) {
   case 11:
   case 10:
   case 9:
-    b += mux64(*v++, p2);
+    mixup64(&a, &b, *v++, prime_2);
   /* fall through */
   case 8:
   case 7:
@@ -176,12 +169,12 @@ uint64_t T1HA_IA32AES_NAME(const void *data, size_t len, uint64_t seed) {
   case 3:
   case 2:
   case 1:
-    a += mux64(tail64_le(v, len), p1);
+    mixup64(&b, &a, tail64_le(v, len), prime_1);
   /* fall through */
   case 0:
-    return mux64(rot64(a + b, s1), p4) + mix64(a ^ b, p0);
+    return final64(a, b);
   }
 }
 
-#endif /* __i386__ || __x86_64__ */
+#endif /* T1HA0_AESNI_AVAILABLE */
 #undef T1HA_IA32AES_NAME

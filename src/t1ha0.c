@@ -1,8 +1,8 @@
-﻿/*
- *  Copyright (c) 2016-2017 Positive Technologies, https://www.ptsecurity.com,
+/*
+ *  Copyright (c) 2016-2018 Positive Technologies, https://www.ptsecurity.com,
  *  Fast Positive Hash.
  *
- *  Portions Copyright (c) 2010-2017 Leonid Yuriev <leo@yuriev.ru>,
+ *  Portions Copyright (c) 2010-2018 Leonid Yuriev <leo@yuriev.ru>,
  *  The 1Hippeus project (t1h).
  *
  *  This software is provided 'as-is', without any express or implied
@@ -41,14 +41,9 @@
  * for The 1Hippeus project - zerocopy messaging in the spirit of Sparta!
  */
 
-#if defined(_MSC_VER) && _MSC_VER > 1800
-#pragma warning(disable : 4464) /* relative include path contains '..' */
-#endif
-
-#include "../t1ha.h"
 #include "t1ha_bits.h"
 
-static __inline uint32_t tail32_le(const void *v, size_t tail) {
+static __always_inline uint32_t tail32_le(const void *v, size_t tail) {
   const uint8_t *p = (const uint8_t *)v;
 #ifdef can_read_underside
   /* On some systems (e.g. x86) we can perform a 'oneshot' read, which
@@ -99,7 +94,7 @@ static __inline uint32_t tail32_le(const void *v, size_t tail) {
   unreachable();
 }
 
-static __inline uint32_t tail32_be(const void *v, size_t tail) {
+static __always_inline uint32_t tail32_be(const void *v, size_t tail) {
   const uint8_t *p = (const uint8_t *)v;
 #ifdef can_read_underside
   /* On some systems we can perform a 'oneshot' read, which is little bit
@@ -146,36 +141,39 @@ static __inline uint32_t tail32_be(const void *v, size_t tail) {
 /***************************************************************************/
 
 #ifndef rot32
-static maybe_unused __inline uint32_t rot32(uint32_t v, unsigned s) {
+static __maybe_unused __always_inline uint32_t rot32(uint32_t v, unsigned s) {
   return (v >> s) | (v << (32 - s));
 }
 #endif /* rot32 */
 
-static __inline uint64_t remix32(uint32_t a, uint32_t b) {
-  a ^= rot32(b, 13);
-  uint64_t l = a | (uint64_t)b << 32;
-  l *= p0;
-  l ^= l >> 41;
-  return l;
-}
-
-static __inline void mixup32(uint32_t *a, uint32_t *b, uint32_t v, uint32_t p) {
-  uint64_t l = mul_32x32_64(*b + v, p);
+static __always_inline void mixup32(uint32_t *a, uint32_t *b, uint32_t v,
+                                    uint32_t prime) {
+  uint64_t l = mul_32x32_64(*b + v, prime);
   *a ^= (uint32_t)l;
   *b += (uint32_t)(l >> 32);
 }
 
+static __always_inline uint64_t final32(uint32_t a, uint32_t b) {
+  uint64_t l = (b ^ rot32(a, 13)) | (uint64_t)a << 32;
+  l *= prime_0;
+  l ^= l >> 41;
+  l *= prime_4;
+  l ^= l >> 47;
+  l *= prime_6;
+  return l;
+}
+
 /* 32-bit 'magic' primes */
-static const uint32_t q0 = UINT32_C(0x92D78269);
-static const uint32_t q1 = UINT32_C(0xCA9B4735);
-static const uint32_t q2 = UINT32_C(0xA4ABA1C3);
-static const uint32_t q3 = UINT32_C(0xF6499843);
-static const uint32_t q4 = UINT32_C(0x86F0FD61);
-static const uint32_t q5 = UINT32_C(0xCA2DA6FB);
-static const uint32_t q6 = UINT32_C(0xC4BB3575);
+static const uint32_t prime32_0 = UINT32_C(0x92D78269);
+static const uint32_t prime32_1 = UINT32_C(0xCA9B4735);
+static const uint32_t prime32_2 = UINT32_C(0xA4ABA1C3);
+static const uint32_t prime32_3 = UINT32_C(0xF6499843);
+static const uint32_t prime32_4 = UINT32_C(0x86F0FD61);
+static const uint32_t prime32_5 = UINT32_C(0xCA2DA6FB);
+static const uint32_t prime32_6 = UINT32_C(0xC4BB3575);
 
 uint64_t t1ha0_32le(const void *data, size_t len, uint64_t seed) {
-  uint32_t a = rot32((uint32_t)len, s1) + (uint32_t)seed;
+  uint32_t a = rot32((uint32_t)len, 17) + (uint32_t)seed;
   uint32_t b = (uint32_t)len ^ (uint32_t)(seed >> 32);
 
   const int need_align = (((uintptr_t)data) & 3) != 0 && !UNALIGNED_OK;
@@ -196,19 +194,19 @@ uint64_t t1ha0_32le(const void *data, size_t len, uint64_t seed) {
       uint32_t w3 = fetch32_le(v + 3);
 
       uint32_t c02 = w0 ^ rot32(w2 + c, 11);
-      uint32_t d13 = w1 + rot32(w3 + d, s1);
+      uint32_t d13 = w1 + rot32(w3 + d, 17);
       c ^= rot32(b + w1, 7);
       d ^= rot32(a + w0, 3);
-      b = q1 * (c02 + w3);
-      a = q0 * (d13 ^ w2);
+      b = prime32_1 * (c02 + w3);
+      a = prime32_0 * (d13 ^ w2);
 
       data = (const uint32_t *)data + 4;
     } while (likely(data < detent));
 
     c += a;
     d += b;
-    a ^= q6 * (rot32(c, 16) + d);
-    b ^= q5 * (c + rot32(d, 16));
+    a ^= prime32_6 * (rot32(c, 16) + d);
+    b ^= prime32_5 * (c + rot32(d, 16));
 
     len &= 15;
   }
@@ -219,36 +217,36 @@ uint64_t t1ha0_32le(const void *data, size_t len, uint64_t seed) {
 
   switch (len) {
   default:
-    mixup32(&a, &b, fetch32_le(v), q4);
+    mixup32(&a, &b, fetch32_le(v), prime32_4);
     v += 4;
   /* fall through */
   case 12:
   case 11:
   case 10:
   case 9:
-    mixup32(&b, &a, fetch32_le(v), q3);
+    mixup32(&b, &a, fetch32_le(v), prime32_3);
     v += 4;
   /* fall through */
   case 8:
   case 7:
   case 6:
   case 5:
-    mixup32(&a, &b, fetch32_le(v), q2);
+    mixup32(&a, &b, fetch32_le(v), prime32_2);
     v += 4;
   /* fall through */
   case 4:
   case 3:
   case 2:
   case 1:
-    mixup32(&b, &a, tail32_le(v, len), q1);
+    mixup32(&b, &a, tail32_le(v, len), prime32_1);
   /* fall through */
   case 0:
-    return remix32(a, b);
+    return final32(a, b);
   }
 }
 
 uint64_t t1ha0_32be(const void *data, size_t len, uint64_t seed) {
-  uint32_t a = rot32((uint32_t)len, s1) + (uint32_t)seed;
+  uint32_t a = rot32((uint32_t)len, 17) + (uint32_t)seed;
   uint32_t b = (uint32_t)len ^ (uint32_t)(seed >> 32);
 
   const int need_align = (((uintptr_t)data) & 3) != 0 && !UNALIGNED_OK;
@@ -269,19 +267,19 @@ uint64_t t1ha0_32be(const void *data, size_t len, uint64_t seed) {
       uint32_t w3 = fetch32_be(v + 3);
 
       uint32_t c02 = w0 ^ rot32(w2 + c, 11);
-      uint32_t d13 = w1 + rot32(w3 + d, s1);
+      uint32_t d13 = w1 + rot32(w3 + d, 17);
       c ^= rot32(b + w1, 7);
       d ^= rot32(a + w0, 3);
-      b = q1 * (c02 + w3);
-      a = q0 * (d13 ^ w2);
+      b = prime32_1 * (c02 + w3);
+      a = prime32_0 * (d13 ^ w2);
 
       data = (const uint32_t *)data + 4;
     } while (likely(data < detent));
 
     c += a;
     d += b;
-    a ^= q6 * (rot32(c, 16) + d);
-    b ^= q5 * (c + rot32(d, 16));
+    a ^= prime32_6 * (rot32(c, 16) + d);
+    b ^= prime32_5 * (c + rot32(d, 16));
 
     len &= 15;
   }
@@ -292,41 +290,37 @@ uint64_t t1ha0_32be(const void *data, size_t len, uint64_t seed) {
 
   switch (len) {
   default:
-    mixup32(&a, &b, fetch32_be(v), q4);
+    mixup32(&a, &b, fetch32_be(v), prime32_4);
     v += 4;
   /* fall through */
   case 12:
   case 11:
   case 10:
   case 9:
-    mixup32(&b, &a, fetch32_be(v), q3);
+    mixup32(&b, &a, fetch32_be(v), prime32_3);
     v += 4;
   /* fall through */
   case 8:
   case 7:
   case 6:
   case 5:
-    mixup32(&a, &b, fetch32_be(v), q2);
+    mixup32(&a, &b, fetch32_be(v), prime32_2);
     v += 4;
   /* fall through */
   case 4:
   case 3:
   case 2:
   case 1:
-    mixup32(&b, &a, tail32_be(v, len), q1);
+    mixup32(&b, &a, tail32_be(v, len), prime32_1);
   /* fall through */
   case 0:
-    return remix32(a, b);
+    return final32(a, b);
   }
 }
 
 /***************************************************************************/
 
-#undef T1HA_ia32aes_AVAILABLE
-#if defined(__x86_64__) || (defined(_M_IX86) && _MSC_VER > 1800) ||            \
-    defined(_M_X64) || defined(i386) || defined(_X86_) || defined(__i386__) || \
-    defined(_X86_64_)
-
+#ifdef __ia32__
 static uint64_t x86_cpu_features(void) {
   uint32_t features = 0;
   uint32_t extended = 0;
@@ -353,15 +347,11 @@ static uint64_t x86_cpu_features(void) {
 #endif
   return features | (uint64_t)extended << 32;
 }
-
-#define T1HA_ia32aes_AVAILABLE
-
-uint64_t t1ha0_ia32aes_avx(const void *data, size_t len, uint64_t seed);
-uint64_t t1ha0_ia32aes_noavx(const void *data, size_t len, uint64_t seed);
-
-#endif /* __i386__ || __x86_64__ */
+#endif /* __ia32__ */
 
 /***************************************************************************/
+
+#ifdef T1HA0_RUNTIME_SELECT
 
 static
 #if __GNUC_PREREQ(4, 0) || __has_attribute(used)
@@ -369,7 +359,7 @@ static
 #endif
     uint64_t (*t1ha0_resolve(void))(const void *, size_t, uint64_t) {
 
-#ifdef T1HA_ia32aes_AVAILABLE
+#ifdef __ia32__
   uint64_t features = x86_cpu_features();
   if (features & UINT32_C(0x02000000) /* check for AES-NI */) {
     if ((features & UINT32_C(0x1A000000)) ==
@@ -378,16 +368,21 @@ static
       return ((features >> 32) & 32) ? t1ha0_ia32aes_avx2 : t1ha0_ia32aes_avx;
     return t1ha0_ia32aes_noavx;
   }
-#endif /* T1HA_ia32aes_AVAILABLE */
+#endif /* __ia32__ */
 
-  return (sizeof(size_t) >= 8)
 #if __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
-             ? t1ha1_be
-             : t1ha0_32be;
+#if UINTPTR_MAX > 0xffffFFFFul || ULONG_MAX > 0xffffFFFFul
+  return t1ha1_be;
 #else
-             ? t1ha1_le
-             : t1ha0_32le;
+  return t1ha0_32be;
 #endif
+#else /* __BYTE_ORDER__ != __ORDER_BIG_ENDIAN__ */
+#if UINTPTR_MAX > 0xffffFFFFul || ULONG_MAX > 0xffffFFFFul
+  return t1ha1_le;
+#else
+  return t1ha0_32le;
+#endif
+#endif /* __BYTE_ORDER__ */
 }
 
 #ifdef __ELF__
@@ -417,4 +412,5 @@ static uint64_t t1ha0_proxy(const void *data, size_t len, uint64_t seed) {
 
 uint64_t (*t1ha0_funcptr)(const void *, size_t, uint64_t) = t1ha0_proxy;
 
-#endif
+#endif /* !ELF */
+#endif /* T1HA0_RUNTIME_SELECT */

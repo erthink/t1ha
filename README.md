@@ -4,17 +4,19 @@ Fast Positive Hash, aka "Позитивный Хэш"
 by [Positive Technologies](https://www.ptsecurity.com).
 
 *The Future will Positive. Всё будет хорошо.*
-[![Build Status](https://travis-ci.org/leo-yuriev/t1ha.svg?branch=master)](https://travis-ci.org/leo-yuriev/t1ha)
-[![Build status](https://ci.appveyor.com/api/projects/status/ptug5fl2ouxdo68h/branch/master?svg=true)](https://ci.appveyor.com/project/leo-yuriev/t1ha/branch/master)
-[![CircleCI](https://circleci.com/gh/leo-yuriev/t1ha/tree/master.svg?style=svg)](https://circleci.com/gh/leo-yuriev/t1ha/tree/master)
+[![Build Status](https://travis-ci.org/leo-yuriev/t1ha.svg?branch=devel)](https://travis-ci.org/leo-yuriev/t1ha)
+[![Build status](https://ci.appveyor.com/api/projects/status/ptug5fl2ouxdo68h/branch/devel?svg=true)](https://ci.appveyor.com/project/leo-yuriev/t1ha/branch/devel)
+[![CircleCI](https://circleci.com/gh/leo-yuriev/t1ha/tree/devel.svg?style=svg)](https://circleci.com/gh/leo-yuriev/t1ha/tree/devel)
 [![Coverity Scan Status](https://scan.coverity.com/projects/12918/badge.svg)](https://scan.coverity.com/projects/leo-yuriev-t1ha)
 
 ## Briefly, it is a portable 64-bit hash function:
-  1. Intended for 64-bit little-endian platforms, predominantly for x86_64,
+  1. Intended for 64-bit little-endian platforms, predominantly for Elbrus and x86_64,
      but portable and without penalties it can run on any 64-bit CPU.
-  2. In most cases up to 15% faster than City64, xxHash, mum-hash, metro-hash
+  2. In most cases up to 15% faster than City, xxHash, mum-hash, metro-hash, etc.
      and all others portable hash-functions (which do not use specific hardware tricks).
-  3. Currently not suitable for cryptography.
+  3. Provides a set of _terraced_ hash functions.
+  4. Currently not suitable for cryptography.
+  5. Licensed under [Zlib License](https://en.wikipedia.org/wiki/Zlib_License).
 
 Also pay attention to [Erlang](https://github.com/lemenkov/erlang-t1ha)
 and [Golang](https://github.com/dgryski/go-t1ha) implementations.
@@ -24,8 +26,10 @@ and [Golang](https://github.com/dgryski/go-t1ha) implementations.
 # Usage
 The `t1ha` library provides several terraced hash functions
 with the dissimilar properties and for a different cases.
-
 These functions briefly described below, see [t1ha.h](t1ha.h) for more API details.
+
+To use in your own project you may link with the t1ha-library,
+or just add to your project corresponding source files from `/src` directory.
 
 Please, feel free to fill an issue or make pull request.
 
@@ -48,8 +52,8 @@ Please, feel free to fill an issue or make pull request.
 
   Also should be noted, the quality of t1ha0() hashing is a subject
   for tradeoffs with performance. Therefore the quality and strength
-  of t1ha0() may be lower than t1ha1(), especially on 32-bit targets,
-  but then much faster.
+  of `t1ha0()` may be lower than `t1ha1()` and `t1ha2()`,
+  especially on 32-bit targets, but then much faster.
   However, guaranteed that it passes all SMHasher tests.
 
   Internally t1ha0() selects most faster implementation for current CPU,
@@ -66,10 +70,10 @@ Please, feel free to fill an issue or make pull request.
  | `t1ha1_be()`            | 64-bit big-endian                      |
 
 
-`t1ha1` = 64 bits, fast portable hash
+`t1ha1` = 64 bits, baseline fast portable hash
 -------------------------------------
 
-  The main generic version of "Fast Positive Hash" with reasonable quality
+  The first version of "Fast Positive Hash" with reasonable quality
   for checksum, hash tables and thin fingerprinting. It is stable, e.g.
   returns same result on all architectures and CPUs.
 
@@ -77,18 +81,33 @@ Please, feel free to fill an issue or make pull request.
   2. Efficiency on modern 64-bit CPUs, but not in a hardware.
   3. Strong as possible, until no penalties on performance.
 
-  The main version is intended for little-endian systems and will run
+  Unfortunatelly, [Yves Orton](https://github.com/demerphq/smhasher) discovered
+  that `t1ha1()` fails the strict avalanche criteria in some cases.
+  This flaw is insignificant for the `t1ha1()` purposes and imperceptible
+  from a practical point of view.
+  However, nowadays this issue has resolved in the next `t1ha2()` function,
+  that was initially planned to providing a bit more quality.
+
+  The basic version of 't1ha1()' intends for little-endian systems and will run
   slowly on big-endian. Therefore a dedicated big-endian version is also
-  provided, but returns the different result than the main version.
+  provided, but returns the different result than the basic version.
 
 
-`t1ha2` = 64 bits, little more attention for quality and strength
+`t1ha2` = 64 and 128 bits, slightly more attention for quality and strength
 -----------------------------------------------------------------
-  The next-step version of "Fast Positive Hash",
-  but not yet finished and therefore not available.
+  The recommended version of "Fast Positive Hash" with good quality
+  for checksum, hash tables and fingerprinting. It is stable, e.g.
+  returns same result on all architectures and CPUs.
+
+  1. Portable and extremely efficiency on modern 64-bit CPUs.
+  2. Great quality of hashing and still faster than other non-t1ha hashes.
+  3. Provides streaming mode and 128-bit result.
+
+  The `t1ha2()` is intended for little-endian systems and will run
+  slightly slowly on big-endian systems.
 
 
-`t1ha3` = 128 bits, fast non-cryptographic fingerprinting
+`t1ha3` = 128 and 256 bits, fast non-cryptographic fingerprinting
 ---------------------------------------------------------
   The next-step version of "Fast Positive Hash",
   but not yet finished and therefore not available.
@@ -124,6 +143,57 @@ for _The 1Hippeus project - zerocopy messaging in the spirit of Sparta!_
 ********************************************************************************
 
 ## Benchmarking and Testing
+
+Current version of t1ha library includes tool for basic testing and benchmarking.
+Just try `make check` from t1ha directory.
+
+To comparison benchmark also includes 32- and 64-bit versions of `xxhash()` function.
+For example:
+```
+$ CC=clang-5.0 make all && sudo make check
+...
+Preparing to benchmarking...
+ - suggest enable rdpmc for usermode (echo 2 | sudo tee /sys/devices/cpu/rdpmc)
+ - running on CPU#3
+ - use RDPMC_perf as clock source for benchmarking
+ - assume it cheap and stable
+ - measure granularity and overhead: 53 cycle, 0.0188679 iteration/cycle
+
+Bench for tiny keys (5 bytes):
+t1ha2_atonce            :     13.070 cycle/hash,  2.614 cycle/byte,  0.383 byte/cycle,  1.148 Gb/s @3GHz
+t1ha1_64le              :     14.055 cycle/hash,  2.811 cycle/byte,  0.356 byte/cycle,  1.067 Gb/s @3GHz
+t1ha0                   :     14.070 cycle/hash,  2.814 cycle/byte,  0.355 byte/cycle,  1.066 Gb/s @3GHz
+xxhash64                :     17.203 cycle/hash,  3.441 cycle/byte,  0.291 byte/cycle,  0.872 Gb/s @3GHz
+
+Bench for medium keys (1024 bytes):
+t1ha2_atonce            :    266.500 cycle/hash,  0.260 cycle/byte,  3.842 byte/cycle, 11.527 Gb/s @3GHz
+t1ha1_64le              :    245.750 cycle/hash,  0.240 cycle/byte,  4.167 byte/cycle, 12.501 Gb/s @3GHz
+t1ha0                   :     86.625 cycle/hash,  0.085 cycle/byte, 11.821 byte/cycle, 35.463 Gb/s @3GHz
+xxhash64                :    283.000 cycle/hash,  0.276 cycle/byte,  3.618 byte/cycle, 10.855 Gb/s @3GHz
+```
+
+The `test` tool support a set of command line options to selecting functions and size of keys for benchmarking.
+For more info please run `./test --help`.
+
+
+One noteable option is `--hash-stdin-strings`, it intended to estimate hash collisions on your custom data.
+With this option `test` tool will hash each line from standard input and print its hash to standard output.
+
+For instance, you could count collisions for lines from some `words.list` file by bash's command:
+```
+  ./t1ha/test --hash-stdin-strings < words.list | sort | uniq -c -d | wc -l
+```
+
+More complex example - count `xxhash()` collisions for lines from `words.list` and 0...10000 numbers,
+with distinction only in 32 bit of hash values:
+```
+  (cat words.list && seq 0 10000) | \
+     ./t1ha/test --xxhash --hash-stdin-strings | \
+     cut --bytes=-8 | sort | uniq -c -d | wc -l
+```
+
+
+### SMHasher
 [_SMHasher_](https://github.com/aappleby/smhasher/wiki) is a wellknown
 test suite designed to test the distribution, collision,
 and performance properties of non-cryptographic hash functions.

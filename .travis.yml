@@ -10,28 +10,20 @@ os:
   - linux
   - osx
 
-script: if [ "${COVERITY_SCAN_BRANCH}" != 1 ]; then make all check; fi
-
 env:
   global:
     - secure: "fQvkBkC9lpnhl6L9DsfXQWBaHR4UMR1wtLjPrSn7Sl8cwKfJ5MAR+K1Khz7BDkKV7MCN6no7QJ1MYbwSSp67XnvwWL10yt/KbaAZCMNRWgwenfiCvdN67sw4rliX3q3X6PllI2jUSJy8gFmHDZzqEH4ark6uq3Gb30gt2lSlxXd/vF4xDOjy/IyLhzbFQIhJScHLApxeOYuoHLEmta5gsXjwhK6dsftDAHGc6alyPu19h5p4wvv+bP2WcREvMQHK6u3vfeUrUGdNYboEHyJmM9qHnR7JPmGMEhuF/lWjc7DtWrvb5qAVSayeKbTOQWnk5sINN46mTEDfGXkHsjlFIau6mdIGDNIAhdge6ODuVyCTS4pTd0LQNTJG5pL0dFDTtiqaSkDU4M0/ofsO2O535dwFhdJz7qqqWacTYDJCPGvku1TmhfxNWyrFlp/I8shtYdMKmNtHQrtEBlLYCdnypow2VB+3tyvwve5LpwSY2BD7gY2NrP6fp7vHqfoan5PXfsxXuBt7LJDmHDBOvTils2RPbqiF0jG1Xk1YYWTUopLqEl2iYUqnOeg4XcS7wEwOpgbEqfrvHJ4BPUI+Rz1TMN19P9sgWS+hWuUMg+hka3ZVvzAI619eqzMnYVNTJjbDHZya3kSxfBuyO7RLjj+3UN88QClLoIKJ7Aa/50xZGY8="
 
-before_install: >
-  if [ "${COVERITY_SCAN_BRANCH}" = 1 ]; then
+before_script: >
+  if [ "${TRAVIS_BRANCH}" = "coverity_scan" ]; then
+    # implement Coverity Scan with before_script instead of addons.coverity_scan
     if grep -q '[0-9]\+\.1$' <<< "${TRAVIS_JOB_NUMBER}"; then
+      export COVERITY_SCAN_BRANCH=1
       echo -n | openssl s_client -connect scan.coverity.com:443 | sed -ne '/-BEGIN CERTIFICATE-/,/-END CERTIFICATE-/p' | sudo tee -a /etc/ssl/certs/ca-
+      curl -s 'https://scan.coverity.com/scripts/travisci_build_coverity_scan.sh' | COVERITY_SCAN_PROJECT_NAME="$TRAVIS_REPO_SLUG" COVERITY_SCAN_NOTIFICATION_EMAIL="leo@yuriev.ru" COVERITY_SCAN_BUILD_COMMAND="make" COVERITY_SCAN_BUILD_COMMAND_PREPEND="" COVERITY_SCAN_BRANCH_PATTERN="$TRAVIS_BRANCH" bash
     else
       echo "Skip CoverityScan for unrelated os/compiler"
-      exit 0
     fi
   fi
 
-addons:
-  coverity_scan:
-    project:
-      name: "leo-yuriev/t1ha"
-      description: "Build submitted via Travis CI"
-      version: 1.0
-    notification_email: leo@yuriev.ru
-    build_command: make
-    branch_pattern: coverity_scan
+script: if [ "${COVERITY_SCAN_BRANCH}" != 1 ]; then make all check; fi

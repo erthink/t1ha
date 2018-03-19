@@ -340,7 +340,7 @@ static int set_single_affinity(void) {
   }
   CPU_ZERO_S(cpuset_size, affinity);
   CPU_SET_S(current_cpu, cpuset_size, affinity);
-  if (sched_setaffinity(0, sizeof(affinity), affinity)) {
+  if (sched_setaffinity(0, cpuset_size, affinity)) {
     perror(MERA_PERROR_PREFIX "sched_setaffinity()");
     CPU_FREE(affinity);
     return -1;

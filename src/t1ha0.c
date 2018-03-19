@@ -387,12 +387,12 @@ static
 
 #ifdef __ELF__
 
-#if __GNUC_PREREQ(4, 6) || __has_attribute(ifunc)
+#if __has_attribute(ifunc)
 uint64_t t1ha0(const void *data, size_t len, uint64_t seed)
     __attribute__((ifunc("t1ha0_resolve")));
 #else
 __asm("\t.globl\tt1ha0\n\t.type\tt1ha0, "
-      "@gnu_indirect_function\n\t.set\tt1ha0,t1ha0_resolve");
+      "%gnu_indirect_function\n\t.set\tt1ha0,t1ha0_resolve");
 #endif /* ifunc */
 
 #elif __GNUC_PREREQ(4, 0) || __has_attribute(constructor)

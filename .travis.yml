@@ -20,7 +20,7 @@ before_script: >
     if grep -q '[0-9]\+\.1$' <<< "${TRAVIS_JOB_NUMBER}"; then
       export COVERITY_SCAN_BRANCH=1
       echo -n | openssl s_client -connect scan.coverity.com:443 | sed -ne '/-BEGIN CERTIFICATE-/,/-END CERTIFICATE-/p' | sudo tee -a /etc/ssl/certs/ca-
-      curl -s 'https://scan.coverity.com/scripts/travisci_build_coverity_scan.sh' | COVERITY_SCAN_PROJECT_NAME="$TRAVIS_REPO_SLUG" COVERITY_SCAN_NOTIFICATION_EMAIL="leo@yuriev.ru" COVERITY_SCAN_BUILD_COMMAND="make" COVERITY_SCAN_BUILD_COMMAND_PREPEND="" COVERITY_SCAN_BRANCH_PATTERN="$TRAVIS_BRANCH" bash
+      curl -s 'https://scan.coverity.com/scripts/travisci_build_coverity_scan.sh' | COVERITY_SCAN_PROJECT_NAME="$TRAVIS_REPO_SLUG" COVERITY_SCAN_NOTIFICATION_EMAIL="leo@yuriev.ru" COVERITY_SCAN_BUILD_COMMAND="make" COVERITY_SCAN_BUILD_COMMAND_PREPEND="" COVERITY_SCAN_BRANCH_PATTERN="$TRAVIS_BRANCH" bash || cat cov-int/scm_log.txt
     else
       echo "Skip CoverityScan for unrelated os/compiler"
     fi

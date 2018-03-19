@@ -71,7 +71,9 @@
 #endif
 
 #if !defined(UNALIGNED_OK)
-#if defined(__ia32__) || defined(__e2k__) || defined(__ARM_FEATURE_UNALIGNED)
+#if (defined(__ia32__) || defined(__e2k__) ||                                  \
+     defined(__ARM_FEATURE_UNALIGNED)) &&                                      \
+    !defined(__ALIGNED__)
 #define UNALIGNED_OK 1
 #else
 #define UNALIGNED_OK 0

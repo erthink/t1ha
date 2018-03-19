@@ -125,6 +125,10 @@
 #define __always_inline __inline __attribute__((always_inline))
 #endif
 
+#if defined(__e2k__)
+#define mul_64x64_high(a, b) __builtin_e2k_umulhd(a, b)
+#endif
+
 #elif defined(_MSC_VER)
 
 #if _MSC_FULL_VER < 190024218 && defined(_M_IX86)

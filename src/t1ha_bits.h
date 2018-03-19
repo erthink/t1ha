@@ -265,7 +265,7 @@ static __always_inline uint16_t fetch16_le(const void *v) {
 }
 
 #if T1HA_USE_FAST_ONESHOT_READ && UNALIGNED_OK && defined(PAGESIZE) &&         \
-    PAGESIZE > 0
+    PAGESIZE > 0 && !defined(__SANITIZE_ADDRESS__)
 #define can_read_underside(ptr, size)                                          \
   ((size) <= sizeof(uintptr_t) && ((PAGESIZE - (size)) & (uintptr_t)(ptr)) != 0)
 #endif /* can_fast_read */

@@ -71,13 +71,16 @@
 #endif
 
 #if !defined(UNALIGNED_OK)
-#if defined(__ia32__) || defined(__e2k__)
+#if defined(__ia32__) || defined(__e2k__) || defined(__ARM_FEATURE_UNALIGNED)
 #define UNALIGNED_OK 1
-#define PAGESIZE 4096
 #else
 #define UNALIGNED_OK 0
 #endif
-#endif
+#endif /* UNALIGNED_OK */
+
+#if UNALIGNED_OK && !defined(PAGESIZE)
+#define PAGESIZE 4096
+#endif /* PAGESIZE */
 
 /***************************************************************************/
 

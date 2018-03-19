@@ -88,7 +88,7 @@ loop(bool need_copy4align, uint64_t *__restrict buffer4align,
   do {
     const uint64_t *v = (const uint64_t *)data;
     if (unlikely(need_copy4align))
-      v = (const uint64_t *)memcpy(buffer4align, v, 32);
+      v = (const uint64_t *)memcpy(buffer4align, unaligned(v), 32);
     update(s, v);
     data = (const uint64_t *)data + 4;
   } while (likely(data < detent));
@@ -206,7 +206,7 @@ uint64_t t1ha2_atonce(const void *data, size_t length, uint64_t seed) {
 
   const uint64_t *v = (const uint64_t *)data;
   if (unlikely(need_copy4align) && length > 8)
-    v = (const uint64_t *)memcpy(&buffer4align, v, length);
+    v = (const uint64_t *)memcpy(&buffer4align, unaligned(v), length);
 
   tail_ab(&state, v, length);
   return final64(state.n.a, state.n.b);
@@ -229,7 +229,7 @@ uint64_t t1ha2_atonce128(uint64_t *__restrict extra_result,
 
   const uint64_t *v = (const uint64_t *)data;
   if (unlikely(need_copy4align) && length > 8)
-    v = (const uint64_t *)memcpy(&buffer4align, v, length);
+    v = (const uint64_t *)memcpy(&buffer4align, unaligned(v), length);
 
   tail_abcd(&state, v, length);
   return final128(state.n.a, state.n.b, state.n.c, state.n.d, extra_result);
@@ -251,7 +251,7 @@ void t1ha2_update(t1ha_context_t *__restrict ctx, const void *__restrict data,
   if (ctx->partial) {
     const size_t left = 32 - ctx->partial;
     const size_t chunk = (length >= left) ? left : length;
-    memcpy(ctx->buffer.bytes + ctx->partial, data, chunk);
+    memcpy(ctx->buffer.bytes + ctx->partial, unaligned(data), chunk);
     ctx->partial += chunk;
     if (ctx->partial < 32) {
       assert(left >= length);
@@ -273,7 +273,7 @@ void t1ha2_update(t1ha_context_t *__restrict ctx, const void *__restrict data,
   }
 
   if (length)
-    memcpy(ctx->buffer.bytes, data, ctx->partial = length);
+    memcpy(ctx->buffer.bytes, unaligned(data), ctx->partial = length);
 }
 
 uint64_t t1ha2_final(t1ha_context_t *__restrict ctx,

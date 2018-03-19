@@ -71,7 +71,7 @@ uint64_t t1ha1_le(const void *data, size_t len, uint64_t seed) {
     do {
       const uint64_t *v = (const uint64_t *)data;
       if (unlikely(need_align))
-        v = (const uint64_t *)memcpy(&align, v, 32);
+        v = (const uint64_t *)memcpy(&align, unaligned(v), 32);
 
       uint64_t w0 = fetch64_le(v + 0);
       uint64_t w1 = fetch64_le(v + 1);
@@ -94,7 +94,7 @@ uint64_t t1ha1_le(const void *data, size_t len, uint64_t seed) {
 
   const uint64_t *v = (const uint64_t *)data;
   if (unlikely(need_align) && len > 8)
-    v = (const uint64_t *)memcpy(&align, v, len);
+    v = (const uint64_t *)memcpy(&align, unaligned(v), len);
 
   switch (len) {
   default:
@@ -149,7 +149,7 @@ uint64_t t1ha1_be(const void *data, size_t len, uint64_t seed) {
     do {
       const uint64_t *v = (const uint64_t *)data;
       if (unlikely(need_align))
-        v = (const uint64_t *)memcpy(&align, v, 32);
+        v = (const uint64_t *)memcpy(&align, unaligned(v), 32);
 
       uint64_t w0 = fetch64_be(v + 0);
       uint64_t w1 = fetch64_be(v + 1);
@@ -172,7 +172,7 @@ uint64_t t1ha1_be(const void *data, size_t len, uint64_t seed) {
 
   const uint64_t *v = (const uint64_t *)data;
   if (unlikely(need_align) && len > 8)
-    v = (const uint64_t *)memcpy(&align, v, len);
+    v = (const uint64_t *)memcpy(&align, unaligned(v), len);
 
   switch (len) {
   default:

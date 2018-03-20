@@ -220,6 +220,8 @@ static __maybe_unused __always_inline void e2k_add64carry_last(unsigned carry,
 #if defined(_M_IX86)
 #pragma intrinsic(__emulu)
 #define mul_32x32_64(a, b) __emulu(a, b)
+
+#if _MSC_FULL_VER >= 190024231 /* LY: workaround for optimizer bug */
 #pragma intrinsic(_addcarry_u32)
 #define add32carry_first(base, addend, sum) _addcarry_u32(0, base, addend, sum)
 #define add32carry_next(carry, base, addend, sum)                              \
@@ -267,6 +269,7 @@ static __forceinline void msvc32_add64carry_last(char carry, uint64_t base,
 }
 #define add64carry_last(carry, base, addend, sum)                              \
   msvc32_add64carry_last(carry, base, addend, sum)
+#endif /* _MSC_FULL_VER >= 190024231 */
 
 #elif defined(_M_ARM)
 #define mul_32x32_64(a, b) _arm_umull(a, b)

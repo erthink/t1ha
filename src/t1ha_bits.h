@@ -132,9 +132,18 @@
 #endif
 
 #if defined(__e2k__)
-#if defined(__iset__) && __iset__ >= 3
+#if __iset__ >= 3
 #define mul_64x64_high(a, b) __builtin_e2k_umulhd(a, b)
 #endif /* __iset__ >= 3 */
+#if __iset__ >= 5
+static __maybe_unused __always_inline unsigned
+e2k_add64_return_carry(uint64_t *sum, uint64_t addend) {
+  unsigned carry = (unsigned)__builtin_e2k_addcd_c(*sum, addend);
+  *sum += addend;
+  return carry;
+}
+#define add64_return_carry(sum, addend) e2k_add64_return_carry(sum, addend)
+#endif /* __iset__ >= 5 */
 #if 0  /* LY: unreasonable, because alignment is required :( */
 #define fetch64_be(ptr) ((uint64_t)__builtin_e2k_ld_64s_be(ptr))
 #define fetch32_be(ptr) ((uint32_t)__builtin_e2k_ld_32u_be(ptr))

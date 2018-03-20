@@ -220,6 +220,54 @@ static __maybe_unused __always_inline void e2k_add64carry_last(unsigned carry,
 #if defined(_M_IX86)
 #pragma intrinsic(__emulu)
 #define mul_32x32_64(a, b) __emulu(a, b)
+#pragma intrinsic(_addcarry_u32)
+#define add32carry_first(base, addend, sum) _addcarry_u32(0, base, addend, sum)
+#define add32carry_next(carry, base, addend, sum)                              \
+  _addcarry_u32(carry, base, addend, sum)
+#define add32carry_last(carry, base, addend, sum)                              \
+  (void)_addcarry_u32(carry, base, addend, sum)
+
+static __forceinline char
+msvc32_add64carry_first(uint64_t base, uint64_t addend, uint64_t *sum) {
+  uint32_t *const sum32 = (uint32_t *)sum;
+  const uint32_t base_32l = (uint32_t)base;
+  const uint32_t base_32h = (uint32_t)(base >> 32);
+  const uint32_t addend_32l = (uint32_t)addend;
+  const uint32_t addend_32h = (uint32_t)(addend >> 32);
+  return add32carry_next(add32carry_first(base_32l, addend_32l, sum32),
+                         base_32h, addend_32h, sum32 + 1);
+}
+#define add64carry_first(base, addend, sum)                                    \
+  msvc32_add64carry_first(base, addend, sum)
+
+static __forceinline char msvc32_add64carry_next(char carry, uint64_t base,
+                                                 uint64_t addend,
+                                                 uint64_t *sum) {
+  uint32_t *const sum32 = (uint32_t *)sum;
+  const uint32_t base_32l = (uint32_t)base;
+  const uint32_t base_32h = (uint32_t)(base >> 32);
+  const uint32_t addend_32l = (uint32_t)addend;
+  const uint32_t addend_32h = (uint32_t)(addend >> 32);
+  return add32carry_next(add32carry_next(carry, base_32l, addend_32l, sum32),
+                         base_32h, addend_32h, sum32 + 1);
+}
+#define add64carry_next(carry, base, addend, sum)                              \
+  msvc32_add64carry_next(carry, base, addend, sum)
+
+static __forceinline void msvc32_add64carry_last(char carry, uint64_t base,
+                                                 uint64_t addend,
+                                                 uint64_t *sum) {
+  uint32_t *const sum32 = (uint32_t *)sum;
+  const uint32_t base_32l = (uint32_t)base;
+  const uint32_t base_32h = (uint32_t)(base >> 32);
+  const uint32_t addend_32l = (uint32_t)addend;
+  const uint32_t addend_32h = (uint32_t)(addend >> 32);
+  add32carry_last(add32carry_next(carry, base_32l, addend_32l, sum32), base_32h,
+                  addend_32h, sum32 + 1);
+}
+#define add64carry_last(carry, base, addend, sum)                              \
+  msvc32_add64carry_last(carry, base, addend, sum)
+
 #elif defined(_M_ARM)
 #define mul_32x32_64(a, b) _arm_umull(a, b)
 #endif

@@ -263,6 +263,7 @@ static __always_inline uint16_t bswap16(uint16_t v) { return v << 8 | v >> 8; }
 
 /***************************************************************************/
 
+#ifndef fetch64_le
 static __always_inline uint64_t fetch64_le(const void *v) {
 #if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
   return *(const uint64_t *)v;
@@ -270,7 +271,9 @@ static __always_inline uint64_t fetch64_le(const void *v) {
   return bswap64(*(const uint64_t *)v);
 #endif
 }
+#endif /* fetch64_le */
 
+#ifndef fetch32_le
 static __always_inline uint32_t fetch32_le(const void *v) {
 #if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
   return *(const uint32_t *)v;
@@ -278,7 +281,9 @@ static __always_inline uint32_t fetch32_le(const void *v) {
   return bswap32(*(const uint32_t *)v);
 #endif
 }
+#endif /* fetch32_le */
 
+#ifndef fetch16_le
 static __always_inline uint16_t fetch16_le(const void *v) {
 #if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
   return *(const uint16_t *)v;
@@ -286,6 +291,7 @@ static __always_inline uint16_t fetch16_le(const void *v) {
   return bswap16(*(const uint16_t *)v);
 #endif
 }
+#endif /* fetch16_le */
 
 #if T1HA_USE_FAST_ONESHOT_READ && UNALIGNED_OK && defined(PAGESIZE) &&         \
     PAGESIZE > 0 && !defined(__SANITIZE_ADDRESS__)
@@ -372,6 +378,7 @@ static __always_inline uint64_t tail64_le(const void *v, size_t tail) {
   unreachable();
 }
 
+#ifndef fetch64_be
 static __maybe_unused __always_inline uint64_t fetch64_be(const void *v) {
 #if __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
   return *(const uint64_t *)v;
@@ -379,7 +386,9 @@ static __maybe_unused __always_inline uint64_t fetch64_be(const void *v) {
   return bswap64(*(const uint64_t *)v);
 #endif
 }
+#endif /* fetch64_be */
 
+#ifndef fetch32_be
 static __maybe_unused __always_inline uint32_t fetch32_be(const void *v) {
 #if __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
   return *(const uint32_t *)v;
@@ -387,7 +396,9 @@ static __maybe_unused __always_inline uint32_t fetch32_be(const void *v) {
   return bswap32(*(const uint32_t *)v);
 #endif
 }
+#endif /* fetch32_be */
 
+#ifndef fetch16_be
 static __maybe_unused __always_inline uint16_t fetch16_be(const void *v) {
 #if __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
   return *(const uint16_t *)v;
@@ -395,6 +406,7 @@ static __maybe_unused __always_inline uint16_t fetch16_be(const void *v) {
   return bswap16(*(const uint16_t *)v);
 #endif
 }
+#endif /* fetch16_be */
 
 static __maybe_unused __always_inline uint64_t tail64_be(const void *v,
                                                          size_t tail) {

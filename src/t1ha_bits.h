@@ -204,6 +204,12 @@ static __maybe_unused __always_inline void e2k_add64carry_last(unsigned carry,
 #if defined(_M_X64) || defined(_M_IA64)
 #pragma intrinsic(_umul128)
 #define mul_64x64_128(a, b, ph) _umul128(a, b, ph)
+#pragma intrinsic(_addcarry_u64)
+#define add64carry_first(base, addend, sum) _addcarry_u64(0, base, addend, sum)
+#define add64carry_next(carry, base, addend, sum)                              \
+  _addcarry_u64(carry, base, addend, sum)
+#define add64carry_last(carry, base, addend, sum)                              \
+  (void)_addcarry_u64(carry, base, addend, sum)
 #endif
 
 #if defined(_M_ARM64) || defined(_M_X64) || defined(_M_IA64)

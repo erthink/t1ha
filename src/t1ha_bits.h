@@ -478,14 +478,15 @@ static __always_inline uint64_t mul_32x32_64(uint32_t a, uint32_t b) {
 }
 #endif /* mul_32x32_64 */
 
-#ifndef mul_64x64_128
-
-static __maybe_unused __always_inline unsigned add_with_carry(uint64_t *sum,
-                                                              uint64_t addend) {
+#ifndef add64_return_carry
+static __maybe_unused __always_inline unsigned
+add64_return_carry(uint64_t *sum, uint64_t addend) {
   *sum += addend;
   return *sum < addend;
 }
+#endif /* add64_return_carry */
 
+#ifndef mul_64x64_128
 static __maybe_unused __always_inline uint64_t mul_64x64_128(uint64_t a,
                                                              uint64_t b,
                                                              uint64_t *h) {
@@ -508,11 +509,10 @@ static __maybe_unused __always_inline uint64_t mul_64x64_128(uint64_t a,
         * but thus we would lost compatibility with the original 64-bit
         * version.  Think is very bad idea, because then 32-bit t1ha will
         * still (relatively) very slowly and well yet not compatible. */
-       add_with_carry(&ll, lh << 32) + add_with_carry(&ll, hl << 32);
+       add64_return_carry(&ll, lh << 32) + add64_return_carry(&ll, hl << 32);
   return ll;
 #endif
 }
-
 #endif /* mul_64x64_128() */
 
 #ifndef mul_64x64_high

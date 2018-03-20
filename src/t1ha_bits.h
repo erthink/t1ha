@@ -344,7 +344,10 @@ static __always_inline uint16_t bswap16(uint16_t v) { return v << 8 | v >> 8; }
 #endif /* bswap16 */
 
 #ifndef unaligned
-#if defined(__clang__)
+#if defined(__LCC__)
+#pragma diag_suppress wrong_entity_for_attribute
+#define unaligned(ptr) ((const char __attribute__((packed, aligned(1))) *)(ptr))
+#elif defined(__clang__)
 #pragma clang diagnostic ignored "-Wignored-attributes"
 #define unaligned(ptr) ((const char __attribute__((packed, aligned(1))) *)(ptr))
 #elif defined(__GNUC__)

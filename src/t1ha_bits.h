@@ -127,7 +127,7 @@
 #define __always_inline __inline __attribute__((always_inline))
 #endif
 
-#if defined(__e2k__)
+#if defined(__e2k__) && defined(__iset__) && __iset__ >= 3
 #define mul_64x64_high(a, b) __builtin_e2k_umulhd(a, b)
 #endif
 

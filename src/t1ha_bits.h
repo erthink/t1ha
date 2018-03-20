@@ -657,8 +657,8 @@ static __always_inline t1ha_uint128_t add128(t1ha_uint128_t x,
     (defined(_INTEGRAL_MAX_BITS) && _INTEGRAL_MAX_BITS >= 128)
   r.v = x.v + y.v;
 #else
-  r.l = x.l + y.l;
-  r.h = (r.l < x.l) + x.h + y.h;
+  r.l = x.l;
+  r.h = add64_return_carry(&r.l, y.l) + x.h + y.h;
 #endif
   return r;
 }

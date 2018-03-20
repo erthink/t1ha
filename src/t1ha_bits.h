@@ -132,22 +132,45 @@
 #endif
 
 #if defined(__e2k__)
+
 #if __iset__ >= 3
 #define mul_64x64_high(a, b) __builtin_e2k_umulhd(a, b)
 #endif /* __iset__ >= 3 */
+
 #if __iset__ >= 5
 static __maybe_unused __always_inline unsigned
-e2k_add64_return_carry(uint64_t *sum, uint64_t addend) {
-  unsigned carry = (unsigned)__builtin_e2k_addcd_c(*sum, addend);
-  *sum += addend;
-  return carry;
+e2k_add64carry_first(uint64_t base, uint64_t addend, uint64_t *sum) {
+  *sum = base + addend;
+  *sum = __builtin_e2k_addcd(base, addend, carry);
+  return (unsigned)__builtin_e2k_addcd_c(base, addend, carry);
 }
-#define add64_return_carry(sum, addend) e2k_add64_return_carry(sum, addend)
+#define add64carry_first(base, addend, sum)                                    \
+  e2k_add64carry_first(base, addend, sum)
+
+static __maybe_unused __always_inline unsigned
+e2k_add64carry_next(unsigned carry, uint64_t base, uint64_t addend,
+                    uint64_t *sum) {
+  *sum = __builtin_e2k_addcd(base, addend, carry);
+  return (unsigned)__builtin_e2k_addcd_c(base, addend, carry);
+}
+#define add64carry_next(carry, base, addend, sum)                              \
+  e2k_add64carry_next(carry, base, addend, sum)
+
+static __maybe_unused __always_inline void e2k_add64carry_last(unsigned carry,
+                                                               uint64_t base,
+                                                               uint64_t addend,
+                                                               uint64_t *sum) {
+  *sum = __builtin_e2k_addcd(base, addend, carry);
+}
+#define add64carry_last(carry, base, addend, sum)                              \
+  e2k_add64carry_last(carry, base, addend, sum)
 #endif /* __iset__ >= 5 */
-#if 0  /* LY: unreasonable, because alignment is required :( */
+
+#if 0 /* LY: unreasonable, because alignment is required :( */
 #define fetch64_be(ptr) ((uint64_t)__builtin_e2k_ld_64s_be(ptr))
 #define fetch32_be(ptr) ((uint32_t)__builtin_e2k_ld_32u_be(ptr))
 #endif
+
 #endif /* __e2k__ Elbrus */
 
 #elif defined(_MSC_VER)
@@ -509,13 +532,28 @@ static __always_inline uint64_t mul_32x32_64(uint32_t a, uint32_t b) {
 }
 #endif /* mul_32x32_64 */
 
-#ifndef add64_return_carry
+#ifndef add64carry_first
 static __maybe_unused __always_inline unsigned
-add64_return_carry(uint64_t *sum, uint64_t addend) {
-  *sum += addend;
+add64carry_first(uint64_t base, uint64_t addend, uint64_t *sum) {
+  *sum = base + addend;
   return *sum < addend;
 }
-#endif /* add64_return_carry */
+#endif /* add64carry_fist */
+
+#ifndef add64carry_next
+static __maybe_unused __always_inline unsigned
+add64carry_next(unsigned carry, uint64_t base, uint64_t addend, uint64_t *sum) {
+  *sum = base + addend + carry;
+  return *sum < addend || (carry && *sum == addend);
+}
+#endif /* add64carry_next */
+
+#ifndef add64carry_last
+static __maybe_unused __always_inline void
+add64carry_last(unsigned carry, uint64_t base, uint64_t addend, uint64_t *sum) {
+  *sum = base + addend + carry;
+}
+#endif /* add64carry_last */
 
 #ifndef mul_64x64_128
 static __maybe_unused __always_inline uint64_t mul_64x64_128(uint64_t a,
@@ -532,16 +570,19 @@ static __maybe_unused __always_inline uint64_t mul_64x64_128(uint64_t a,
   return a * b;
 #else
   /* performs 64x64 to 128 bit multiplication */
-  uint64_t ll = mul_32x32_64((uint32_t)a, (uint32_t)b);
-  uint64_t lh = mul_32x32_64(a >> 32, (uint32_t)b);
-  uint64_t hl = mul_32x32_64((uint32_t)a, b >> 32);
-  *h = mul_32x32_64(a >> 32, b >> 32) + (lh >> 32) + (hl >> 32) +
-       /* Few simplification are possible here for 32-bit architectures,
-        * but thus we would lost compatibility with the original 64-bit
-        * version.  Think is very bad idea, because then 32-bit t1ha will
-        * still (relatively) very slowly and well yet not compatible. */
-       add64_return_carry(&ll, lh << 32) + add64_return_carry(&ll, hl << 32);
-  return ll;
+  const uint64_t ll = mul_32x32_64((uint32_t)a, (uint32_t)b);
+  const uint64_t lh = mul_32x32_64(a >> 32, (uint32_t)b);
+  const uint64_t hl = mul_32x32_64((uint32_t)a, b >> 32);
+  const uint64_t hh = mul_32x32_64(a >> 32, b >> 32);
+
+  /* Few simplification are possible here for 32-bit architectures,
+   * but thus we would lost compatibility with the original 64-bit
+   * version.  Think is very bad idea, because then 32-bit t1ha will
+   * still (relatively) very slowly and well yet not compatible. */
+  uint64_t l;
+  add64carry_last(add64carry_first(ll, lh << 32, &l), hh, lh >> 32, h);
+  add64carry_last(add64carry_first(l, hl << 32, &l), *h, hl >> 32, h);
+  return l;
 #endif
 }
 #endif /* mul_64x64_128() */
@@ -688,8 +729,7 @@ static __always_inline t1ha_uint128_t add128(t1ha_uint128_t x,
     (defined(_INTEGRAL_MAX_BITS) && _INTEGRAL_MAX_BITS >= 128)
   r.v = x.v + y.v;
 #else
-  r.l = x.l;
-  r.h = add64_return_carry(&r.l, y.l) + x.h + y.h;
+  add64carry_last(add64carry_first(x.l, y.l, &r.l), x.h, y.h, &r.h);
 #endif
   return r;
 }

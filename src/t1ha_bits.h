@@ -100,6 +100,10 @@
 #include <cpuid.h>
 #endif
 
+#if defined(__e2k__)
+#include <e2kbuiltin.h>
+#endif
+
 #ifndef likely
 #define likely(cond) __builtin_expect(!!(cond), 1)
 #endif
@@ -127,9 +131,15 @@
 #define __always_inline __inline __attribute__((always_inline))
 #endif
 
-#if defined(__e2k__) && defined(__iset__) && __iset__ >= 3
+#if defined(__e2k__)
+#if defined(__iset__) && __iset__ >= 3
 #define mul_64x64_high(a, b) __builtin_e2k_umulhd(a, b)
+#endif /* __iset__ >= 3 */
+#if 0  /* LY: unreasonable, because alignment is required :( */
+#define fetch64_be(ptr) ((uint64_t)__builtin_e2k_ld_64s_be(ptr))
+#define fetch32_be(ptr) ((uint32_t)__builtin_e2k_ld_32u_be(ptr))
 #endif
+#endif /* __e2k__ Elbrus */
 
 #elif defined(_MSC_VER)
 

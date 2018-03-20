@@ -535,23 +535,41 @@ static __always_inline uint64_t mul_32x32_64(uint32_t a, uint32_t b) {
 #ifndef add64carry_first
 static __maybe_unused __always_inline unsigned
 add64carry_first(uint64_t base, uint64_t addend, uint64_t *sum) {
+#if __has_builtin(__builtin_addcll)
+  unsigned long long carryout;
+  *sum = __builtin_addcll(base, addend, 0, &carryout);
+  return (unsigned)carryout;
+#else
   *sum = base + addend;
   return *sum < addend;
+#endif /* __has_builtin(__builtin_addcll) */
 }
 #endif /* add64carry_fist */
 
 #ifndef add64carry_next
 static __maybe_unused __always_inline unsigned
 add64carry_next(unsigned carry, uint64_t base, uint64_t addend, uint64_t *sum) {
+#if __has_builtin(__builtin_addcll)
+  unsigned long long carryout;
+  *sum = __builtin_addcll(base, addend, carry, &carryout);
+  return (unsigned)carryout;
+#else
   *sum = base + addend + carry;
   return *sum < addend || (carry && *sum == addend);
+#endif /* __has_builtin(__builtin_addcll) */
 }
 #endif /* add64carry_next */
 
 #ifndef add64carry_last
 static __maybe_unused __always_inline void
 add64carry_last(unsigned carry, uint64_t base, uint64_t addend, uint64_t *sum) {
+#if __has_builtin(__builtin_addcll)
+  unsigned long long carryout;
+  *sum = __builtin_addcll(base, addend, carry, &carryout);
+  (void)carryout;
+#else
   *sum = base + addend + carry;
+#endif /* __has_builtin(__builtin_addcll) */
 }
 #endif /* add64carry_last */
 

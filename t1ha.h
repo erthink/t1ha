@@ -109,19 +109,20 @@
 /* clang-format off */
 
 #if defined(__GLIBC__) || defined(__GNU_LIBRARY__) || defined(__ANDROID__) ||  \
-    __has_include(<endian.h>)
+    defined(HAVE_ENDIAN_H) || __has_include(<endian.h>)
 #include <endian.h>
 #elif defined(__APPLE__) || defined(__MACH__) || defined(__OpenBSD__) ||       \
-    __has_include(<machine/endian.h>)
+    defined(HAVE_MACHINE_ENDIAN_H) || __has_include(<machine/endian.h>)
 #include <machine/endian.h>
-#elif __has_include(<sys/isa_defs.h>)
+#elif defined(HAVE_SYS_ISA_DEFS_H) || __has_include(<sys/isa_defs.h>)
 #include <sys/isa_defs.h>
-#elif __has_include(<sys/types.h>) && __has_include(<sys/endian.h>)
+#elif (defined(HAVE_SYS_TYPES_H) && defined(HAVE_SYS_ENDIAN_H)) ||             \
+    (__has_include(<sys/types.h>) && __has_include(<sys/endian.h>))
 #include <sys/endian.h>
 #include <sys/types.h>
 #elif defined(__bsdi__) || defined(__DragonFly__) || defined(__FreeBSD__) ||   \
     defined(__NETBSD__) || defined(__NetBSD__) ||                              \
-    __has_include(<sys/param.h>)
+    defined(HAVE_SYS_PARAM_H) || __has_include(<sys/param.h>)
 #include <sys/param.h>
 #endif /* OS */
 

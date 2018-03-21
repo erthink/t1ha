@@ -141,8 +141,7 @@
 static __maybe_unused __always_inline unsigned
 e2k_add64carry_first(uint64_t base, uint64_t addend, uint64_t *sum) {
   *sum = base + addend;
-  *sum = __builtin_e2k_addcd(base, addend, carry);
-  return (unsigned)__builtin_e2k_addcd_c(base, addend, carry);
+  return (unsigned)__builtin_e2k_addcd_c(base, addend, 0);
 }
 #define add64carry_first(base, addend, sum)                                    \
   e2k_add64carry_first(base, addend, sum)

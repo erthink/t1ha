@@ -99,25 +99,35 @@ test: $(OBJ_LIST) $(BENCH_EXTRA) tests/main.c Makefile \
 	$(CC) $(CFLAGS_TEST) -o $@ tests/main.c $(OBJ_LIST) $(BENCH_EXTRA)
 
 check: test
-	./test || rm -rf libt1ha.a libt1ha.so
+	./test
 
 bench-verbose: test
-	./test --bench-verbose || rm -rf libt1ha.a libt1ha.so
+	./test --bench-verbose
 
 ###############################################################################
-
-# sparc64-linux-gnu-gcc	- qemu troubles (sigaction, etc...)
-# hppa-linux-gnu-gcc	- don't supported by qemu
-# hppa64-linux-gnu-gcc	- gcc unable to cross-compiler
-# s390x-linux-gnu-gcc	- qemu troubles (hang)
 
 CROSS_LIST = sh4-linux-gnu-gcc alpha-linux-gnu-gcc \
 	powerpc64-linux-gnu-gcc powerpc-linux-gnu-gcc \
 	mips64-linux-gnuabi64-gcc mips-linux-gnu-gcc \
-	arm-linux-gnueabihf-gcc aarch64-linux-gnu-gcc
+	arm-linux-gnueabihf-gcc aarch64-linux-gnu-gcc \
+	sparc64-linux-gnu-gcc
+
+# hppa-linux-gnu-gcc	- don't supported by current qemu release
+# s390x-linux-gnu-gcc	- qemu troubles (hang/abort)
+CROSS_LIST_NOQEMU = hppa-linux-gnu-gcc s390x-linux-gnu-gcc
 
 cross-gcc:
-	for CC in $(CROSS_LIST); do make clean && CC=$$CC make all || exit $$?; done
+	@echo "CORRESPONDING CROSS-COMPILERs ARE REQUIRED."
+	@echo "FOR INSTANCE: apt install gcc-aarch64-linux-gnu gcc-alpha-linux-gnu gcc-arm-linux-gnueabihf gcc-hppa-linux-gnu gcc-mips-linux-gnu gcc-mips64-linux-gnuabi64 gcc-powerpc-linux-gnu gcc-powerpc64-linux-gnu gcc-s390x-linux-gnu gcc-sh4-linux-gnu"
+	@for CC in $(CROSS_LIST_NOQEMU) $(CROSS_LIST); do \
+		echo "===================== $$CC"; \
+		$(MAKE) clean && CC=$$CC $(MAKE) all || exit $$?; \
+	done
 
 cross-qemu:
-	for CC in $(CROSS_LIST); do make clean && CC=$$CC CFLAGS_TEST="-std=c99 -static" make bench-verbose || exit $$?; done
+	@echo "CORRESPONDING CROSS-COMPILERs AND QEMUs ARE REQUIRED."
+	@echo "FOR INSTANCE: apt install binfmt-support qemu-user-static qemu-user qemu-system-arm qemu-system-mips qemu-system-misc qemu-system-ppc qemu-system-sparc gcc-aarch64-linux-gnu gcc-alpha-linux-gnu gcc-arm-linux-gnueabihf gcc-hppa-linux-gnu gcc-mips-linux-gnu gcc-mips64-linux-gnuabi64 gcc-powerpc-linux-gnu gcc-powerpc64-linux-gnu gcc-s390x-linux-gnu gcc-sh4-linux-gnu"
+	@for CC in $(CROSS_LIST); do \
+		echo "===================== $$CC + qemu"; \
+		$(MAKE) clean && CC=$$CC CFLAGS_TEST="-std=c99 -static" $(MAKE) bench-verbose || exit $$?; \
+	done

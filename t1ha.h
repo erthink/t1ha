@@ -71,6 +71,12 @@
 
 /*****************************************************************************/
 
+#ifdef _MSC_VER
+/* Avoid '16' bytes padding added after data member 't1ha_context::total'
+ * and other warnings from std-headers if warning-level > 3. */
+#pragma warning(push, 3)
+#endif
+
 #if defined(__cplusplus) && __cplusplus >= 201103L
 #include <climits>
 #include <cstddef>
@@ -243,6 +249,10 @@ typedef struct t1ha_context {
   size_t partial;
   uint64_t total;
 } t1ha_context_t;
+
+#ifdef _MSC_VER
+#pragma warning(pop)
+#endif
 
 /******************************************************************************
  *

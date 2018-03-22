@@ -1348,7 +1348,7 @@ bool mera_init(void) {
   }
 #endif /* __ia32__ */
 
-#if __NR_perf_event_open
+#if defined(__NR_perf_event_open)
   if (perf_setup() == 0) {
     bool perf_used = probe(clock_perf, clock_perf, convert_1to1,
                            timestamp_cycles | timestamp_clock_stable,

@@ -87,6 +87,7 @@ void usage(void) {
       "                              i.e. t1ha0_ia32aes_avx(), etc...\n"
 #endif /* T1HA0_AESNI_AVAILABLE */
       "  --xxhash, --no-xxhash     - include/exclude xxhash32() and xxhash64(),"
+      "\n"
       "                              just for comparison.\n");
 }
 
@@ -214,7 +215,7 @@ int main(int argc, const char *argv[]) {
   /*************************************************************************/
 
   bool failed = false;
-  /* Nowadays t1ha2 not frozen */
+  /* Stable t1ha2 */
   failed |= verify("t1ha2_atonce", t1ha2_atonce, refval_2atonce);
   failed |= verify("t1ha2_atonce128", thunk_t1ha2_atonce128, refval_2atonce128);
   failed |= verify("t1ha2_stream", thunk_t1ha2_stream, refval_2stream);

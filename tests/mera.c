@@ -628,7 +628,8 @@ static unsigned clock_hppa(timestamp_t *now) {
 }
 #endif /* __hppa__ */
 
-#if defined(__s390__) || defined(__s390)
+#if defined(__s390__) || defined(__s390) || defined(__zarch__) ||              \
+    defined(__zarch)
 static unsigned clock_stcke(timestamp_t *now) {
   compiler_barrier();
   uint8_t clk[16];
@@ -1203,7 +1204,8 @@ bool mera_init(void) {
         "MFCTL(16)", "cycle");
 #endif /* __hppa__ */
 
-#if defined(__s390__) || defined(__s390)
+#if defined(__s390__) || defined(__s390) || defined(__zarch__) ||              \
+    defined(__zarch)
   probe(clock_stcke, clock_stcke, convert_1to1,
         timestamp_clock_cheap | timestamp_cycles | timestamp_clock_stable,
         "STCKE", "cycle");

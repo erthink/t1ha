@@ -1,3 +1,4 @@
+meson.build
 tests/xxhash/xxhash.h
 tests/xxhash/xxhash.c
 tests/common.h

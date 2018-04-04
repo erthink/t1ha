@@ -43,7 +43,7 @@
 
 #include "t1ha_bits.h"
 
-#ifdef T1HA0_AESNI_AVAILABLE
+#if T1HA0_AESNI_AVAILABLE
 
 uint64_t T1HA_IA32AES_NAME(const void *data, size_t len, uint64_t seed) {
   uint64_t a = seed;

@@ -94,7 +94,7 @@ void bench_size(const unsigned size, const char *caption) {
   if (is_selected(bench_32 | bench_be | bench_0))
     bench("t1ha0_32be", t1ha0_32be, buffer, size, seed);
 
-#ifdef T1HA0_AESNI_AVAILABLE
+#if T1HA0_AESNI_AVAILABLE
   if (is_selected(bench_aes)) {
     bench("t1ha0_ia32aes_noavx_a", t1ha0_ia32aes_noavx_a, buffer, size, seed);
     bench("t1ha0_ia32aes_noavx_b", t1ha0_ia32aes_noavx_b, buffer, size, seed);

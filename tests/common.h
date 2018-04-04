@@ -69,7 +69,7 @@ enum test_flags {
   bench_64 = 1u << 25,
   bench_le = 1u << 26,
   bench_be = 1u << 27,
-#ifdef T1HA0_AESNI_AVAILABLE
+#if T1HA0_AESNI_AVAILABLE
   bench_aes = 1u << 28,
   bench_avx = 1u << 29,
 #ifndef __e2k__
@@ -103,7 +103,7 @@ extern const uint64_t refval_64be[];
 extern const uint64_t refval_32le[];
 extern const uint64_t refval_32be[];
 
-#ifdef T1HA0_AESNI_AVAILABLE
+#if T1HA0_AESNI_AVAILABLE
 uint64_t t1ha0_ia32aes_noavx_a(const void *data, size_t length, uint64_t seed);
 uint64_t t1ha0_ia32aes_avx_a(const void *data, size_t length, uint64_t seed);
 #ifndef __e2k__

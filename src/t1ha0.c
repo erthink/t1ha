@@ -320,7 +320,9 @@ uint64_t t1ha0_32be(const void *data, size_t len, uint64_t seed) {
 
 /***************************************************************************/
 
-#ifdef __ia32__
+#if T1HA0_RUNTIME_SELECT
+
+#if T1HA0_AESNI_AVAILABLE && defined(__ia32__)
 static uint64_t x86_cpu_features(void) {
   uint32_t features = 0;
   uint32_t extended = 0;
@@ -347,11 +349,7 @@ static uint64_t x86_cpu_features(void) {
 #endif
   return features | (uint64_t)extended << 32;
 }
-#endif /* __ia32__ */
-
-/***************************************************************************/
-
-#ifdef T1HA0_RUNTIME_SELECT
+#endif /* T1HA0_AESNI_AVAILABLE && __ia32__ */
 
 static
 #if __GNUC_PREREQ(4, 0) || __has_attribute(used)
@@ -359,7 +357,7 @@ static
 #endif
     uint64_t (*t1ha0_resolve(void))(const void *, size_t, uint64_t) {
 
-#ifdef __ia32__
+#if T1HA0_AESNI_AVAILABLE && defined(__ia32__)
   uint64_t features = x86_cpu_features();
   if (features & UINT32_C(0x02000000) /* check for AES-NI */) {
     if ((features & UINT32_C(0x1A000000)) ==
@@ -368,7 +366,7 @@ static
       return ((features >> 32) & 32) ? t1ha0_ia32aes_avx2 : t1ha0_ia32aes_avx;
     return t1ha0_ia32aes_noavx;
   }
-#endif /* __ia32__ */
+#endif /* T1HA0_AESNI_AVAILABLE && __ia32__ */
 
 #if __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
 #if UINTPTR_MAX > 0xffffFFFFul || ULONG_MAX > 0xffffFFFFul

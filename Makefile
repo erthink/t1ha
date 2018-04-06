@@ -98,8 +98,11 @@ test: $(OBJ_LIST) $(BENCH_EXTRA) tests/main.c Makefile \
 	@echo "Target-ARCH: $(TARGET_ARCH)" || true
 	$(CC) $(CFLAGS_TEST) -o $@ tests/main.c $(OBJ_LIST) $(BENCH_EXTRA)
 
-check: test
+bench check: test
 	./test
+
+bench-all: test
+	./test --all-funcs --all-sizes
 
 bench-verbose: test
 	./test --bench-verbose

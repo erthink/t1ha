@@ -387,9 +387,9 @@ int main(int argc, const char *argv[]) {
   printf("\nNon-optimized/Debug build, skip benchmark\n");
 #else
   if (is_option_set(bench_tiny))
-    bench_size(5, "tiny");
+    bench_size(7, "tiny");
   if (is_option_set(bench_small))
-    bench_size(31, "small");
+    bench_size(63, "small");
   if (is_option_set(bench_medium))
     bench_size(1024, "medium");
   if (is_option_set(bench_large))

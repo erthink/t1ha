@@ -96,7 +96,7 @@
 #include <x86intrin.h>
 #endif
 
-#if defined(__ia32__)
+#if defined(__ia32__) && !defined(__cpuid_count)
 #include <cpuid.h>
 #endif
 

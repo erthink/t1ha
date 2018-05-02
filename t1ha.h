@@ -323,11 +323,6 @@ T1HA_API uint64_t t1ha1_le(const void *data, size_t length, uint64_t seed);
 /* The big-endian variant. */
 T1HA_API uint64_t t1ha1_be(const void *data, size_t length, uint64_t seed);
 
-/* The historical nicname for generic little-endian variant. */
-static __inline uint64_t t1ha(const void *data, size_t length, uint64_t seed) {
-  return t1ha1_le(data, length, seed);
-}
-
 /******************************************************************************
  *
  *  t1ha0 = 64-bit, JUST ONLY FASTER:

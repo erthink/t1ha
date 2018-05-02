@@ -289,7 +289,7 @@ int main(int argc, const char *argv[]) {
       hash_function = XXH64;
       hash_name = "xxhash64";
     } else {
-      hash_function = t1ha;
+      hash_function = t1ha1_le;
       hash_name = "t1ha-default";
     }
 

@@ -271,6 +271,7 @@ typedef struct t1ha_context {
  * Note: Due performance reason 64- and 128-bit results are completely
  *       different each other, i.e. 64-bit result is NOT any part of 128-bit.
  */
+#ifndef T1HA2_DISABLED
 
 /* The at-once variant with 64-bit result */
 T1HA_API uint64_t t1ha2_atonce(const void *data, size_t length, uint64_t seed);
@@ -301,6 +302,8 @@ T1HA_API void t1ha2_update(t1ha_context_t *__restrict ctx,
 T1HA_API uint64_t t1ha2_final(t1ha_context_t *__restrict ctx,
                               uint64_t *__restrict extra_result /* optional */);
 
+#endif /* T1HA2_DISABLED */
+
 /******************************************************************************
  *
  *  t1ha1 = 64-bit, BASELINE FAST PORTABLE HASH:
@@ -316,12 +319,15 @@ T1HA_API uint64_t t1ha2_final(t1ha_context_t *__restrict ctx,
  *      However, nowadays this issue has resolved in the next t1ha2(),
  *      that was initially planned to providing a bit more quality.
  */
+#ifndef T1HA1_DISABLED
 
 /* The little-endian variant. */
 T1HA_API uint64_t t1ha1_le(const void *data, size_t length, uint64_t seed);
 
 /* The big-endian variant. */
 T1HA_API uint64_t t1ha1_be(const void *data, size_t length, uint64_t seed);
+
+#endif /* T1HA1_DISABLED */
 
 /******************************************************************************
  *
@@ -347,6 +353,8 @@ T1HA_API uint64_t t1ha1_be(const void *data, size_t length, uint64_t seed);
  *      used only in runtime, but should not be persist or transferred
  *      over a network.
  */
+
+#ifndef T1HA0_DISABLED
 
 /* The little-endian variant for 32-bit CPU. */
 uint64_t t1ha0_32le(const void *data, size_t length, uint64_t seed);
@@ -412,6 +420,8 @@ static __inline uint64_t t1ha0(const void *data, size_t length, uint64_t seed) {
 #endif
 }
 #endif /* !T1HA0_RUNTIME_SELECT */
+
+#endif /* T1HA0_DISABLED */
 
 #ifdef __cplusplus
 }

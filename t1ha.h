@@ -209,12 +209,14 @@
 #endif
 #endif /* __dll_import */
 
+#ifndef T1HA_API
 #if defined(t1ha_EXPORTS)
 #define T1HA_API __dll_export
 #elif defined(t1ha_IMPORTS)
 #define T1HA_API __dll_import
 #else
 #define T1HA_API
+#endif
 #endif /* T1HA_API */
 
 #if defined(_MSC_VER) && defined(__ia32__)

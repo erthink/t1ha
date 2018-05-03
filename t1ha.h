@@ -69,6 +69,15 @@
 #endif
 #endif /* __CLANG_PREREQ */
 
+#ifndef __LCC_PREREQ
+#ifdef __LCC__
+#define __LCC_PREREQ(maj, min)                                                 \
+  ((__LCC__ << 16) + __LCC_MINOR__ >= ((maj) << 16) + (min))
+#else
+#define __LCC_PREREQ(maj, min) (0)
+#endif
+#endif /* __LCC_PREREQ */
+
 /*****************************************************************************/
 
 #ifdef _MSC_VER

@@ -64,7 +64,7 @@ static __always_inline void update(t1ha_state256_t *__restrict s,
 
   uint64_t d02 = w0 + rot64(w2 + s->n.d, 56);
   uint64_t c13 = w1 + rot64(w3 + s->n.c, 19);
-#ifdef __e2k__
+#if defined(__e2k__) && !__LCC_PREREQ(121, 24)
   /* FIXME: temporary workaround for lcc's ELBRUS scheduling bug (LY) */
   s->n.c ^= s->n.a + rot64(w0, 57);
   s->n.d ^= s->n.b + rot64(w1, 38);

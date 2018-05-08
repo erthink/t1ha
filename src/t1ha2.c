@@ -278,11 +278,11 @@ void t1ha2_update(t1ha_context_t *__restrict ctx, const void *__restrict data,
 
 uint64_t t1ha2_final(t1ha_context_t *__restrict ctx,
                      uint64_t *__restrict extra_result) {
-  uint64_t bytes = (ctx->total << 3) ^ (UINT64_C(1) << 63);
+  uint64_t bits = (ctx->total << 3) ^ (UINT64_C(1) << 63);
 #if __BYTE_ORDER__ != __ORDER_LITTLE_ENDIAN__
-  bytes = bswap64(bytes);
+  bits = bswap64(bits);
 #endif
-  t1ha2_update(ctx, &bytes, 8);
+  t1ha2_update(ctx, &bits, 8);
 
   if (likely(!extra_result)) {
     squash(&ctx->state);

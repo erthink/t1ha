@@ -383,15 +383,18 @@ static
 #endif /* __BYTE_ORDER__ */
 }
 
-#ifdef __ELF__
-
+#if T1HA_USE_INDIRECT_FUNCTIONS
+/* Use IFUNC (GNU ELF indirect functions) to choice implementation at runtime.
+ * For more info please see
+ * https://en.wikipedia.org/wiki/Executable_and_Linkable_Format
+ * and https://sourceware.org/glibc/wiki/GNU_IFUNC */
 #if __has_attribute(ifunc)
 uint64_t t1ha0(const void *data, size_t len, uint64_t seed)
     __attribute__((ifunc("t1ha0_resolve")));
 #else
 __asm("\t.globl\tt1ha0\n\t.type\tt1ha0, "
       "%gnu_indirect_function\n\t.set\tt1ha0,t1ha0_resolve");
-#endif /* ifunc */
+#endif /* __has_attribute(ifunc) */
 
 #elif __GNUC_PREREQ(4, 0) || __has_attribute(constructor)
 
@@ -401,7 +404,7 @@ static void __attribute__((constructor)) t1ha0_init(void) {
   t1ha0_funcptr = t1ha0_resolve();
 }
 
-#else /* ELF */
+#else /* T1HA_USE_INDIRECT_FUNCTIONS */
 
 static uint64_t t1ha0_proxy(const void *data, size_t len, uint64_t seed) {
   t1ha0_funcptr = t1ha0_resolve();
@@ -410,5 +413,5 @@ static uint64_t t1ha0_proxy(const void *data, size_t len, uint64_t seed) {
 
 uint64_t (*t1ha0_funcptr)(const void *, size_t, uint64_t) = t1ha0_proxy;
 
-#endif /* !ELF */
+#endif /* !T1HA_USE_INDIRECT_FUNCTIONS */
 #endif /* T1HA0_RUNTIME_SELECT */

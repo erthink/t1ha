@@ -245,6 +245,26 @@
 #define T1HA_ALIGN_SUFFIX
 #endif /* GCC x86 */
 
+#ifndef T1HA_USE_INDIRECT_FUNCTIONS
+/* GNU ELF indirect functions usage control. For more info please see
+ * https://en.wikipedia.org/wiki/Executable_and_Linkable_Format
+ * and https://sourceware.org/glibc/wiki/GNU_IFUNC */
+#if __has_attribute(ifunc) &&                                                  \
+    defined(__ELF__) /* ifunc is broken on Darwin/OSX */
+/* Use ifunc/gnu_indirect_function if corresponding attribute is available,
+ * Assuming compiler will generate properly code even when
+ * the -fstack-protector-all and/or the -fsanitize=address are enabled. */
+#define T1HA_USE_INDIRECT_FUNCTIONS 1
+#elif defined(__ELF__) && !defined(__SANITIZE_ADDRESS__) &&                    \
+    !defined(__SSP_ALL__)
+/* ifunc/gnu_indirect_function will be used on ELF, but only if both
+ * -fstack-protector-all and -fsanitize=address are NOT enabled. */
+#define T1HA_USE_INDIRECT_FUNCTIONS 1
+#else
+#define T1HA_USE_INDIRECT_FUNCTIONS 0
+#endif
+#endif /* T1HA_USE_INDIRECT_FUNCTIONS */
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -402,9 +422,7 @@ uint64_t t1ha0_ia32aes_avx2(const void *data, size_t length, uint64_t seed);
 #endif /* T1HA0_AESNI_AVAILABLE */
 
 #if T1HA0_RUNTIME_SELECT
-#ifdef __ELF__
-/* ifunc/gnu_indirect_function will be used on ELF.
- * Please see https://en.wikipedia.org/wiki/Executable_and_Linkable_Format */
+#if T1HA_USE_INDIRECT_FUNCTIONS
 T1HA_API uint64_t t1ha0(const void *data, size_t length, uint64_t seed);
 #else
 /* Otherwise function pointer will be used.
@@ -414,7 +432,7 @@ T1HA_API extern uint64_t (*t1ha0_funcptr)(const void *data, size_t length,
 static __inline uint64_t t1ha0(const void *data, size_t length, uint64_t seed) {
   return t1ha0_funcptr(data, length, seed);
 }
-#endif /* __ELF__ */
+#endif /* T1HA_USE_INDIRECT_FUNCTIONS */
 
 #elif __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
 static __inline uint64_t t1ha0(const void *data, size_t length, uint64_t seed) {

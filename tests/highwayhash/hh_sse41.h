@@ -173,7 +173,7 @@ public:
                                  const size_t size_mod32,
                                  const char *HH_RESTRICT buffer,
                                  const size_t buffer_valid) {
-    HHPacket tmp HH_ALIGNAS(32);
+    HHPacket HH_ALIGNAS(tmp, 32);
     for (size_t i = 0; i < buffer_valid; ++i) {
       tmp[i] = buffer[i];
     }

@@ -47,9 +47,11 @@
 //-----------------------------------------------------------------------------
 
 #if HH_GCC_VERSION && HH_GCC_VERSION < 408
-#define HH_ALIGNAS(multiple) __attribute__((aligned(multiple)))
+#define HH_ALIGNAS(object, multiple) object __attribute__((aligned(multiple)))
+#elif HH_MSC_VERSION && HH_MSC_VERSION < 1900
+#define HH_ALIGNAS(object, multiple) __declspec(align(multiple)) object
 #else
-#define HH_ALIGNAS(multiple) alignas(multiple) // C++11
+#define HH_ALIGNAS(object, multiple) object alignas(multiple) // C++11
 #endif
 
 #if HH_MSC_VERSION

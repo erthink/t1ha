@@ -193,8 +193,8 @@ public:
   }
 
 private:
-  HHPacket buffer_ HH_ALIGNAS(64);
-  HHStateT<Target> state_ HH_ALIGNAS(32);
+  HHPacket HH_ALIGNAS(buffer_, 64);
+  HHStateT<Target> HH_ALIGNAS(state_, 32);
   // How many bytes in buffer_ (starting with offset 0) are valid.
   size_t buffer_usage_ = 0;
 };

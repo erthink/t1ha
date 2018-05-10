@@ -129,7 +129,7 @@ endif
 4bench_highwayhash_vsx.o: $(addprefix tests/highwayhash/, \
 		hh_vsx.cc hh_vsx.h 4bench_vsx.cc) \
 		$(HIGHWAYHASH_SRC) tests/common.h Makefile
-	$(CXX) -I tests $(CXXFLAGS_TEST) -mvsx -Wno-error -c -o $@ tests/highwayhash/4bench_vsx.cc
+	$(CXX) -I tests $(CXXFLAGS_TEST) -mpower8-vector -mvsx -Wno-error -c -o $@ tests/highwayhash/4bench_vsx.cc
 
 ifeq ($(TARGET_ARCH_ppc),yes)
 BENCH_EXTRA += 4bench_highwayhash_vsx.o
@@ -172,7 +172,7 @@ cross-gcc:
 	@echo "FOR INSTANCE: apt install gcc-aarch64-linux-gnu gcc-alpha-linux-gnu gcc-arm-linux-gnueabihf gcc-hppa-linux-gnu gcc-mips-linux-gnu gcc-mips64-linux-gnuabi64 gcc-powerpc-linux-gnu gcc-powerpc64-linux-gnu gcc-s390x-linux-gnu gcc-sh4-linux-gnu"
 	@for CC in $(CROSS_LIST_NOQEMU) $(CROSS_LIST); do \
 		echo "===================== $$CC"; \
-		$(MAKE) clean && CC=$$CC $(MAKE) all || exit $$?; \
+		$(MAKE) clean && CC=$$CC CXX=$$(echo "$$CC" | sed 's/gcc/g++/') $(MAKE) all || exit $$?; \
 	done
 
 cross-qemu:
@@ -180,5 +180,5 @@ cross-qemu:
 	@echo "FOR INSTANCE: apt install binfmt-support qemu-user-static qemu-user qemu-system-arm qemu-system-mips qemu-system-misc qemu-system-ppc qemu-system-sparc gcc-aarch64-linux-gnu gcc-alpha-linux-gnu gcc-arm-linux-gnueabihf gcc-hppa-linux-gnu gcc-mips-linux-gnu gcc-mips64-linux-gnuabi64 gcc-powerpc-linux-gnu gcc-powerpc64-linux-gnu gcc-s390x-linux-gnu gcc-sh4-linux-gnu"
 	@for CC in $(CROSS_LIST); do \
 		echo "===================== $$CC + qemu"; \
-		$(MAKE) clean && CC=$$CC CFLAGS_TEST="-std=c99 -static" $(MAKE) bench-verbose || exit $$?; \
+		$(MAKE) clean && CC=$$CC CXX=$$(echo "$$CC" | sed 's/gcc/g++/') CFLAGS_TEST="-std=c99 -static" $(MAKE) bench-verbose || exit $$?; \
 	done

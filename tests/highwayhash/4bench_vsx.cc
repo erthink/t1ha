@@ -1,1 +1,1 @@
-#include "hh_vsx.c"
+#include "highwayhash/hh_vsx.cc"

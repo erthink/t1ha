@@ -5,14 +5,17 @@
 # So, define it to 0 for calmness if doubt.
 T1HA_USE_FAST_ONESHOT_READ ?=1
 
-CFLAGS ?= -std=c99 -O3 -DNDEBUG -D_DEFAULT_SOURCE
 CC ?= gcc
+CXX ?= g++
+CFLAGS ?= -std=c99 -O3 -DNDEBUG -D_DEFAULT_SOURCE
+CXXFLAGS = -std=c++11 $(filter-out -std=c99,$(CFLAGS))
 
 TARGET_ARCH_e2k = $(shell (export LC_ALL=C; ($(CC) --version 2>&1; $(CC) -v 2>&1) | grep -q -i 'e2k' && echo yes || echo no))
 TARGET_ARCH_ia32 = $(shell (export LC_ALL=C; ($(CC) --version 2>&1; $(CC) -v 2>&1) | grep -q -i -e '^Target: \(x86_64\)\|\([iI][3-6]86\)-.*' && echo yes || echo no))
+TARGET_ARCH_ppc = $(shell (export LC_ALL=C; ($(CC) --version 2>&1; $(CC) -v 2>&1) | grep -q -i -e '^Target: powerpc.*' && echo yes || echo no))
 
 OBJ_LIST := t1ha0.o t1ha1.o t1ha2.o
-BENCH_EXTRA := bench.o mera.o test.o 4bench_xxhash.o
+BENCH_EXTRA := bench.o mera.o test.o 4bench_xxhash.o 4bench_highwayhash_test.o 4bench_highwayhash_pure_c.o 4bench_highwayhash_portable.o
 ifeq ($(TARGET_ARCH_e2k),yes)
 TARGET_ARCH := e2k
 CFLAGS += -mtune=native
@@ -28,6 +31,7 @@ TARGET_ARCH := portable
 endif
 
 CFLAGS_TEST ?= -Wextra -Werror $(CFLAGS)
+CXXFLAGS_TEST ?= -Wextra -Werror $(CXXFLAGS)
 CFLAGS_LIB ?= -Wall -ffunction-sections -fPIC $(CFLAGS) -fvisibility=hidden -Dt1ha_EXPORTS
 
 all: test libt1ha.a libt1ha.so
@@ -91,6 +95,50 @@ test.o: t1ha.h tests/common.h tests/mera.h tests/test.c \
 4bench_xxhash.o: tests/xxhash/xxhash.h tests/xxhash/xxhash.c \
 		Makefile
 	$(CC) $(CFLAGS_TEST) -Wno-error -c -o $@ tests/xxhash/xxhash.c
+
+4bench_highwayhash_pure_c.o: tests/highwayhash/pure_c.h \
+		tests/highwayhash/pure_c.c \
+		Makefile
+	$(CC) $(CFLAGS_TEST) -Wno-error -c -o $@ tests/highwayhash/pure_c.c
+
+HIGHWAYHASH_SRC = $(addprefix tests/highwayhash/, \
+	arch_specific.cc arch_specific.h compiler_specific.h \
+	endianess.h hh_types.h hh_buffer.h highwayhash.h \
+	highwayhash_target.cc highwayhash_target.h iaca.h \
+	load3.h vector128.h vector256.h)
+
+4bench_highwayhash_portable.o: $(addprefix tests/highwayhash/, \
+		hh_portable.cc hh_portable.h 4bench_portable.cc) \
+		$(HIGHWAYHASH_SRC) tests/common.h Makefile
+	$(CXX) -I tests $(CXXFLAGS_TEST) -Wno-error -c -o $@ tests/highwayhash/4bench_portable.cc
+
+4bench_highwayhash_avx2.o: $(addprefix tests/highwayhash/, \
+		hh_avx2.cc hh_avx2.h 4bench_avx2.cc) \
+		$(HIGHWAYHASH_SRC) tests/common.h Makefile
+	$(CXX) -I tests $(CXXFLAGS_TEST) -mavx2 -Wno-error -c -o $@ tests/highwayhash/4bench_avx2.cc
+
+4bench_highwayhash_sse41.o: $(addprefix tests/highwayhash/, \
+		hh_sse41.cc hh_sse41.h 4bench_sse41.cc) \
+		$(HIGHWAYHASH_SRC) tests/common.h Makefile
+	$(CXX) -I tests $(CXXFLAGS_TEST) -msse4.1 -Wno-error -c -o $@ tests/highwayhash/4bench_sse41.cc
+
+ifeq ($(TARGET_ARCH_ia32),yes)
+BENCH_EXTRA += 4bench_highwayhash_avx2.o 4bench_highwayhash_sse41.o
+endif
+
+4bench_highwayhash_vsx.o: $(addprefix tests/highwayhash/, \
+		hh_vsx.cc hh_vsx.h 4bench_vsx.cc) \
+		$(HIGHWAYHASH_SRC) tests/common.h Makefile
+	$(CXX) -I tests $(CXXFLAGS_TEST) -mvsx -Wno-error -c -o $@ tests/highwayhash/4bench_vsx.cc
+
+ifeq ($(TARGET_ARCH_ppc),yes)
+BENCH_EXTRA += 4bench_highwayhash_vsx.o
+endif
+
+4bench_highwayhash_test.o: tests/common.h tests/highwayhash/pure_c.h \
+		 tests/highwayhash/verifier.c Makefile
+	$(CC) $(CFLAGS_TEST) -Wno-error -c -o $@ tests/highwayhash/verifier.c
+
 
 test: $(OBJ_LIST) $(BENCH_EXTRA) tests/main.c Makefile \
 		t1ha.h tests/common.h tests/mera.h \

@@ -60,6 +60,12 @@ namespace HH_TARGET_NAME {
 // Primary template for 128-bit SSE4.1 vectors; only specializations are used.
 template <typename T> class V128 {};
 
+#if !(defined(__x86_64) || defined(__x86_64__) || defined(__amd64) ||          \
+      defined(_M_X64)) &&                                                      \
+    !defined(_mm_cvtsi64_si128)
+#define _mm_cvtsi64_si128(V64) _mm_set_epi64x(0, V64)
+#endif
+
 template <> class V128<uint8_t> {
 public:
   using Intrinsic = __m128i;

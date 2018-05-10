@@ -54,6 +54,12 @@ namespace HH_TARGET_NAME {
 // Primary template for 256-bit AVX2 vectors; only specializations are used.
 template <typename T> class V256 {};
 
+#if !(defined(__x86_64) || defined(__x86_64__) || defined(__amd64) ||          \
+      defined(_M_X64)) &&                                                      \
+    !defined(_mm_cvtsi64_si128)
+#define _mm_cvtsi64_si128(V64) _mm_set_epi64x(0, V64)
+#endif
+
 template <> class V256<uint8_t> {
 public:
   using Intrinsic = __m256i;
@@ -529,7 +535,7 @@ HH_INLINE V256<T> operator&(const V256<T> &left, const V256<T> &right) {
 }
 
 template <typename T>
-HH_INLINE V256<T> operator|(const V256<T> left, const V256<T> &right) {
+HH_INLINE V256<T> operator|(const V256<T> &left, const V256<T> &right) {
   V256<T> t(left);
   return t |= right;
 }

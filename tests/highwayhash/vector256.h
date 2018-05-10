@@ -54,6 +54,13 @@ namespace HH_TARGET_NAME {
 // Primary template for 256-bit AVX2 vectors; only specializations are used.
 template <typename T> class V256 {};
 
+#if (defined(_MSC_VER) && defined(_M_IX86) && _MSC_VER < 1900) &&              \
+    !defined(_mm_set_epi64x)
+#define _mm_set_epi64x(A, B)                                                   \
+  _mm_set_epi32((uint32_t)((uint64_t)(A) >> 32), (uint32_t)(A),                \
+                (uint32_t)((uint64_t)(B) >> 32), (uint32_t)(B))
+#endif
+
 #if !(defined(__x86_64) || defined(__x86_64__) || defined(__amd64) ||          \
       defined(_M_X64)) &&                                                      \
     !defined(_mm_cvtsi64_si128)
@@ -284,7 +291,21 @@ public:
 
   // Lane 0 (p_0) is the lowest.
   HH_INLINE V256(T p_3, T p_2, T p_1, T p_0)
+#if defined(_MSC_VER) && defined(_M_IX86) && _MSC_VER < 1900
+    {
+    union {
+      uint64_t u64x4[4];
+      __m256i m256i;
+    } x;
+    x.u64x4[0] = p_0;
+    x.u64x4[1] = p_1;
+    x.u64x4[2] = p_2;
+    x.u64x4[3] = p_3;
+    v_ = x.m256i;
+  }
+#else
       : v_(_mm256_set_epi64x(p_3, p_2, p_1, p_0)) {}
+#endif
 
   // Broadcasts i to all lanes.
   HH_INLINE explicit V256(T i)

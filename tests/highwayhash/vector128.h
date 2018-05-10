@@ -60,6 +60,13 @@ namespace HH_TARGET_NAME {
 // Primary template for 128-bit SSE4.1 vectors; only specializations are used.
 template <typename T> class V128 {};
 
+#if (defined(_MSC_VER) && defined(_M_IX86) && _MSC_VER < 1900) &&              \
+    !defined(_mm_set_epi64x)
+#define _mm_set_epi64x(A, B)                                                   \
+  _mm_set_epi32((uint32_t)((uint64_t)(A) >> 32), (uint32_t)(A),                \
+                (uint32_t)((uint64_t)(B) >> 32), (uint32_t)(B))
+#endif
+
 #if !(defined(__x86_64) || defined(__x86_64__) || defined(__amd64) ||          \
       defined(_M_X64)) &&                                                      \
     !defined(_mm_cvtsi64_si128)

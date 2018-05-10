@@ -54,6 +54,10 @@
 #define HH_ALIGNAS(object, multiple) object alignas(multiple) // C++11
 #endif
 
+#if HH_MSC_VERSION && HH_MSC_VERSION < 1900
+#define constexpr const
+#endif
+
 #if HH_MSC_VERSION
 #define HH_RESTRICT __restrict
 #elif HH_GCC_VERSION

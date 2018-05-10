@@ -155,6 +155,13 @@ bool HighwayHash64_verify(HighwayHash64_t fn, const char *title);
 /* HighwayHash CXX */
 uint64_t HighwayHash64_Portable(const uint64_t key[4], const uint8_t *data,
                                 size_t size);
+uint64_t HighwayHash64_AVX2(const uint64_t key[4], const uint8_t *data,
+                            size_t size);
+uint64_t HighwayHash64_SSE41(const uint64_t key[4], const uint8_t *data,
+                             size_t size);
+uint64_t HighwayHash64_VSX(const uint64_t key[4], const uint8_t *data,
+                           size_t size);
+
 uint64_t thunk_HighwayHash64_Portable(const void *input, size_t length,
                                       uint64_t seed);
 uint64_t thunk_HighwayHash64_AVX2(const void *input, size_t length,

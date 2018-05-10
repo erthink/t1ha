@@ -266,6 +266,12 @@ int main(int argc, const char *argv[]) {
   failed |= HighwayHash64_verify(HighwayHash64_pure_c, "HighwayHash64_pure_c");
   failed |= HighwayHash64_verify(HighwayHash64_Portable,
                                  "HighwayHash64_portable_cxx");
+#ifdef __ia32__
+  if (ia32_cpu_features.basic.ecx & (1ul << 19))
+    HighwayHash64_verify(HighwayHash64_SSE41, "HighwayHash64_sse41");
+  if (ia32_cpu_features.extended_7.ebx & 32)
+    HighwayHash64_verify(HighwayHash64_AVX2, "HighwayHash64_avx2");
+#endif
 
   if (failed)
     return EXIT_FAILURE;

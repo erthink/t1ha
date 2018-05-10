@@ -56,12 +56,12 @@ bool HighwayHash64_verify(HighwayHash64_t fn, const char *title) {
   uint8_t data[kMaxSize + 1] = {0};
   int i;
   for (i = 0; i <= kMaxSize; i++) {
-    data[i] = i;
+    data[i] = (uint8_t)i;
     failed |= TestHash64(fn, kExpected64[i], data, i, kTestKey1);
   }
 
   for (i = 0; i < 33; i++) {
-    data[i] = 128 + i;
+    data[i] = 128 + (uint8_t)i;
   }
   failed |= TestHash64(fn, 0x53c516cce478cad7ull, data, 33, kTestKey2);
 

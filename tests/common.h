@@ -34,7 +34,9 @@
 #if _MSC_VER > 1800
 #pragma warning(disable : 4464) /* relative include path contains '..' */
 #endif
-#endif /* MSVC */
+#pragma warning(disable : 4204) /* nonstandard extension used: non-constant    \
+                                   aggregate initializer */
+#endif                          /* MSVC */
 
 #include "../t1ha.h" /* for T1HA0_AESNI_AVAILABLE, __ia32__, etc */
 #include "mera.h"    /* for ia32_cpu_features */

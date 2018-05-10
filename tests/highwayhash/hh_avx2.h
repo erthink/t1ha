@@ -162,7 +162,7 @@ def x(a,b,c):
   static HH_INLINE void CopyPartial(const char *HH_RESTRICT from,
                                     const size_t size_mod32,
                                     char *HH_RESTRICT buffer) {
-    const V4x32U size(size_mod32);
+    const V4x32U size((uint32_t)size_mod32);
     const uint32_t *const HH_RESTRICT from_u32 =
         reinterpret_cast<const uint32_t * HH_RESTRICT>(from);
     uint32_t *const HH_RESTRICT buffer_u32 =
@@ -185,7 +185,7 @@ def x(a,b,c):
                                       const size_t size_mod32,
                                       char *HH_RESTRICT buffer,
                                       const size_t buffer_valid) {
-    const V4x32U size(size_mod32);
+    const V4x32U size((uint32_t)size_mod32);
     uint32_t *const HH_RESTRICT buffer_u32 =
         reinterpret_cast<uint32_t * HH_RESTRICT>(buffer);
     // buffer_valid + size <= 32 => appending 0..16 bytes inside upper 16 bytes.
@@ -203,7 +203,8 @@ def x(a,b,c):
       // Do we have enough input to start filling the upper 16 buffer bytes?
       if (size_mod32 > offsetH) {
         const size_t sizeH = size_mod32 - offsetH;
-        const V4x32U outH = Load0To16<>(from + offsetH, sizeH, V4x32U(sizeH));
+        const V4x32U outH =
+            Load0To16<>(from + offsetH, sizeH, V4x32U((uint32_t)sizeH));
         Store(outH, buffer_u32 + V4x32U::N);
       }
     }
@@ -214,7 +215,7 @@ def x(a,b,c):
                                  const size_t size_mod32,
                                  const char *HH_RESTRICT buffer,
                                  const size_t buffer_valid) {
-    const V4x32U size(size_mod32);
+    const V4x32U size((uint32_t)size_mod32);
     const uint32_t *const HH_RESTRICT buffer_u32 =
         reinterpret_cast<const uint32_t * HH_RESTRICT>(buffer);
     // buffer_valid + size <= 32 => appending 0..16 bytes inside upper 16 bytes.
@@ -233,7 +234,7 @@ def x(a,b,c):
       // Do we have enough input to start filling the upper 16 packet bytes?
       if (size_mod32 > offsetH) {
         const size_t sizeH = size_mod32 - offsetH;
-        packetH = Load0To16<>(from + offsetH, sizeH, V4x32U(sizeH));
+        packetH = Load0To16<>(from + offsetH, sizeH, V4x32U((uint32_t)sizeH));
       }
 
       Update(packetH, packetL);
@@ -258,7 +259,7 @@ private:
     const uint64_t last3 = Load3()(Load3Policy(), remainder, size_mod32 & 3);
     const V4x32U int_mask = IntMask<kSizeOffset>()(size);
     const V4x32U int_lanes = MaskedLoadInt(from, int_mask);
-    return Insert4AboveMask(last3, int_mask, int_lanes);
+    return Insert4AboveMask((uint32_t)last3, int_mask, int_lanes);
   }
 
   static HH_INLINE V4x64U Rotate64By32(const V4x64U &v) {

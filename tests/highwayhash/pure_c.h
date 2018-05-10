@@ -56,7 +56,7 @@ void HighwayHash256_pure_c(const uint64_t key[4], const uint8_t *data,
 typedef struct {
   HighwayHashState state;
   uint8_t packet[32];
-  int num;
+  size_t num;
 } HighwayHashCat;
 
 /* Allocates new state for a new streaming hash computation */

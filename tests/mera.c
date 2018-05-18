@@ -235,7 +235,7 @@ static int do_probe(unsigned (*start)(timestamp_t *),
     return -1;
   }
 
-  if (sigsetjmp(sigaction_jump, 0) != 0) {
+  if (sigsetjmp(sigaction_jump, 1) != 0) {
     sigaction(SIGSEGV, &prev_sigsegv, NULL);
     sigaction(SIGILL, &prev_sigill, NULL);
     sigaction(SIGBUS, &prev_sigbus, NULL);

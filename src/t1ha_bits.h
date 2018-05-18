@@ -398,7 +398,7 @@ typedef struct {
 #endif /* read_unaligned */
 
 #ifndef read_aligned
-#if __has_builtin(assume_aligned)
+#if __GNUC_PREREQ(4, 8) || __has_builtin(__builtin_assume_aligned)
 #define read_aligned(ptr, bits)                                                \
   (*(const uint##bits##_t *)__builtin_assume_aligned(ptr, ALIGNMENT_##bits))
 #elif __has_attribute(aligned) && !defined(__clang__)

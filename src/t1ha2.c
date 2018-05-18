@@ -83,8 +83,9 @@ static __always_inline void squash(t1ha_state256_t *s) {
     const void *detent = (const uint8_t *)data + len - 31;                     \
     do {                                                                       \
       const uint64_t *v = (const uint64_t *)data;                              \
-      T1HA2_UPDATE(le, ALIGNESS, state, v);                                    \
       data = (const uint64_t *)data + 4;                                       \
+      prefetch(data);                                                          \
+      T1HA2_UPDATE(le, ALIGNESS, state, v);                                    \
     } while (likely(data < detent));                                           \
   } while (0)
 

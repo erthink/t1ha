@@ -440,6 +440,20 @@ static __always_inline const
 #endif
 #endif /* read_aligned */
 
+#ifndef prefetch
+#if (__GNUC_PREREQ(4, 0) || __has_builtin(__builtin_prefetch)) &&              \
+    !defined(__ia32__)
+#define prefetch(ptr) __builtin_prefetch(ptr)
+#elif defined(_M_ARM64) || defined(_M_ARM)
+#define prefetch(ptr) __prefetch(ptr)
+#else
+#define prefetch(ptr)                                                          \
+  do {                                                                         \
+    (void)(ptr);                                                               \
+  } while (0)
+#endif
+#endif /* prefetch */
+
 #if __has_warning("-Wconstant-logical-operand")
 #if defined(__clang__)
 #pragma clang diagnostic ignored "-Wconstant-logical-operand"

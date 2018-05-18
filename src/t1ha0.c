@@ -278,6 +278,8 @@ static const uint32_t prime32_6 = UINT32_C(0xC4BB3575);
       const uint32_t w1 = fetch32_##ENDIANNES##_##ALIGNESS(v + 1);             \
       const uint32_t w2 = fetch32_##ENDIANNES##_##ALIGNESS(v + 2);             \
       const uint32_t w3 = fetch32_##ENDIANNES##_##ALIGNESS(v + 3);             \
+      v += 4;                                                                  \
+      prefetch(v);                                                             \
                                                                                \
       const uint32_t c02 = w0 ^ rot32(w2 + c, 11);                             \
       const uint32_t d13 = w1 + rot32(w3 + d, 17);                             \
@@ -285,8 +287,6 @@ static const uint32_t prime32_6 = UINT32_C(0xC4BB3575);
       d ^= rot32(a + w0, 3);                                                   \
       b = prime32_1 * (c02 + w3);                                              \
       a = prime32_0 * (d13 ^ w2);                                              \
-                                                                               \
-      v += 4;                                                                  \
     } while (likely(v < detent));                                              \
                                                                                \
     c += a;                                                                    \

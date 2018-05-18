@@ -70,6 +70,8 @@ static __inline uint64_t final_weak_avalanche(uint64_t a, uint64_t b) {
       const uint64_t w1 = fetch64_##ENDIANNES##_##ALIGNESS(v + 1);             \
       const uint64_t w2 = fetch64_##ENDIANNES##_##ALIGNESS(v + 2);             \
       const uint64_t w3 = fetch64_##ENDIANNES##_##ALIGNESS(v + 3);             \
+      v += 4;                                                                  \
+      prefetch(v);                                                             \
                                                                                \
       const uint64_t d02 = w0 ^ rot64(w2 + d, 17);                             \
       const uint64_t c13 = w1 ^ rot64(w3 + c, 17);                             \
@@ -77,7 +79,6 @@ static __inline uint64_t final_weak_avalanche(uint64_t a, uint64_t b) {
       d -= b ^ rot64(w1, 31);                                                  \
       a ^= prime_1 * (d02 + w3);                                               \
       b ^= prime_0 * (c13 + w2);                                               \
-      v += 4;                                                                  \
     } while (likely(v < detent));                                              \
                                                                                \
     a ^= prime_6 * (rot64(c, 17) + d);                                         \

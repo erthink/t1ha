@@ -55,7 +55,7 @@ static __always_inline void init_cd(t1ha_state256_t *s, uint64_t x,
   s->n.d = ~y + rot64(x, 19);
 }
 
-/* TODO C++ template in the next version */
+/* TODO: C++ template in the next version */
 #define T1HA2_UPDATE(ENDIANNES, ALIGNESS, state, v)                            \
   do {                                                                         \
     t1ha_state256_t *const s = state;                                          \
@@ -77,26 +77,22 @@ static __always_inline void squash(t1ha_state256_t *s) {
   s->n.b ^= prime_5 * (rot64(s->n.c, 19) + s->n.d);
 }
 
-/* TODO C++ template in the next version */
-#define T1HA2_LOOP(ENDIANNES, ALIGNESS, BUFFER4COPY, state, data, len)         \
+/* TODO: C++ template in the next version */
+#define T1HA2_LOOP(ENDIANNES, ALIGNESS, state, data, len)                      \
   do {                                                                         \
     const void *detent = (const uint8_t *)data + len - 31;                     \
     do {                                                                       \
       const uint64_t *v = (const uint64_t *)data;                              \
-      if (BUFFER4COPY != NULL)                                                 \
-        memcpy((void *)(v = BUFFER4COPY), data, 32);                           \
-      T1HA2_UPDATE(le, unaligned, state, v);                                   \
+      T1HA2_UPDATE(le, ALIGNESS, state, v);                                    \
       data = (const uint64_t *)data + 4;                                       \
     } while (likely(data < detent));                                           \
   } while (0)
 
-/* TODO C++ template in the next version */
-#define T1HA2_TAIL_AB(ENDIANNES, ALIGNESS, BUFFER4COPY, state, data, len)      \
+/* TODO: C++ template in the next version */
+#define T1HA2_TAIL_AB(ENDIANNES, ALIGNESS, state, data, len)                   \
   do {                                                                         \
     t1ha_state256_t *const s = state;                                          \
     const uint64_t *v = (const uint64_t *)data;                                \
-    if (BUFFER4COPY != NULL)                                                   \
-      memcpy((void *)(v = BUFFER4COPY), data, len);                            \
     switch (len) {                                                             \
     default:                                                                   \
       mixup64(&s->n.a, &s->n.b, fetch64_##ENDIANNES##_##ALIGNESS(v++),         \
@@ -140,13 +136,11 @@ static __always_inline void squash(t1ha_state256_t *s) {
     }                                                                          \
   } while (0)
 
-/* TODO C++ template in the next version */
-#define T1HA2_TAIL_ABCD(ENDIANNES, ALIGNESS, BUFFER4COPY, state, data, len)    \
+/* TODO: C++ template in the next version */
+#define T1HA2_TAIL_ABCD(ENDIANNES, ALIGNESS, state, data, len)                 \
   do {                                                                         \
     t1ha_state256_t *const s = state;                                          \
     const uint64_t *v = (const uint64_t *)data;                                \
-    if (BUFFER4COPY != NULL)                                                   \
-      memcpy((void *)(v = BUFFER4COPY), data, len);                            \
     switch (len) {                                                             \
     default:                                                                   \
       mixup64(&s->n.a, &s->n.d, fetch64_##ENDIANNES##_##ALIGNESS(v++),         \
@@ -206,26 +200,34 @@ uint64_t t1ha2_atonce(const void *data, size_t length, uint64_t seed) {
   t1ha_state256_t state;
   init_ab(&state, seed, length);
 
-  const bool need_copy4align =
-      (((uintptr_t)data) & (ALIGNMENT_64 - 1)) != 0 && !UNALIGNED_OK;
-  if (need_copy4align) {
-    uint64_t buffer4align[4];
+#if T1HA_CONFIG_UNALIGNED_ACCESS == T1HA_CONFIG_UNALIGNED_ACCESS__EFFICIENT
+  if (unlikely(length > 32)) {
+    init_cd(&state, seed, length);
+    T1HA2_LOOP(le, unaligned, &state, data, length);
+    squash(&state);
+    length &= 31;
+  }
+  T1HA2_TAIL_AB(le, unaligned, &state, data, length);
+#else
+  const bool misaligned = (((uintptr_t)data) & (ALIGNMENT_64 - 1)) != 0;
+  if (misaligned) {
     if (unlikely(length > 32)) {
       init_cd(&state, seed, length);
-      T1HA2_LOOP(le, aligned, buffer4align, &state, data, length);
+      T1HA2_LOOP(le, unaligned, &state, data, length);
       squash(&state);
       length &= 31;
     }
-    T1HA2_TAIL_AB(le, aligned, buffer4align, &state, data, length);
+    T1HA2_TAIL_AB(le, unaligned, &state, data, length);
   } else {
     if (unlikely(length > 32)) {
       init_cd(&state, seed, length);
-      T1HA2_LOOP(le, unaligned, NULL, &state, data, length);
+      T1HA2_LOOP(le, aligned, &state, data, length);
       squash(&state);
       length &= 31;
     }
-    T1HA2_TAIL_AB(le, unaligned, NULL, &state, data, length);
+    T1HA2_TAIL_AB(le, aligned, &state, data, length);
   }
+#endif
 }
 
 uint64_t t1ha2_atonce128(uint64_t *__restrict extra_result,
@@ -235,22 +237,28 @@ uint64_t t1ha2_atonce128(uint64_t *__restrict extra_result,
   init_ab(&state, seed, length);
   init_cd(&state, seed, length);
 
-  const bool need_copy4align =
-      (((uintptr_t)data) & (ALIGNMENT_64 - 1)) != 0 && !UNALIGNED_OK;
-  if (need_copy4align) {
-    uint64_t buffer4align[4];
+#if T1HA_CONFIG_UNALIGNED_ACCESS == T1HA_CONFIG_UNALIGNED_ACCESS__EFFICIENT
+  if (unlikely(length > 32)) {
+    T1HA2_LOOP(le, unaligned, &state, data, length);
+    length &= 31;
+  }
+  T1HA2_TAIL_ABCD(le, unaligned, &state, data, length);
+#else
+  const bool misaligned = (((uintptr_t)data) & (ALIGNMENT_64 - 1)) != 0;
+  if (misaligned) {
     if (unlikely(length > 32)) {
-      T1HA2_LOOP(le, aligned, buffer4align, &state, data, length);
+      T1HA2_LOOP(le, unaligned, &state, data, length);
       length &= 31;
     }
-    T1HA2_TAIL_ABCD(le, aligned, buffer4align, &state, data, length);
+    T1HA2_TAIL_ABCD(le, unaligned, &state, data, length);
   } else {
     if (unlikely(length > 32)) {
-      T1HA2_LOOP(le, unaligned, NULL, &state, data, length);
+      T1HA2_LOOP(le, aligned, &state, data, length);
       length &= 31;
     }
-    T1HA2_TAIL_ABCD(le, unaligned, NULL, &state, data, length);
+    T1HA2_TAIL_ABCD(le, aligned, &state, data, length);
   }
+#endif
 }
 
 //------------------------------------------------------------------------------
@@ -282,13 +290,16 @@ void t1ha2_update(t1ha_context_t *__restrict ctx, const void *__restrict data,
   }
 
   if (length >= 32) {
-    const bool need_copy4align =
-        (((uintptr_t)data) & (ALIGNMENT_64 - 1)) != 0 && !UNALIGNED_OK;
-    if (need_copy4align) {
-      T1HA2_LOOP(le, aligned, ctx->buffer.u64, &ctx->state, data, length);
+#if T1HA_CONFIG_UNALIGNED_ACCESS == T1HA_CONFIG_UNALIGNED_ACCESS__EFFICIENT
+    T1HA2_LOOP(le, unaligned, &ctx->state, data, length);
+#else
+    const bool misaligned = (((uintptr_t)data) & (ALIGNMENT_64 - 1)) != 0;
+    if (misaligned) {
+      T1HA2_LOOP(le, unaligned, &ctx->state, data, length);
     } else {
-      T1HA2_LOOP(le, unaligned, NULL, &ctx->state, data, length);
+      T1HA2_LOOP(le, aligned, &ctx->state, data, length);
     }
+#endif
     length &= 31;
   }
 
@@ -306,13 +317,11 @@ uint64_t t1ha2_final(t1ha_context_t *__restrict ctx,
 
   if (likely(!extra_result)) {
     squash(&ctx->state);
-    T1HA2_TAIL_AB(le, aligned, NULL, &ctx->state, ctx->buffer.u64,
-                  ctx->partial);
+    T1HA2_TAIL_AB(le, aligned, &ctx->state, ctx->buffer.u64, ctx->partial);
     return final64(ctx->state.n.a, ctx->state.n.b);
   }
 
-  T1HA2_TAIL_ABCD(le, aligned, NULL, &ctx->state, ctx->buffer.u64,
-                  ctx->partial);
+  T1HA2_TAIL_ABCD(le, aligned, &ctx->state, ctx->buffer.u64, ctx->partial);
   return final128(ctx->state.n.a, ctx->state.n.b, ctx->state.n.c,
                   ctx->state.n.d, extra_result);
 }

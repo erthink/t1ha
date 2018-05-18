@@ -70,19 +70,23 @@
 #error Unsupported byte order.
 #endif
 
-#if !defined(UNALIGNED_OK)
-#if (defined(__ia32__) || defined(__e2k__) ||                                  \
-     defined(__ARM_FEATURE_UNALIGNED)) &&                                      \
-    !defined(__ALIGNED__)
-#define UNALIGNED_OK 1
-#else
-#define UNALIGNED_OK 0
-#endif
-#endif /* UNALIGNED_OK */
+#define T1HA_CONFIG_UNALIGNED_ACCESS__UNABLE 0
+#define T1HA_CONFIG_UNALIGNED_ACCESS__SLOW 1
+#define T1HA_CONFIG_UNALIGNED_ACCESS__EFFICIENT 2
 
-#if UNALIGNED_OK && !defined(PAGESIZE)
-#define PAGESIZE 4096
-#endif /* PAGESIZE */
+#ifndef T1HA_CONFIG_UNALIGNED_ACCESS
+#if defined(CONFIG_HAVE_EFFICIENT_UNALIGNED_ACCESS)
+#define T1HA_CONFIG_UNALIGNED_ACCESS T1HA_CONFIG_UNALIGNED_ACCESS__EFFICIENT
+#elif defined(__ia32__)
+#define T1HA_CONFIG_UNALIGNED_ACCESS T1HA_CONFIG_UNALIGNED_ACCESS__EFFICIENT
+#elif defined(__e2k__)
+#define T1HA_CONFIG_UNALIGNED_ACCESS T1HA_CONFIG_UNALIGNED_ACCESS__SLOW
+#elif defined(__ARM_FEATURE_UNALIGNED)
+#define T1HA_CONFIG_UNALIGNED_ACCESS T1HA_CONFIG_UNALIGNED_ACCESS__EFFICIENT
+#else
+#define T1HA_CONFIG_UNALIGNED_ACCESS T1HA_CONFIG_UNALIGNED_ACCESS__UNABLE
+#endif
+#endif /* T1HA_CONFIG_UNALIGNED_ACCESS */
 
 #define ALIGNMENT_16 2
 #define ALIGNMENT_32 4
@@ -91,6 +95,10 @@
 #else
 #define ALIGNMENT_64 4
 #endif
+
+#ifndef PAGESIZE
+#define PAGESIZE 4096
+#endif /* PAGESIZE */
 
 /***************************************************************************/
 
@@ -456,48 +464,9 @@ static __always_inline const
 
 /*---------------------------------------------------------- Little Endian */
 
-#ifndef fetch64_le_aligned
-static __always_inline uint64_t fetch64_le_aligned(const void *v) {
-#if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
-  return read_aligned(v, 64);
-#else
-  return bswap64(read_aligned(v, 64));
-#endif
-}
-#endif /* fetch64_le_aligned */
-
-#ifndef fetch64_le_unaligned
-static __always_inline uint64_t fetch64_le_unaligned(const void *v) {
-#if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
-  return read_unaligned(v, 64);
-#else
-  return bswap64(read_unaligned(v, 64));
-#endif
-}
-#endif /* fetch64_le_unaligned */
-
-#ifndef fetch32_le_aligned
-static __always_inline uint32_t fetch32_le_aligned(const void *v) {
-#if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
-  return read_aligned(v, 32);
-#else
-  return bswap32(read_aligned(v, 32));
-#endif
-}
-#endif /* fetch32_le_aligned */
-
-#ifndef fetch32_le_unaligned
-static __always_inline uint32_t fetch32_le_unaligned(const void *v) {
-#if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
-  return read_unaligned(v, 32);
-#else
-  return bswap32(read_unaligned(v, 32));
-#endif
-}
-#endif /* fetch32_le_unaligned */
-
 #ifndef fetch16_le_aligned
 static __always_inline uint16_t fetch16_le_aligned(const void *v) {
+  assert(((uintptr_t)v) % ALIGNMENT_16 == 0);
 #if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
   return read_aligned(v, 16);
 #else
@@ -508,13 +477,64 @@ static __always_inline uint16_t fetch16_le_aligned(const void *v) {
 
 #ifndef fetch16_le_unaligned
 static __always_inline uint16_t fetch16_le_unaligned(const void *v) {
-#if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
+#if T1HA_CONFIG_UNALIGNED_ACCESS == T1HA_CONFIG_UNALIGNED_ACCESS__UNABLE
+  const uint8_t *p = (const uint8_t *)v;
+  return p[0] | (uint16_t)p[1] << 8;
+#elif __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
   return read_unaligned(v, 16);
 #else
   return bswap16(read_unaligned(v, 16));
 #endif
 }
 #endif /* fetch16_le_unaligned */
+
+#ifndef fetch32_le_aligned
+static __always_inline uint32_t fetch32_le_aligned(const void *v) {
+  assert(((uintptr_t)v) % ALIGNMENT_32 == 0);
+#if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
+  return read_aligned(v, 32);
+#else
+  return bswap32(read_aligned(v, 32));
+#endif
+}
+#endif /* fetch32_le_aligned */
+
+#ifndef fetch32_le_unaligned
+static __always_inline uint32_t fetch32_le_unaligned(const void *v) {
+#if T1HA_CONFIG_UNALIGNED_ACCESS == T1HA_CONFIG_UNALIGNED_ACCESS__UNABLE
+  return fetch16_le_unaligned(v) |
+         (uint32_t)fetch16_le_unaligned((const uint8_t *)v + 2) << 16;
+#elif __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
+  return read_unaligned(v, 32);
+#else
+  return bswap32(read_unaligned(v, 32));
+#endif
+}
+#endif /* fetch32_le_unaligned */
+
+#ifndef fetch64_le_aligned
+static __always_inline uint64_t fetch64_le_aligned(const void *v) {
+  assert(((uintptr_t)v) % ALIGNMENT_64 == 0);
+#if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
+  return read_aligned(v, 64);
+#else
+  return bswap64(read_aligned(v, 64));
+#endif
+}
+#endif /* fetch64_le_aligned */
+
+#ifndef fetch64_le_unaligned
+static __always_inline uint64_t fetch64_le_unaligned(const void *v) {
+#if T1HA_CONFIG_UNALIGNED_ACCESS == T1HA_CONFIG_UNALIGNED_ACCESS__UNABLE
+  return fetch32_le_unaligned(v) |
+         (uint64_t)fetch32_le_unaligned((const uint8_t *)v + 4) << 32;
+#elif __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
+  return read_unaligned(v, 64);
+#else
+  return bswap64(read_unaligned(v, 64));
+#endif
+}
+#endif /* fetch64_le_unaligned */
 
 static __always_inline uint64_t tail64_le_aligned(const void *v, size_t tail) {
   const uint8_t *const p = (const uint8_t *)v;
@@ -526,6 +546,9 @@ static __always_inline uint64_t tail64_le_aligned(const void *v, size_t tail) {
 
   uint64_t r = 0;
   switch (tail & 7) {
+  default:
+    unreachable();
+/* fall through */
 #if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
   /* For most CPUs this code is better when not needed byte reordering. */
   case 0:
@@ -582,11 +605,11 @@ static __always_inline uint64_t tail64_le_aligned(const void *v, size_t tail) {
     return r + p[0];
 #endif
   }
-  unreachable();
 }
 
-#if T1HA_USE_FAST_ONESHOT_READ && UNALIGNED_OK && defined(PAGESIZE) &&         \
-    PAGESIZE > 0 && !defined(__SANITIZE_ADDRESS__)
+#if T1HA_USE_FAST_ONESHOT_READ &&                                              \
+    T1HA_CONFIG_UNALIGNED_ACCESS != T1HA_CONFIG_UNALIGNED_ACCESS__UNABLE &&    \
+    defined(PAGESIZE) && PAGESIZE > 42 && !defined(__SANITIZE_ADDRESS__)
 #define can_read_underside(ptr, size)                                          \
   ((size) <= sizeof(uintptr_t) && ((PAGESIZE - (size)) & (uintptr_t)(ptr)) != 0)
 #endif /* can_fast_read */
@@ -609,7 +632,12 @@ static __always_inline uint64_t tail64_le_unaligned(const void *v,
 
   uint64_t r = 0;
   switch (tail & 7) {
-#if UNALIGNED_OK && __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
+  default:
+    unreachable();
+/* fall through */
+#if (T1HA_CONFIG_UNALIGNED_ACCESS ==                                           \
+     T1HA_CONFIG_UNALIGNED_ACCESS__EFFICIENT) &&                               \
+    __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
   /* For most CPUs this code is better when not needed
    * copying for alignment or byte reordering. */
   case 0:
@@ -668,58 +696,14 @@ static __always_inline uint64_t tail64_le_unaligned(const void *v,
     return r + p[0];
 #endif
   }
-  unreachable();
 }
 
 /*------------------------------------------------------------- Big Endian */
 
-#ifndef fetch64_be_aligned
-static __maybe_unused __always_inline uint64_t
-fetch64_be_aligned(const void *v) {
-#if __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
-  return read_aligned(v, 64);
-#else
-  return bswap64(read_aligned(v, 64));
-#endif
-}
-#endif /* fetch64_be_aligned */
-
-#ifndef fetch64_be_unaligned
-static __maybe_unused __always_inline uint64_t
-fetch64_be_unaligned(const void *v) {
-#if __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
-  return read_unaligned(v, 64);
-#else
-  return bswap64(read_unaligned(v, 64));
-#endif
-}
-#endif /* fetch64_be_unaligned */
-
-#ifndef fetch32_be_aligned
-static __maybe_unused __always_inline uint32_t
-fetch32_be_aligned(const void *v) {
-#if __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
-  return read_aligned(v, 32);
-#else
-  return bswap32(read_aligned(v, 32));
-#endif
-}
-#endif /* fetch32_be_aligned */
-
-#ifndef fetch32_be_unaligned
-static __maybe_unused __always_inline uint32_t
-fetch32_be_unaligned(const void *v) {
-#if __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
-  return read_unaligned(v, 32);
-#else
-  return bswap32(read_unaligned(v, 32));
-#endif
-}
-#endif /* fetch32_be_unaligned */
-
 #ifndef fetch16_be_aligned
 static __maybe_unused __always_inline uint16_t
 fetch16_be_aligned(const void *v) {
+  assert(((uintptr_t)v) % ALIGNMENT_16 == 0);
 #if __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
   return read_aligned(v, 16);
 #else
@@ -731,13 +715,68 @@ fetch16_be_aligned(const void *v) {
 #ifndef fetch16_be_unaligned
 static __maybe_unused __always_inline uint16_t
 fetch16_be_unaligned(const void *v) {
-#if __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
+#if T1HA_CONFIG_UNALIGNED_ACCESS == T1HA_CONFIG_UNALIGNED_ACCESS__UNABLE
+  const uint8_t *p = (const uint8_t *)v;
+  return (uint16_t)p[0] << 8 | p[1];
+#elif __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
   return read_unaligned(v, 16);
 #else
   return bswap16(read_unaligned(v, 16));
 #endif
 }
 #endif /* fetch16_be_unaligned */
+
+#ifndef fetch32_be_aligned
+static __maybe_unused __always_inline uint32_t
+fetch32_be_aligned(const void *v) {
+  assert(((uintptr_t)v) % ALIGNMENT_32 == 0);
+#if __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
+  return read_aligned(v, 32);
+#else
+  return bswap32(read_aligned(v, 32));
+#endif
+}
+#endif /* fetch32_be_aligned */
+
+#ifndef fetch32_be_unaligned
+static __maybe_unused __always_inline uint32_t
+fetch32_be_unaligned(const void *v) {
+#if T1HA_CONFIG_UNALIGNED_ACCESS == T1HA_CONFIG_UNALIGNED_ACCESS__UNABLE
+  return (uint32_t)fetch16_be_unaligned(v) << 16 |
+         fetch16_be_unaligned((const uint8_t *)v + 2);
+#elif __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
+  return read_unaligned(v, 32);
+#else
+  return bswap32(read_unaligned(v, 32));
+#endif
+}
+#endif /* fetch32_be_unaligned */
+
+#ifndef fetch64_be_aligned
+static __maybe_unused __always_inline uint64_t
+fetch64_be_aligned(const void *v) {
+  assert(((uintptr_t)v) % ALIGNMENT_64 == 0);
+#if __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
+  return read_aligned(v, 64);
+#else
+  return bswap64(read_aligned(v, 64));
+#endif
+}
+#endif /* fetch64_be_aligned */
+
+#ifndef fetch64_be_unaligned
+static __maybe_unused __always_inline uint64_t
+fetch64_be_unaligned(const void *v) {
+#if T1HA_CONFIG_UNALIGNED_ACCESS == T1HA_CONFIG_UNALIGNED_ACCESS__UNABLE
+  return (uint64_t)fetch32_be_unaligned(v) << 32 |
+         fetch32_be_unaligned((const uint8_t *)v + 4);
+#elif __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
+  return read_unaligned(v, 64);
+#else
+  return bswap64(read_unaligned(v, 64));
+#endif
+}
+#endif /* fetch64_be_unaligned */
 
 static __maybe_unused __always_inline uint64_t tail64_be_aligned(const void *v,
                                                                  size_t tail) {
@@ -749,6 +788,9 @@ static __maybe_unused __always_inline uint64_t tail64_be_aligned(const void *v,
 #endif /* 'oneshot' read */
 
   switch (tail & 7) {
+  default:
+    unreachable();
+/* fall through */
 #if __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
   /* For most CPUs this code is better when not byte reordering. */
   case 1:
@@ -767,7 +809,7 @@ static __maybe_unused __always_inline uint64_t tail64_be_aligned(const void *v,
     return (uint64_t)fetch32_be_aligned(p) << 24 |
            (uint32_t)fetch16_be_aligned(p + 4) << 8 | p[6];
   case 0:
-    return fetch64_be(p);
+    return fetch64_be_aligned(p);
 #else
   case 1:
     return p[0];
@@ -794,7 +836,6 @@ static __maybe_unused __always_inline uint64_t tail64_be_aligned(const void *v,
            (uint64_t)p[1] << 48 | (uint64_t)p[0] << 56;
 #endif
   }
-  unreachable();
 }
 
 static __maybe_unused __always_inline uint64_t
@@ -814,7 +855,12 @@ tail64_be_unaligned(const void *v, size_t tail) {
 #endif /* 'oneshot' read */
 
   switch (tail & 7) {
-#if UNALIGNED_OK && __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
+  default:
+    unreachable();
+/* fall through */
+#if (T1HA_CONFIG_UNALIGNED_ACCESS ==                                           \
+     T1HA_CONFIG_UNALIGNED_ACCESS__EFFICIENT) &&                               \
+    __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
   /* For most CPUs this code is better when not needed
    * copying for alignment or byte reordering. */
   case 1:
@@ -863,7 +909,6 @@ tail64_be_unaligned(const void *v, size_t tail) {
            (uint64_t)p[1] << 48 | (uint64_t)p[0] << 56;
 #endif
   }
-  unreachable();
 }
 
 /***************************************************************************/

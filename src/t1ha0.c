@@ -43,7 +43,8 @@
 
 #include "t1ha_bits.h"
 
-static __always_inline uint32_t tail32_le_aligned(const void *v, size_t tail) {
+static __maybe_unused __always_inline uint32_t tail32_le_aligned(const void *v,
+                                                                 size_t tail) {
   const uint8_t *const p = (const uint8_t *)v;
 #if T1HA_USE_FAST_ONESHOT_READ && !defined(__SANITIZE_ADDRESS__)
   /* We can perform a 'oneshot' read, which is little bit faster. */
@@ -53,6 +54,9 @@ static __always_inline uint32_t tail32_le_aligned(const void *v, size_t tail) {
 
   uint32_t r = 0;
   switch (tail & 3) {
+  default:
+    unreachable();
+/* fall through */
 #if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
   /* For most CPUs this code is better when not needed
    * copying for alignment or byte reordering. */
@@ -82,11 +86,10 @@ static __always_inline uint32_t tail32_le_aligned(const void *v, size_t tail) {
     return r + p[0];
 #endif
   }
-  unreachable();
 }
 
-static __always_inline uint32_t tail32_le_unaligned(const void *v,
-                                                    size_t tail) {
+static __maybe_unused __always_inline uint32_t
+tail32_le_unaligned(const void *v, size_t tail) {
   const uint8_t *p = (const uint8_t *)v;
 #ifdef can_read_underside
   /* On some systems (e.g. x86) we can perform a 'oneshot' read, which
@@ -103,7 +106,12 @@ static __always_inline uint32_t tail32_le_unaligned(const void *v,
 
   uint32_t r = 0;
   switch (tail & 3) {
-#if UNALIGNED_OK && __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
+  default:
+    unreachable();
+/* fall through */
+#if (T1HA_CONFIG_UNALIGNED_ACCESS ==                                           \
+     T1HA_CONFIG_UNALIGNED_ACCESS__EFFICIENT) &&                               \
+    __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
   /* For most CPUs this code is better when not needed
    * copying for alignment or byte reordering. */
   case 0:
@@ -134,10 +142,10 @@ static __always_inline uint32_t tail32_le_unaligned(const void *v,
     return r + p[0];
 #endif
   }
-  unreachable();
 }
 
-static __always_inline uint32_t tail32_be_aligned(const void *v, size_t tail) {
+static __maybe_unused __always_inline uint32_t tail32_be_aligned(const void *v,
+                                                                 size_t tail) {
   const uint8_t *const p = (const uint8_t *)v;
 #if T1HA_USE_FAST_ONESHOT_READ && !defined(__SANITIZE_ADDRESS__)
   /* We can perform a 'oneshot' read, which is little bit faster. */
@@ -146,6 +154,9 @@ static __always_inline uint32_t tail32_be_aligned(const void *v, size_t tail) {
 #endif /* 'oneshot' read */
 
   switch (tail & 3) {
+  default:
+    unreachable();
+/* fall through */
 #if __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
   /* For most CPUs this code is better when not needed
    * copying for alignment or byte reordering. */
@@ -169,11 +180,10 @@ static __always_inline uint32_t tail32_be_aligned(const void *v, size_t tail) {
            (uint32_t)p[0] << 24;
 #endif
   }
-  unreachable();
 }
 
-static __always_inline uint32_t tail32_be_unaligned(const void *v,
-                                                    size_t tail) {
+static __maybe_unused __always_inline uint32_t
+tail32_be_unaligned(const void *v, size_t tail) {
   const uint8_t *p = (const uint8_t *)v;
 #ifdef can_read_underside
   /* On some systems we can perform a 'oneshot' read, which is little bit
@@ -189,7 +199,12 @@ static __always_inline uint32_t tail32_be_unaligned(const void *v,
 #endif /* 'oneshot' read */
 
   switch (tail & 3) {
-#if UNALIGNED_OK && __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
+  default:
+    unreachable();
+/* fall through */
+#if (T1HA_CONFIG_UNALIGNED_ACCESS ==                                           \
+     T1HA_CONFIG_UNALIGNED_ACCESS__EFFICIENT) &&                               \
+    __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
   /* For most CPUs this code is better when not needed
    * copying for alignment or byte reordering. */
   case 1:
@@ -214,7 +229,6 @@ static __always_inline uint32_t tail32_be_unaligned(const void *v,
            (uint32_t)p[0] << 24;
 #endif
   }
-  unreachable();
 }
 
 /***************************************************************************/
@@ -251,17 +265,15 @@ static const uint32_t prime32_4 = UINT32_C(0x86F0FD61);
 static const uint32_t prime32_5 = UINT32_C(0xCA2DA6FB);
 static const uint32_t prime32_6 = UINT32_C(0xC4BB3575);
 
-/* TODO C++ template in the next version */
-#define T1HA0_BODY(ENDIANNES, ALIGNESS, DOCOPY)                                \
+/* TODO: C++ template in the next version */
+#define T1HA0_BODY(ENDIANNES, ALIGNESS)                                        \
+  const uint32_t *v = (const uint32_t *)data;                                  \
   if (unlikely(len > 16)) {                                                    \
     uint32_t c = ~a;                                                           \
     uint32_t d = rot32(b, 5);                                                  \
-    const void *detent = (const uint8_t *)data + len - 15;                     \
+    const uint32_t *detent =                                                   \
+        (const uint32_t *)((const uint8_t *)data + len - 15);                  \
     do {                                                                       \
-      const uint32_t *v = (const uint32_t *)data;                              \
-      if (DOCOPY)                                                              \
-        memcpy((void *)(v = buffer4align), data, 16);                          \
-                                                                               \
       const uint32_t w0 = fetch32_##ENDIANNES##_##ALIGNESS(v + 0);             \
       const uint32_t w1 = fetch32_##ENDIANNES##_##ALIGNESS(v + 1);             \
       const uint32_t w2 = fetch32_##ENDIANNES##_##ALIGNESS(v + 2);             \
@@ -274,8 +286,8 @@ static const uint32_t prime32_6 = UINT32_C(0xC4BB3575);
       b = prime32_1 * (c02 + w3);                                              \
       a = prime32_0 * (d13 ^ w2);                                              \
                                                                                \
-      data = (const uint32_t *)data + 4;                                       \
-    } while (likely(data < detent));                                           \
+      v += 4;                                                                  \
+    } while (likely(v < detent));                                              \
                                                                                \
     c += a;                                                                    \
     d += b;                                                                    \
@@ -284,10 +296,6 @@ static const uint32_t prime32_6 = UINT32_C(0xC4BB3575);
                                                                                \
     len &= 15;                                                                 \
   }                                                                            \
-                                                                               \
-  const uint32_t *v = (const uint32_t *)data;                                  \
-  if (unlikely(need_copy4align) && len > 4)                                    \
-    memcpy((void *)(v = buffer4align), data, len);                             \
                                                                                \
   switch (len) {                                                               \
   default:                                                                     \
@@ -319,26 +327,32 @@ uint64_t t1ha0_32le(const void *data, size_t len, uint64_t seed) {
   uint32_t a = rot32((uint32_t)len, 17) + (uint32_t)seed;
   uint32_t b = (uint32_t)len ^ (uint32_t)(seed >> 32);
 
-  const bool need_copy4align = (((uintptr_t)data) & 3) != 0 && !UNALIGNED_OK;
-  uint32_t buffer4align[4];
-  if (need_copy4align) {
-    T1HA0_BODY(le, aligned, true);
+#if T1HA_CONFIG_UNALIGNED_ACCESS == T1HA_CONFIG_UNALIGNED_ACCESS__EFFICIENT
+  T1HA0_BODY(le, unaligned);
+#else
+  const bool misaligned = (((uintptr_t)data) & (ALIGNMENT_32 - 1)) != 0;
+  if (misaligned) {
+    T1HA0_BODY(le, unaligned);
   } else {
-    T1HA0_BODY(le, unaligned, false);
+    T1HA0_BODY(le, aligned);
   }
+#endif
 }
 
 uint64_t t1ha0_32be(const void *data, size_t len, uint64_t seed) {
   uint32_t a = rot32((uint32_t)len, 17) + (uint32_t)seed;
   uint32_t b = (uint32_t)len ^ (uint32_t)(seed >> 32);
 
-  const bool need_copy4align = (((uintptr_t)data) & 3) != 0 && !UNALIGNED_OK;
-  uint32_t buffer4align[4];
-  if (need_copy4align) {
-    T1HA0_BODY(be, aligned, true);
+#if T1HA_CONFIG_UNALIGNED_ACCESS == T1HA_CONFIG_UNALIGNED_ACCESS__EFFICIENT
+  T1HA0_BODY(be, unaligned);
+#else
+  const bool misaligned = (((uintptr_t)data) & (ALIGNMENT_32 - 1)) != 0;
+  if (misaligned) {
+    T1HA0_BODY(be, unaligned);
   } else {
-    T1HA0_BODY(be, unaligned, false);
+    T1HA0_BODY(be, aligned);
   }
+#endif
 }
 
 /***************************************************************************/

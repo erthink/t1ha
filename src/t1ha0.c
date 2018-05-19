@@ -50,8 +50,7 @@ static __maybe_unused __always_inline uint32_t tail32_le_aligned(const void *v,
   /* We can perform a 'oneshot' read, which is little bit faster. */
   const unsigned shift = ((4 - tail) & 3) << 3;
   return fetch32_le_aligned(p) & ((~UINT32_C(0)) >> shift);
-#endif /* 'oneshot' read */
-
+#else
   uint32_t r = 0;
   switch (tail & 3) {
   default:
@@ -86,6 +85,7 @@ static __maybe_unused __always_inline uint32_t tail32_le_aligned(const void *v,
     return r + p[0];
 #endif
   }
+#endif /* T1HA_USE_FAST_ONESHOT_READ */
 }
 
 static __maybe_unused __always_inline uint32_t
@@ -102,15 +102,13 @@ tail32_le_unaligned(const void *v, size_t tail) {
     return fetch32_le_unaligned(p) >> shift;
   }
   return fetch32_le_unaligned(p) & ((~UINT32_C(0)) >> shift);
-#endif /* 'oneshot' read */
-
+#else
   uint32_t r = 0;
   switch (tail & 3) {
   default:
     unreachable();
 /* fall through */
-#if (T1HA_CONFIG_UNALIGNED_ACCESS ==                                           \
-     T1HA_CONFIG_UNALIGNED_ACCESS__EFFICIENT) &&                               \
+#if T1HA_CONFIG_UNALIGNED_ACCESS == T1HA_CONFIG_UNALIGNED_ACCESS__EFFICIENT && \
     __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
   /* For most CPUs this code is better when not needed
    * copying for alignment or byte reordering. */
@@ -142,6 +140,7 @@ tail32_le_unaligned(const void *v, size_t tail) {
     return r + p[0];
 #endif
   }
+#endif /* can_read_underside */
 }
 
 static __maybe_unused __always_inline uint32_t tail32_be_aligned(const void *v,
@@ -151,8 +150,7 @@ static __maybe_unused __always_inline uint32_t tail32_be_aligned(const void *v,
   /* We can perform a 'oneshot' read, which is little bit faster. */
   const unsigned shift = ((4 - tail) & 3) << 3;
   return fetch32_be_aligned(p) >> shift;
-#endif /* 'oneshot' read */
-
+#else
   switch (tail & 3) {
   default:
     unreachable();
@@ -180,6 +178,7 @@ static __maybe_unused __always_inline uint32_t tail32_be_aligned(const void *v,
            (uint32_t)p[0] << 24;
 #endif
   }
+#endif /* T1HA_USE_FAST_ONESHOT_READ */
 }
 
 static __maybe_unused __always_inline uint32_t
@@ -196,14 +195,12 @@ tail32_be_unaligned(const void *v, size_t tail) {
     return fetch32_be_unaligned(p) & ((~UINT32_C(0)) >> shift);
   }
   return fetch32_be_unaligned(p) >> shift;
-#endif /* 'oneshot' read */
-
+#else
   switch (tail & 3) {
   default:
     unreachable();
 /* fall through */
-#if (T1HA_CONFIG_UNALIGNED_ACCESS ==                                           \
-     T1HA_CONFIG_UNALIGNED_ACCESS__EFFICIENT) &&                               \
+#if T1HA_CONFIG_UNALIGNED_ACCESS == T1HA_CONFIG_UNALIGNED_ACCESS__EFFICIENT && \
     __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
   /* For most CPUs this code is better when not needed
    * copying for alignment or byte reordering. */
@@ -229,6 +226,7 @@ tail32_be_unaligned(const void *v, size_t tail) {
            (uint32_t)p[0] << 24;
 #endif
   }
+#endif /* can_read_underside */
 }
 
 /***************************************************************************/

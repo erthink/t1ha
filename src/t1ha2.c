@@ -319,10 +319,7 @@ uint64_t t1ha2_final(t1ha_context_t *__restrict ctx,
   if (likely(!extra_result)) {
     squash(&ctx->state);
     T1HA2_TAIL_AB(le, aligned, &ctx->state, ctx->buffer.u64, ctx->partial);
-    return final64(ctx->state.n.a, ctx->state.n.b);
   }
 
   T1HA2_TAIL_ABCD(le, aligned, &ctx->state, ctx->buffer.u64, ctx->partial);
-  return final128(ctx->state.n.a, ctx->state.n.b, ctx->state.n.c,
-                  ctx->state.n.d, extra_result);
 }

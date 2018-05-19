@@ -556,8 +556,7 @@ static __always_inline uint64_t tail64_le_aligned(const void *v, size_t tail) {
   /* We can perform a 'oneshot' read, which is little bit faster. */
   const unsigned shift = ((8 - tail) & 7) << 3;
   return fetch64_le_aligned(p) & ((~UINT64_C(0)) >> shift);
-#endif /* 'oneshot' read */
-
+#else
   uint64_t r = 0;
   switch (tail & 7) {
   default:
@@ -619,6 +618,7 @@ static __always_inline uint64_t tail64_le_aligned(const void *v, size_t tail) {
     return r + p[0];
 #endif
   }
+#endif /* T1HA_USE_FAST_ONESHOT_READ */
 }
 
 #if T1HA_USE_FAST_ONESHOT_READ &&                                              \
@@ -626,7 +626,7 @@ static __always_inline uint64_t tail64_le_aligned(const void *v, size_t tail) {
     defined(PAGESIZE) && PAGESIZE > 42 && !defined(__SANITIZE_ADDRESS__)
 #define can_read_underside(ptr, size)                                          \
   ((size) <= sizeof(uintptr_t) && ((PAGESIZE - (size)) & (uintptr_t)(ptr)) != 0)
-#endif /* can_fast_read */
+#endif /* T1HA_USE_FAST_ONESHOT_READ */
 
 static __always_inline uint64_t tail64_le_unaligned(const void *v,
                                                     size_t tail) {
@@ -642,15 +642,13 @@ static __always_inline uint64_t tail64_le_unaligned(const void *v,
     return fetch64_le_unaligned(p) >> shift;
   }
   return fetch64_le_unaligned(p) & ((~UINT64_C(0)) >> shift);
-#endif /* 'oneshot' read */
-
+#else
   uint64_t r = 0;
   switch (tail & 7) {
   default:
     unreachable();
 /* fall through */
-#if (T1HA_CONFIG_UNALIGNED_ACCESS ==                                           \
-     T1HA_CONFIG_UNALIGNED_ACCESS__EFFICIENT) &&                               \
+#if T1HA_CONFIG_UNALIGNED_ACCESS == T1HA_CONFIG_UNALIGNED_ACCESS__EFFICIENT && \
     __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
   /* For most CPUs this code is better when not needed
    * copying for alignment or byte reordering. */
@@ -710,6 +708,7 @@ static __always_inline uint64_t tail64_le_unaligned(const void *v,
     return r + p[0];
 #endif
   }
+#endif /* can_read_underside */
 }
 
 /*------------------------------------------------------------- Big Endian */
@@ -799,8 +798,7 @@ static __maybe_unused __always_inline uint64_t tail64_be_aligned(const void *v,
   /* We can perform a 'oneshot' read, which is little bit faster. */
   const unsigned shift = ((8 - tail) & 7) << 3;
   return fetch64_be_aligned(p) >> shift;
-#endif /* 'oneshot' read */
-
+#else
   switch (tail & 7) {
   default:
     unreachable();
@@ -850,6 +848,7 @@ static __maybe_unused __always_inline uint64_t tail64_be_aligned(const void *v,
            (uint64_t)p[1] << 48 | (uint64_t)p[0] << 56;
 #endif
   }
+#endif /* T1HA_USE_FAST_ONESHOT_READ */
 }
 
 static __maybe_unused __always_inline uint64_t
@@ -866,14 +865,12 @@ tail64_be_unaligned(const void *v, size_t tail) {
     return fetch64_be_unaligned(p) & ((~UINT64_C(0)) >> shift);
   }
   return fetch64_be_unaligned(p) >> shift;
-#endif /* 'oneshot' read */
-
+#else
   switch (tail & 7) {
   default:
     unreachable();
 /* fall through */
-#if (T1HA_CONFIG_UNALIGNED_ACCESS ==                                           \
-     T1HA_CONFIG_UNALIGNED_ACCESS__EFFICIENT) &&                               \
+#if T1HA_CONFIG_UNALIGNED_ACCESS == T1HA_CONFIG_UNALIGNED_ACCESS__EFFICIENT && \
     __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
   /* For most CPUs this code is better when not needed
    * copying for alignment or byte reordering. */
@@ -923,6 +920,7 @@ tail64_be_unaligned(const void *v, size_t tail) {
            (uint64_t)p[1] << 48 | (uint64_t)p[0] << 56;
 #endif
   }
+#endif /* can_read_underside */
 }
 
 /***************************************************************************/

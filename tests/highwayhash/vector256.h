@@ -74,7 +74,7 @@ public:
   static constexpr size_t N = 32;
 
   // Leaves v_ uninitialized - typically used for output parameters.
-  HH_INLINE V256() {}
+  HH_INLINE V256() : v_(_mm256_undefined_si256()) {}
 
   // Broadcasts i to all lanes.
   HH_INLINE explicit V256(T i)

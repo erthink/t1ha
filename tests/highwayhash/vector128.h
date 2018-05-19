@@ -80,7 +80,7 @@ public:
   static constexpr size_t N = 16;
 
   // Leaves v_ uninitialized - typically used for output parameters.
-  HH_INLINE V128() {}
+  HH_INLINE V128() : v_(_mm_undefined_si128()) {}
 
   // Broadcasts i to all lanes (usually by loading from memory).
   HH_INLINE explicit V128(T i) : v_(_mm_set1_epi8(i)) {}

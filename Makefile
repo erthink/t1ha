@@ -112,15 +112,17 @@ HIGHWAYHASH_SRC = $(addprefix tests/highwayhash/, \
 		$(HIGHWAYHASH_SRC) tests/common.h Makefile
 	$(CXX) -I tests $(CXXFLAGS_TEST) -Wno-error -c -o $@ tests/highwayhash/4bench_portable.cc
 
+4bench_highwayhash_avx2.o_ARCH_ia32_CFLAGS = -mavx2
 4bench_highwayhash_avx2.o: $(addprefix tests/highwayhash/, \
 		hh_avx2.cc hh_avx2.h 4bench_avx2.cc) \
 		$(HIGHWAYHASH_SRC) tests/common.h Makefile
-	$(CXX) -I tests $(CXXFLAGS_TEST) -mavx2 -Wno-error -c -o $@ tests/highwayhash/4bench_avx2.cc
+	$(CXX) -I tests $(CXXFLAGS_TEST) $($(@)_ARCH_$(TARGET_ARCH)_CFLAGS) -Wno-error -c -o $@ tests/highwayhash/4bench_avx2.cc
 
+4bench_highwayhash_sse41.o_ARCH_ia32_CFLAGS = -msse4.1
 4bench_highwayhash_sse41.o: $(addprefix tests/highwayhash/, \
 		hh_sse41.cc hh_sse41.h 4bench_sse41.cc) \
 		$(HIGHWAYHASH_SRC) tests/common.h Makefile
-	$(CXX) -I tests $(CXXFLAGS_TEST) -msse4.1 -Wno-error -c -o $@ tests/highwayhash/4bench_sse41.cc
+	$(CXX) -I tests $(CXXFLAGS_TEST) $($(@)_ARCH_$(TARGET_ARCH)_CFLAGS) -Wno-error -c -o $@ tests/highwayhash/4bench_sse41.cc
 
 ifeq ($(TARGET_ARCH_ia32),yes)
 BENCH_EXTRA += 4bench_highwayhash_avx2.o 4bench_highwayhash_sse41.o
@@ -133,6 +135,10 @@ endif
 
 ifeq ($(TARGET_ARCH_ppc),yes)
 BENCH_EXTRA += 4bench_highwayhash_vsx.o
+endif
+
+ifeq ($(TARGET_ARCH_e2k),yes)
+BENCH_EXTRA += 4bench_highwayhash_sse41.o
 endif
 
 4bench_highwayhash_test.o: tests/common.h tests/highwayhash/pure_c.h \

@@ -136,6 +136,9 @@ void bench_size(const unsigned size, const char *caption) {
     if (ia32_cpu_features.extended_7.ebx & 32)
       bench("HighwayHash64_avx2", thunk_HighwayHash64_AVX2, buffer, size, seed);
 #endif
+#ifdef __e2k__
+    bench("HighwayHash64_sse41", thunk_HighwayHash64_SSE41, buffer, size, seed);
+#endif
     /* TODO: thunk_HighwayHash64_VSX() */
   }
   free(buffer);

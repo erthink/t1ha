@@ -272,6 +272,9 @@ int main(int argc, const char *argv[]) {
   if (ia32_cpu_features.extended_7.ebx & 32)
     HighwayHash64_verify(HighwayHash64_AVX2, "HighwayHash64_avx2");
 #endif
+#ifdef __e2k__
+  HighwayHash64_verify(HighwayHash64_SSE41, "HighwayHash64_sse41");
+#endif
 
   if (failed)
     return EXIT_FAILURE;

@@ -67,6 +67,15 @@ template <typename T> class V256 {};
 #define _mm_cvtsi64_si128(V64) _mm_set_epi64x(0, V64)
 #endif
 
+#if (HH_GCC_VERSION && HH_GCC_VERSION < 490 && !HH_CLANG_VERSION) ||           \
+    (HH_CLANG_VERSION && !__has_builtin(__builtin_ia32_undef256))
+extern __inline __m256i __attribute__((__gnu_inline__, __always_inline__))
+_mm256_undefined_si256(void) {
+  __m256i __Y = __Y;
+  return __Y;
+}
+#endif
+
 template <> class V256<uint8_t> {
 public:
   using Intrinsic = __m256i;

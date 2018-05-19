@@ -46,6 +46,10 @@
 
 //-----------------------------------------------------------------------------
 
+#ifndef __has_builtin
+#define __has_builtin(x) (0)
+#endif
+
 #if HH_GCC_VERSION && HH_GCC_VERSION < 408
 #define HH_ALIGNAS(object, multiple) object __attribute__((aligned(multiple)))
 #elif HH_MSC_VERSION && HH_MSC_VERSION < 1900

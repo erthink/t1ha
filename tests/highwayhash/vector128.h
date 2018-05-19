@@ -73,6 +73,15 @@ template <typename T> class V128 {};
 #define _mm_cvtsi64_si128(V64) _mm_set_epi64x(0, V64)
 #endif
 
+#if (HH_GCC_VERSION && HH_GCC_VERSION < 490 && !HH_CLANG_VERSION) ||           \
+    (HH_CLANG_VERSION && !__has_builtin(__builtin_ia32_undef128))
+extern __inline __m128i __attribute__((__gnu_inline__, __always_inline__))
+_mm_undefined_si128(void) {
+  __m128i __Y = __Y;
+  return __Y;
+}
+#endif
+
 template <> class V128<uint8_t> {
 public:
   using Intrinsic = __m128i;

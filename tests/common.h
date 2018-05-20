@@ -34,7 +34,9 @@
 #if _MSC_VER > 1800
 #pragma warning(disable : 4464) /* relative include path contains '..' */
 #endif
-#endif /* MSVC */
+#pragma warning(disable : 4204) /* nonstandard extension used: non-constant    \
+                                   aggregate initializer */
+#endif                          /* MSVC */
 
 #include "../t1ha.h" /* for T1HA0_AESNI_AVAILABLE, __ia32__, etc */
 #include "mera.h"    /* for ia32_cpu_features */
@@ -45,7 +47,8 @@ enum test_flags {
   hash_stdin_strings = 1u << 2,
   bench_verbose = 1u << 3,
   bench_xxhash = 1u << 4,
-  /*  5, 6, 7 */
+  bench_highwayhash = 1u << 5,
+  /* 6, 7 */
 
   bench_0 = 1u << 8,
   bench_1 = 1u << 9,
@@ -69,7 +72,7 @@ enum test_flags {
   bench_64 = 1u << 25,
   bench_le = 1u << 26,
   bench_be = 1u << 27,
-#if T1HA0_AESNI_AVAILABLE
+#if T1HA0_AESNI_AVAILABLE || defined(__ia32__)
   bench_aes = 1u << 28,
   bench_avx = 1u << 29,
 #ifndef __e2k__
@@ -81,7 +84,7 @@ enum test_flags {
   bench_funcs_flags = bench_0 | bench_1 | bench_2 | bench_3 | bench_4 |
                       bench_5 | bench_6 | bench_7 | bench_32 | bench_64 |
                       bench_le | bench_be | 1u << 28 | 1u << 29 | 1u << 30 |
-                      1u << 31 | bench_xxhash
+                      1u << 31 | bench_xxhash | bench_highwayhash
 };
 
 extern unsigned option_flags, disabled_option_flags;
@@ -134,6 +137,36 @@ void bench(const char *caption,
 void bench_size(const unsigned size, const char *caption);
 
 /*****************************************************************************/
-/* xxHash - just for comparison */
+/* Other hashes, just for comparison */
+
+/* xxHash */
 uint64_t XXH64(const void *input, size_t length, uint64_t seed);
 uint32_t XXH32(const void *input, size_t length, uint32_t seed);
+
+/* HighwayHash */
+typedef uint64_t (*HighwayHash64_t)(const uint64_t key[4], const uint8_t *data,
+                                    size_t size);
+
+bool HighwayHash64_verify(HighwayHash64_t fn, const char *title);
+
+/* HighwayHash C */
+#include "highwayhash/pure_c.h"
+
+/* HighwayHash CXX */
+uint64_t HighwayHash64_Portable(const uint64_t key[4], const uint8_t *data,
+                                size_t size);
+uint64_t HighwayHash64_AVX2(const uint64_t key[4], const uint8_t *data,
+                            size_t size);
+uint64_t HighwayHash64_SSE41(const uint64_t key[4], const uint8_t *data,
+                             size_t size);
+uint64_t HighwayHash64_VSX(const uint64_t key[4], const uint8_t *data,
+                           size_t size);
+
+uint64_t thunk_HighwayHash64_Portable(const void *input, size_t length,
+                                      uint64_t seed);
+uint64_t thunk_HighwayHash64_AVX2(const void *input, size_t length,
+                                  uint64_t seed);
+uint64_t thunk_HighwayHash64_SSE41(const void *input, size_t length,
+                                   uint64_t seed);
+uint64_t thunk_HighwayHash64_VSX(const void *input, size_t length,
+                                 uint64_t seed);

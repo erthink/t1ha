@@ -301,7 +301,7 @@ public:
   // Lane 0 (p_0) is the lowest.
   HH_INLINE V256(T p_3, T p_2, T p_1, T p_0)
 #if defined(_MSC_VER) && defined(_M_IX86) && _MSC_VER < 1900
-    {
+  {
     union {
       uint64_t u64x4[4];
       __m256i m256i;
@@ -313,7 +313,8 @@ public:
     v_ = x.m256i;
   }
 #else
-      : v_(_mm256_set_epi64x(p_3, p_2, p_1, p_0)) {}
+      : v_(_mm256_set_epi64x(p_3, p_2, p_1, p_0)) {
+  }
 #endif
 
   // Broadcasts i to all lanes.

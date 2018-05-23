@@ -41,6 +41,7 @@
  * for The 1Hippeus project - zerocopy messaging in the spirit of Sparta!
  */
 
+#ifndef T1HA0_DISABLED
 #include "t1ha_bits.h"
 
 static __maybe_unused __always_inline uint32_t tail32_le_aligned(const void *v,
@@ -404,14 +405,24 @@ static
 #endif /* T1HA0_AESNI_AVAILABLE && __ia32__ */
 
 #if __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
-#if UINTPTR_MAX > 0xffffFFFFul || ULONG_MAX > 0xffffFFFFul
+#if (UINTPTR_MAX > 0xffffFFFFul || ULONG_MAX > 0xffffFFFFul) &&                \
+    (!defined(T1HA1_DISABLED) || !defined(T1HA2_DISABLED))
+#ifndef T1HA1_DISABLED
   return t1ha1_be;
+#else
+  return t1ha2_atonce;
+#endif /* T1HA1_DISABLED */
 #else
   return t1ha0_32be;
 #endif
 #else /* __BYTE_ORDER__ != __ORDER_BIG_ENDIAN__ */
-#if UINTPTR_MAX > 0xffffFFFFul || ULONG_MAX > 0xffffFFFFul
+#if (UINTPTR_MAX > 0xffffFFFFul || ULONG_MAX > 0xffffFFFFul) &&                \
+    (!defined(T1HA1_DISABLED) || !defined(T1HA2_DISABLED))
+#ifndef T1HA1_DISABLED
   return t1ha1_le;
+#else
+  return t1ha2_atonce;
+#endif /* T1HA1_DISABLED */
 #else
   return t1ha0_32le;
 #endif
@@ -450,3 +461,5 @@ uint64_t (*t1ha0_funcptr)(const void *, size_t, uint64_t) = t1ha0_proxy;
 
 #endif /* !T1HA_USE_INDIRECT_FUNCTIONS */
 #endif /* T1HA0_RUNTIME_SELECT */
+
+#endif /* T1HA0_DISABLED */

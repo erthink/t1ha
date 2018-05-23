@@ -41,6 +41,7 @@
  * for The 1Hippeus project - zerocopy messaging in the spirit of Sparta!
  */
 
+#ifndef T1HA2_DISABLED
 #include "t1ha_bits.h"
 
 static __always_inline void init_ab(t1ha_state256_t *s, uint64_t x,
@@ -323,3 +324,5 @@ uint64_t t1ha2_final(t1ha_context_t *__restrict ctx,
 
   T1HA2_TAIL_ABCD(le, aligned, &ctx->state, ctx->buffer.u64, ctx->partial);
 }
+
+#endif /* T1HA2_DISABLED */

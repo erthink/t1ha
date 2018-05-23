@@ -44,6 +44,7 @@ static const uint8_t pattern[64] = {
   'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x'
 };
 
+#ifndef T1HA2_DISABLED
 const uint64_t refval_2atonce[81] = { 0,
   0x772C7311BE32FF42, 0x444753D23F207E03, 0x71F6DF5DA3B4F532, 0x555859635365F660,
   0xE98808F1CD39C626, 0x2EB18FAF2163BB09, 0x7B9DD892C8019C87, 0xE2B1431C4DA4D15A,
@@ -135,7 +136,9 @@ const uint64_t refval_2stream128[81] = { 0xCD2801D3B92237D6,
   0x6A371F966E034A54, 0x8789CF41AE4D67EF, 0x02688755484D60AE, 0xD5834B3A4BF5CE42,
   0x9405FC61440DE25D, 0x35EB280A157979B6, 0x48D40D6A525297AC, 0x6A87DC185054BADA
 };
+#endif /* T1HA2_DISABLED */
 
+#ifndef T1HA1_DISABLED
 const uint64_t refval_64le[81] = { 0,
   0x6A580668D6048674, 0xA2FE904AFF0D0879, 0xE3AB9C06FAF4D023, 0x6AF1C60874C95442,
   0xB3557E561A6C5D82, 0x0AE73C696F3D37C0, 0x5EF25F7062324941, 0x9B784F3B4CE6AF33,
@@ -181,7 +184,9 @@ const uint64_t refval_64be[81] = { 0,
   0xC35F6C2B3B553EEF, 0x59529E8B0DC94C1A, 0x1569DF036EBC4FA1, 0xDA32B88593C118F9,
   0xF01E4155FF5A5660, 0x765A2522DCE2B185, 0xCEE95554128073EF, 0x60F072A5CA51DE2F
 };
+#endif /* T1HA1_DISABLED */
 
+#ifndef T1HA0_DISABLED
 const uint64_t refval_32le[81] = { 0,
   0xC92229C10FAEA50E, 0x3DF1354B0DFDC443, 0x968F016D60417BB3, 0x85AAFB50C6DA770F,
   0x66CCE3BB6842C7D6, 0xDDAA39C11537C226, 0x35958D281F0C9C8C, 0x8C5D64B091DE608E,
@@ -275,12 +280,14 @@ const uint64_t refval_ia32aes_b[81] = { 0,
   0xA494842ACF4B802C, 0xFC6D9CDDE2C34A3F, 0x4ED6863CE455F7A7, 0x630914D0DB7AAE98
 };
 #endif /* T1HA0_AESNI_AVAILABLE */
+#endif /* T1HA0_DISABLED */
 
 /* *INDENT-ON* */
 /* clang-format on */
 
 /*****************************************************************************/
 
+#ifndef T1HA2_DISABLED
 uint64_t thunk_t1ha2_atonce128(const void *data, size_t len, uint64_t seed) {
   uint64_t unused;
   return t1ha2_atonce128(&unused, data, len, seed);
@@ -300,6 +307,7 @@ uint64_t thunk_t1ha2_stream128(const void *data, size_t len, uint64_t seed) {
   uint64_t unused;
   return t1ha2_final(&ctx, &unused);
 }
+#endif /* T1HA2_DISABLED */
 
 static bool probe(uint64_t (*hash)(const void *, size_t, uint64_t),
                   const char *caption, const uint64_t check, const void *data,

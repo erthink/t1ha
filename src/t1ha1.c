@@ -41,6 +41,7 @@
  * for The 1Hippeus project - zerocopy messaging in the spirit of Sparta!
  */
 
+#ifndef T1HA1_DISABLED
 #include "t1ha_bits.h"
 
 /* xor-mul-xor mixer */
@@ -155,3 +156,5 @@ uint64_t t1ha1_be(const void *data, size_t len, uint64_t seed) {
   }
 #endif
 }
+
+#endif /* T1HA1_DISABLED */

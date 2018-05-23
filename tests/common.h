@@ -142,6 +142,7 @@ void bench_size(const unsigned size, const char *caption);
 /* xxHash */
 uint64_t XXH64(const void *input, size_t length, uint64_t seed);
 uint32_t XXH32(const void *input, size_t length, uint32_t seed);
+uint64_t thunk_XXH32(const void *input, size_t length, uint64_t seed);
 
 /* HighwayHash */
 typedef uint64_t (*HighwayHash64_t)(const uint64_t key[4], const uint8_t *data,
@@ -151,6 +152,8 @@ bool HighwayHash64_verify(HighwayHash64_t fn, const char *title);
 
 /* HighwayHash C */
 #include "highwayhash/pure_c.h"
+uint64_t thunk_HighwayHash64_pure_c(const void *input, size_t length,
+                                    uint64_t seed);
 
 /* HighwayHash CXX */
 uint64_t HighwayHash64_Portable(const uint64_t key[4], const uint8_t *data,

@@ -285,7 +285,17 @@ int main(int argc, const char *argv[]) {
     uint64_t (*hash_function)(const void *data, size_t length, uint64_t seed) =
         NULL;
     const char *hash_name = NULL;
-    if (is_selected(bench_64 | bench_2)) {
+
+    if (is_selected(bench_highwayhash)) {
+      hash_function = thunk_HighwayHash64_pure_c;
+      hash_name = "HighwayHash64";
+    } else if (is_selected(bench_64 | bench_xxhash)) {
+      hash_function = XXH64;
+      hash_name = "xxhash64";
+    } else if (is_selected(bench_32 | bench_xxhash)) {
+      hash_function = thunk_XXH32;
+      hash_name = "xxhash32";
+    } else if (is_selected(bench_64 | bench_2)) {
       hash_function = t1ha2_atonce;
       hash_name = "t1ha2_atonce";
     } else if (is_selected(bench_64 | bench_le | bench_1)) {
@@ -303,12 +313,9 @@ int main(int argc, const char *argv[]) {
     } else if (is_selected(bench_0)) {
       hash_function = t1ha0;
       hash_name = "t1ha0";
-    } else if (is_selected(bench_xxhash)) {
-      hash_function = XXH64;
-      hash_name = "xxhash64";
     } else {
-      hash_function = t1ha1_le;
-      hash_name = "t1ha-default";
+      fprintf(stderr, "hash-function should be selected explicitly\n");
+      return EXIT_FAILURE;
     }
 
     size_t buffer_size =

@@ -65,12 +65,12 @@ void bench(const char *caption,
   fflush(NULL);
 }
 
-static uint64_t thunk_XXH32(const void *input, size_t length, uint64_t seed) {
+uint64_t thunk_XXH32(const void *input, size_t length, uint64_t seed) {
   return XXH32(input, length, (uint32_t)seed);
 }
 
-static uint64_t thunk_HighwayHash64_portable(const void *input, size_t length,
-                                             uint64_t seed) {
+uint64_t thunk_HighwayHash64_pure_c(const void *input, size_t length,
+                                    uint64_t seed) {
   uint64_t key[4] = {seed, seed, seed, seed};
   return HighwayHash64_pure_c(key, input, length);
 }
@@ -125,7 +125,7 @@ void bench_size(const unsigned size, const char *caption) {
     bench("xxhash64", XXH64, buffer, size, (uint32_t)seed);
   }
   if (is_selected(bench_highwayhash)) {
-    bench("HighwayHash64_pure_c", thunk_HighwayHash64_portable, buffer, size,
+    bench("HighwayHash64_pure_c", thunk_HighwayHash64_pure_c, buffer, size,
           seed);
     bench("HighwayHash64_portable", thunk_HighwayHash64_Portable, buffer, size,
           seed);

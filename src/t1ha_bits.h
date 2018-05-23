@@ -70,23 +70,23 @@
 #error Unsupported byte order.
 #endif
 
-#define T1HA_CONFIG_UNALIGNED_ACCESS__UNABLE 0
-#define T1HA_CONFIG_UNALIGNED_ACCESS__SLOW 1
-#define T1HA_CONFIG_UNALIGNED_ACCESS__EFFICIENT 2
+#define T1HA_UNALIGNED_ACCESS__UNABLE 0
+#define T1HA_UNALIGNED_ACCESS__SLOW 1
+#define T1HA_UNALIGNED_ACCESS__EFFICIENT 2
 
-#ifndef T1HA_CONFIG_UNALIGNED_ACCESS
+#ifndef T1HA_SYS_UNALIGNED_ACCESS
 #if defined(CONFIG_HAVE_EFFICIENT_UNALIGNED_ACCESS)
-#define T1HA_CONFIG_UNALIGNED_ACCESS T1HA_CONFIG_UNALIGNED_ACCESS__EFFICIENT
+#define T1HA_SYS_UNALIGNED_ACCESS T1HA_UNALIGNED_ACCESS__EFFICIENT
 #elif defined(__ia32__)
-#define T1HA_CONFIG_UNALIGNED_ACCESS T1HA_CONFIG_UNALIGNED_ACCESS__EFFICIENT
+#define T1HA_SYS_UNALIGNED_ACCESS T1HA_UNALIGNED_ACCESS__EFFICIENT
 #elif defined(__e2k__)
-#define T1HA_CONFIG_UNALIGNED_ACCESS T1HA_CONFIG_UNALIGNED_ACCESS__SLOW
+#define T1HA_SYS_UNALIGNED_ACCESS T1HA_UNALIGNED_ACCESS__SLOW
 #elif defined(__ARM_FEATURE_UNALIGNED)
-#define T1HA_CONFIG_UNALIGNED_ACCESS T1HA_CONFIG_UNALIGNED_ACCESS__EFFICIENT
+#define T1HA_SYS_UNALIGNED_ACCESS T1HA_UNALIGNED_ACCESS__EFFICIENT
 #else
-#define T1HA_CONFIG_UNALIGNED_ACCESS T1HA_CONFIG_UNALIGNED_ACCESS__UNABLE
+#define T1HA_SYS_UNALIGNED_ACCESS T1HA_UNALIGNED_ACCESS__UNABLE
 #endif
-#endif /* T1HA_CONFIG_UNALIGNED_ACCESS */
+#endif /* T1HA_SYS_UNALIGNED_ACCESS */
 
 #define ALIGNMENT_16 2
 #define ALIGNMENT_32 4
@@ -491,7 +491,7 @@ static __always_inline uint16_t fetch16_le_aligned(const void *v) {
 
 #ifndef fetch16_le_unaligned
 static __always_inline uint16_t fetch16_le_unaligned(const void *v) {
-#if T1HA_CONFIG_UNALIGNED_ACCESS == T1HA_CONFIG_UNALIGNED_ACCESS__UNABLE
+#if T1HA_SYS_UNALIGNED_ACCESS == T1HA_UNALIGNED_ACCESS__UNABLE
   const uint8_t *p = (const uint8_t *)v;
   return p[0] | (uint16_t)p[1] << 8;
 #elif __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
@@ -515,7 +515,7 @@ static __always_inline uint32_t fetch32_le_aligned(const void *v) {
 
 #ifndef fetch32_le_unaligned
 static __always_inline uint32_t fetch32_le_unaligned(const void *v) {
-#if T1HA_CONFIG_UNALIGNED_ACCESS == T1HA_CONFIG_UNALIGNED_ACCESS__UNABLE
+#if T1HA_SYS_UNALIGNED_ACCESS == T1HA_UNALIGNED_ACCESS__UNABLE
   return fetch16_le_unaligned(v) |
          (uint32_t)fetch16_le_unaligned((const uint8_t *)v + 2) << 16;
 #elif __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
@@ -539,7 +539,7 @@ static __always_inline uint64_t fetch64_le_aligned(const void *v) {
 
 #ifndef fetch64_le_unaligned
 static __always_inline uint64_t fetch64_le_unaligned(const void *v) {
-#if T1HA_CONFIG_UNALIGNED_ACCESS == T1HA_CONFIG_UNALIGNED_ACCESS__UNABLE
+#if T1HA_SYS_UNALIGNED_ACCESS == T1HA_UNALIGNED_ACCESS__UNABLE
   return fetch32_le_unaligned(v) |
          (uint64_t)fetch32_le_unaligned((const uint8_t *)v + 4) << 32;
 #elif __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
@@ -622,7 +622,7 @@ static __always_inline uint64_t tail64_le_aligned(const void *v, size_t tail) {
 }
 
 #if T1HA_USE_FAST_ONESHOT_READ &&                                              \
-    T1HA_CONFIG_UNALIGNED_ACCESS != T1HA_CONFIG_UNALIGNED_ACCESS__UNABLE &&    \
+    T1HA_SYS_UNALIGNED_ACCESS != T1HA_UNALIGNED_ACCESS__UNABLE &&              \
     defined(PAGESIZE) && PAGESIZE > 42 && !defined(__SANITIZE_ADDRESS__)
 #define can_read_underside(ptr, size)                                          \
   ((size) <= sizeof(uintptr_t) && ((PAGESIZE - (size)) & (uintptr_t)(ptr)) != 0)
@@ -648,7 +648,7 @@ static __always_inline uint64_t tail64_le_unaligned(const void *v,
   default:
     unreachable();
 /* fall through */
-#if T1HA_CONFIG_UNALIGNED_ACCESS == T1HA_CONFIG_UNALIGNED_ACCESS__EFFICIENT && \
+#if T1HA_SYS_UNALIGNED_ACCESS == T1HA_UNALIGNED_ACCESS__EFFICIENT &&           \
     __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
   /* For most CPUs this code is better when not needed
    * copying for alignment or byte reordering. */
@@ -728,7 +728,7 @@ fetch16_be_aligned(const void *v) {
 #ifndef fetch16_be_unaligned
 static __maybe_unused __always_inline uint16_t
 fetch16_be_unaligned(const void *v) {
-#if T1HA_CONFIG_UNALIGNED_ACCESS == T1HA_CONFIG_UNALIGNED_ACCESS__UNABLE
+#if T1HA_SYS_UNALIGNED_ACCESS == T1HA_UNALIGNED_ACCESS__UNABLE
   const uint8_t *p = (const uint8_t *)v;
   return (uint16_t)p[0] << 8 | p[1];
 #elif __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
@@ -754,7 +754,7 @@ fetch32_be_aligned(const void *v) {
 #ifndef fetch32_be_unaligned
 static __maybe_unused __always_inline uint32_t
 fetch32_be_unaligned(const void *v) {
-#if T1HA_CONFIG_UNALIGNED_ACCESS == T1HA_CONFIG_UNALIGNED_ACCESS__UNABLE
+#if T1HA_SYS_UNALIGNED_ACCESS == T1HA_UNALIGNED_ACCESS__UNABLE
   return (uint32_t)fetch16_be_unaligned(v) << 16 |
          fetch16_be_unaligned((const uint8_t *)v + 2);
 #elif __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
@@ -780,7 +780,7 @@ fetch64_be_aligned(const void *v) {
 #ifndef fetch64_be_unaligned
 static __maybe_unused __always_inline uint64_t
 fetch64_be_unaligned(const void *v) {
-#if T1HA_CONFIG_UNALIGNED_ACCESS == T1HA_CONFIG_UNALIGNED_ACCESS__UNABLE
+#if T1HA_SYS_UNALIGNED_ACCESS == T1HA_UNALIGNED_ACCESS__UNABLE
   return (uint64_t)fetch32_be_unaligned(v) << 32 |
          fetch32_be_unaligned((const uint8_t *)v + 4);
 #elif __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
@@ -870,7 +870,7 @@ tail64_be_unaligned(const void *v, size_t tail) {
   default:
     unreachable();
 /* fall through */
-#if T1HA_CONFIG_UNALIGNED_ACCESS == T1HA_CONFIG_UNALIGNED_ACCESS__EFFICIENT && \
+#if T1HA_SYS_UNALIGNED_ACCESS == T1HA_UNALIGNED_ACCESS__EFFICIENT &&           \
     __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
   /* For most CPUs this code is better when not needed
    * copying for alignment or byte reordering. */

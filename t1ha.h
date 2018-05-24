@@ -537,6 +537,16 @@ uint64_t t1ha0_ia32aes_avx2(const void *data, size_t length, uint64_t seed);
 #endif
 #endif /* T1HA0_AESNI_AVAILABLE */
 
+#ifndef __force_inline
+#ifdef _MSC_VER
+#define __force_inline __forceinline
+#elif __GNUC_PREREQ(3, 2) || __has_attribute(always_inline)
+#define __force_inline __inline __attribute__((always_inline))
+#else
+#define __force_inline __inline
+#endif
+#endif /* __force_inline */
+
 #if T1HA0_RUNTIME_SELECT
 #if T1HA_USE_INDIRECT_FUNCTIONS
 T1HA_API uint64_t t1ha0(const void *data, size_t length, uint64_t seed);
@@ -545,13 +555,15 @@ T1HA_API uint64_t t1ha0(const void *data, size_t length, uint64_t seed);
  * Unfortunately this may cause some overhead calling. */
 T1HA_API extern uint64_t (*t1ha0_funcptr)(const void *data, size_t length,
                                           uint64_t seed);
-static __inline uint64_t t1ha0(const void *data, size_t length, uint64_t seed) {
+static __force_inline uint64_t t1ha0(const void *data, size_t length,
+                                     uint64_t seed) {
   return t1ha0_funcptr(data, length, seed);
 }
 #endif /* T1HA_USE_INDIRECT_FUNCTIONS */
 
 #elif __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
-static __inline uint64_t t1ha0(const void *data, size_t length, uint64_t seed) {
+static __force_inline uint64_t t1ha0(const void *data, size_t length,
+                                     uint64_t seed) {
 #if (UINTPTR_MAX > 0xffffFFFFul || ULONG_MAX > 0xffffFFFFul) &&                \
     (!defined(T1HA1_DISABLED) || !defined(T1HA2_DISABLED))
 #ifndef T1HA1_DISABLED
@@ -564,7 +576,8 @@ static __inline uint64_t t1ha0(const void *data, size_t length, uint64_t seed) {
 #endif
 }
 #else
-static __inline uint64_t t1ha0(const void *data, size_t length, uint64_t seed) {
+static __force_inline uint64_t t1ha0(const void *data, size_t length,
+                                     uint64_t seed) {
 #if (UINTPTR_MAX > 0xffffFFFFul || ULONG_MAX > 0xffffFFFFul) &&                \
     (!defined(T1HA1_DISABLED) || !defined(T1HA2_DISABLED))
 #ifndef T1HA1_DISABLED

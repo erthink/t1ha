@@ -529,6 +529,14 @@ uint64_t t1ha0_32be(const void *data, size_t length, uint64_t seed);
 #endif
 #endif /* T1HA0_RUNTIME_SELECT */
 
+#if !T1HA0_RUNTIME_SELECT && !defined(T1HA0_USE_DEFINE)
+#if defined(__LCC__)
+#define T1HA0_USE_DEFINE 1
+#else
+#define T1HA0_USE_DEFINE 0
+#endif
+#endif /* T1HA0_USE_DEFINE */
+
 #if T1HA0_AESNI_AVAILABLE
 uint64_t t1ha0_ia32aes_noavx(const void *data, size_t length, uint64_t seed);
 uint64_t t1ha0_ia32aes_avx(const void *data, size_t length, uint64_t seed);
@@ -562,6 +570,22 @@ static __force_inline uint64_t t1ha0(const void *data, size_t length,
 #endif /* T1HA_USE_INDIRECT_FUNCTIONS */
 
 #elif __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
+
+#if T1HA0_USE_DEFINE
+
+#if (UINTPTR_MAX > 0xffffFFFFul || ULONG_MAX > 0xffffFFFFul) &&                \
+    (!defined(T1HA1_DISABLED) || !defined(T1HA2_DISABLED))
+#if defined(T1HA1_DISABLED)
+#define t1ha0 t1ha2_atonce
+#else
+#define t1ha0 t1ha1_be
+#endif /* T1HA1_DISABLED */
+#else  /* 32/64 */
+#define t1ha0 t1ha0_32be
+#endif /* 32/64 */
+
+#else /* T1HA0_USE_DEFINE */
+
 static __force_inline uint64_t t1ha0(const void *data, size_t length,
                                      uint64_t seed) {
 #if (UINTPTR_MAX > 0xffffFFFFul || ULONG_MAX > 0xffffFFFFul) &&                \
@@ -571,11 +595,30 @@ static __force_inline uint64_t t1ha0(const void *data, size_t length,
 #else
   return t1ha2_atonce(data, length, seed);
 #endif /* T1HA1_DISABLED */
-#else
+#else  /* 32/64 */
   return t1ha0_32be(data, length, seed);
-#endif
+#endif /* 32/64 */
 }
+
+#endif /* !T1HA0_USE_DEFINE */
+
+#else /* !T1HA0_RUNTIME_SELECT && __BYTE_ORDER__ != __ORDER_BIG_ENDIAN__ */
+
+#if T1HA0_USE_DEFINE
+
+#if (UINTPTR_MAX > 0xffffFFFFul || ULONG_MAX > 0xffffFFFFul) &&                \
+    (!defined(T1HA1_DISABLED) || !defined(T1HA2_DISABLED))
+#if defined(T1HA1_DISABLED)
+#define t1ha0 t1ha2_atonce
 #else
+#define t1ha0 t1ha1_le
+#endif /* T1HA1_DISABLED */
+#else  /* 32/64 */
+#define t1ha0 t1ha0_32le
+#endif /* 32/64 */
+
+#else
+
 static __force_inline uint64_t t1ha0(const void *data, size_t length,
                                      uint64_t seed) {
 #if (UINTPTR_MAX > 0xffffFFFFul || ULONG_MAX > 0xffffFFFFul) &&                \
@@ -585,10 +628,13 @@ static __force_inline uint64_t t1ha0(const void *data, size_t length,
 #else
   return t1ha2_atonce(data, length, seed);
 #endif /* T1HA1_DISABLED */
-#else
+#else  /* 32/64 */
   return t1ha0_32le(data, length, seed);
-#endif
+#endif /* 32/64 */
 }
+
+#endif /* !T1HA0_USE_DEFINE */
+
 #endif /* !T1HA0_RUNTIME_SELECT */
 
 #endif /* T1HA0_DISABLED */

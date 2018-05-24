@@ -280,10 +280,10 @@ static const uint32_t prime32_6 = UINT32_C(0xC4BB3575);
       v += 4;                                                                  \
       prefetch(v);                                                             \
                                                                                \
-      const uint32_t c02 = w0 ^ rot32(w2 + c, 11);                             \
       const uint32_t d13 = w1 + rot32(w3 + d, 17);                             \
-      c ^= rot32(b + w1, 7);                                                   \
+      const uint32_t c02 = w0 ^ rot32(w2 + c, 11);                             \
       d ^= rot32(a + w0, 3);                                                   \
+      c ^= rot32(b + w1, 7);                                                   \
       b = prime32_1 * (c02 + w3);                                              \
       a = prime32_0 * (d13 ^ w2);                                              \
     } while (likely(v < detent));                                              \

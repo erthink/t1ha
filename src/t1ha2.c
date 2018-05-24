@@ -67,8 +67,8 @@ static __always_inline void init_cd(t1ha_state256_t *s, uint64_t x,
                                                                                \
     const uint64_t d02 = w0 + rot64(w2 + s->n.d, 56);                          \
     const uint64_t c13 = w1 + rot64(w3 + s->n.c, 19);                          \
-    s->n.c ^= s->n.a + rot64(w0, 57);                                          \
     s->n.d ^= s->n.b + rot64(w1, 38);                                          \
+    s->n.c ^= s->n.a + rot64(w0, 57);                                          \
     s->n.b ^= prime_6 * (c13 + w2);                                            \
     s->n.a ^= prime_5 * (d02 + w3);                                            \
   } while (0)

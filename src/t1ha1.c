@@ -41,6 +41,7 @@
  * for The 1Hippeus project - zerocopy messaging in the spirit of Sparta!
  */
 
+#ifndef T1HA1_DISABLED
 #include "t1ha_bits.h"
 
 /* xor-mul-xor mixer */
@@ -128,7 +129,7 @@ uint64_t t1ha1_le(const void *data, size_t len, uint64_t seed) {
   uint64_t a = seed;
   uint64_t b = len;
 
-#if T1HA_CONFIG_UNALIGNED_ACCESS == T1HA_CONFIG_UNALIGNED_ACCESS__EFFICIENT
+#if T1HA_SYS_UNALIGNED_ACCESS == T1HA_UNALIGNED_ACCESS__EFFICIENT
   T1HA1_BODY(le, unaligned);
 #else
   const bool misaligned = (((uintptr_t)data) & (ALIGNMENT_64 - 1)) != 0;
@@ -144,7 +145,7 @@ uint64_t t1ha1_be(const void *data, size_t len, uint64_t seed) {
   uint64_t a = seed;
   uint64_t b = len;
 
-#if T1HA_CONFIG_UNALIGNED_ACCESS == T1HA_CONFIG_UNALIGNED_ACCESS__EFFICIENT
+#if T1HA_SYS_UNALIGNED_ACCESS == T1HA_UNALIGNED_ACCESS__EFFICIENT
   T1HA1_BODY(be, unaligned);
 #else
   const bool misaligned = (((uintptr_t)data) & (ALIGNMENT_64 - 1)) != 0;
@@ -155,3 +156,5 @@ uint64_t t1ha1_be(const void *data, size_t len, uint64_t seed) {
   }
 #endif
 }
+
+#endif /* T1HA1_DISABLED */

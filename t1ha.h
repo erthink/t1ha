@@ -43,6 +43,122 @@
 
 #pragma once
 
+/*****************************************************************************
+ *
+ * PLEASE PAY ATTENTION TO THE FOLLOWING NOTES
+ * about macros definitions which controls t1ha behaviour and/or performance.
+ *
+ *
+ * 1) T1HA_SYS_UNALIGNED_ACCESS = Defines the system/platform/CPU/architecture
+ *                                abilities for unaligned data access.
+ *
+ *    By default, when the T1HA_SYS_UNALIGNED_ACCESS not defined,
+ *    it will defined on the basis hardcoded knowledge about of capabilities
+ *    of most common CPU architectures. But you could override this
+ *    default behavior when build t1ha library itself:
+ *
+ *      // To disable unaligned access at all.
+ *      #define T1HA_SYS_UNALIGNED_ACCESS 0
+ *
+ *      // To enable unaligned access, but indicate that it significally slow.
+ *      #define T1HA_SYS_UNALIGNED_ACCESS 1
+ *
+ *      // To enable unaligned access, and indicate that it effecient.
+ *      #define T1HA_SYS_UNALIGNED_ACCESS 2
+ *
+ *
+ * 2) T1HA_USE_FAST_ONESHOT_READ = Controls the data reads at the end of buffer.
+ *
+ *    When defined to non-zero, t1ha will use 'one shot' method for reading
+ *    up to 8 bytes at the end of data. In this case just the one 64-bit read
+ *    will be performed even when the available less than 8 bytes.
+ *
+ *    This is little bit faster that switching by length of data tail.
+ *    Unfortunately this will triggering a false-positive alarms from Valgrind,
+ *    AddressSanitizer and other similar tool.
+ *
+ *    By default, t1ha defines it to 1, but you could override this
+ *    default behavior when build t1ha library itself:
+ *
+ *      // For little bit faster and small code.
+ *      #define T1HA_USE_FAST_ONESHOT_READ 1
+ *
+ *      // For calmness if doubt.
+ *      #define T1HA_USE_FAST_ONESHOT_READ 0
+ *
+ *
+ * 3) T1HA0_RUNTIME_SELECT = Controls choice fastest function in runtime.
+ *
+ *    t1ha library offers the t1ha0() function as the fastest for current CPU.
+ *    But actual CPU's features/capabilities and may be significantly different,
+ *    especially on x86 platform. Therefore, internally, t1ha0() may require
+ *    dynamic dispatching for choice best implementation.
+ *
+ *    By default, t1ha enables such runtime choice and (may be) corresponding
+ *    indirect calls if it reasonable, but you could override this default
+ *    behavior when build t1ha library itself:
+ *
+ *      // To enable runtime choice of fastest implementation.
+ *      #define T1HA0_RUNTIME_SELECT 1
+ *
+ *      // To disable runtime choice of fastest implementation.
+ *      #define T1HA0_RUNTIME_SELECT 0
+ *
+ *
+ * 4) T1HA_USE_INDIRECT_FUNCTIONS = Controls usage of GNU Indirect functions.
+ *
+ *    In continue of T1HA0_RUNTIME_SELECT the T1HA_USE_INDIRECT_FUNCTIONS
+ *    controls usage of ELF indirect functions feature. In general, when
+ *    available, this reduces overhead of indirect function's calls though
+ *    a DSO-bundary (https://sourceware.org/glibc/wiki/GNU_IFUNC).
+ *
+ *    By default, t1ha engage GNU Indirect functions when it available
+ *    and useful, but you could override this default behavior when build
+ *    t1ha library itself:
+ *
+ *      // To enable use of GNU ELF Indirect functions.
+ *      #define T1T1HA_USE_INDIRECT_FUNCTIONS 1
+ *
+ *      // To disable use of GNU ELF Indirect functions. This may be useful
+ *      // if the actual toolchain or the system's loader don't support ones.
+ *      #define T1HA_USE_INDIRECT_FUNCTIONS 0
+ *
+ * 5) T1HA0_AESNI_AVAILABLE = Controls AES-NI detection and dispatching on x86.
+ *
+ *    In continue of T1HA0_RUNTIME_SELECT the T1HA0_AESNI_AVAILABLE controls
+ *    detection and usage of AES-NI CPU's feature. On the other hand, this
+ *    requires compiling parts of t1ha library with certain properly options,
+ *    and could be difficult or inconvenient in some cases.
+ *
+ *    By default, t1ha engade AES-NI for t1ha0() on the x86 platform, but
+ *    you could override this default behavior when build t1ha library itself:
+ *
+ *      // To enable detection and usage of AES-NI instructions for t1ha0().
+ *      #define T1HA0_AESNI_AVAILABLE 1
+ *
+ *      // To disable detection and usage of AES-NI instructions for t1ha0().
+ *      // This may be useful when you unable to build t1ha library properly
+ *      // or known that AES-NI will be unavailable at the deploy.
+ *      #define T1HA0_AESNI_AVAILABLE 0
+ *
+ * 6) T1HA0_DISABLED, T1HA1_DISABLED, T1HA2_DISABLED = Controls availability of
+ *    t1ha functions.
+ *
+ *    In some cases could be useful to import/use only few of t1ha functions
+ *    or just the one. So, this definitions allows disable corresponding parts
+ *    of t1ha library.
+ *
+ *      // To disable t1ha0(), t1ha0_32le(), t1ha0_32be() and all AES-NI.
+ *      #define T1HA0_DISABLED
+ *
+ *      // To disable t1ha1_le() and t1ha1_be().
+ *      #define T1HA1_DISABLED
+ *
+ *      // To disable t1ha2_atonce(), t1ha2_atonce128() and so on.
+ *      #define T1HA2_DISABLED
+ *
+ *****************************************************************************/
+
 #define T1HA_VERSION_MAJOR 2
 #define T1HA_VERSION_MINOR 0
 #define T1HA_VERSION_RELEASE 2
@@ -436,16 +552,26 @@ static __inline uint64_t t1ha0(const void *data, size_t length, uint64_t seed) {
 
 #elif __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
 static __inline uint64_t t1ha0(const void *data, size_t length, uint64_t seed) {
-#if UINTPTR_MAX > 0xffffFFFFul || ULONG_MAX > 0xffffFFFFul
+#if (UINTPTR_MAX > 0xffffFFFFul || ULONG_MAX > 0xffffFFFFul) &&                \
+    (!defined(T1HA1_DISABLED) || !defined(T1HA2_DISABLED))
+#ifndef T1HA1_DISABLED
   return t1ha1_be(data, length, seed);
+#else
+  return t1ha2_atonce(data, length, seed);
+#endif /* T1HA1_DISABLED */
 #else
   return t1ha0_32be(data, length, seed);
 #endif
 }
 #else
 static __inline uint64_t t1ha0(const void *data, size_t length, uint64_t seed) {
-#if UINTPTR_MAX > 0xffffFFFFul || ULONG_MAX > 0xffffFFFFul
+#if (UINTPTR_MAX > 0xffffFFFFul || ULONG_MAX > 0xffffFFFFul) &&                \
+    (!defined(T1HA1_DISABLED) || !defined(T1HA2_DISABLED))
+#ifndef T1HA1_DISABLED
   return t1ha1_le(data, length, seed);
+#else
+  return t1ha2_atonce(data, length, seed);
+#endif /* T1HA1_DISABLED */
 #else
   return t1ha0_32le(data, length, seed);
 #endif

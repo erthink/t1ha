@@ -65,12 +65,12 @@ void bench(const char *caption,
   fflush(NULL);
 }
 
-static uint64_t thunk_XXH32(const void *input, size_t length, uint64_t seed) {
+uint64_t thunk_XXH32(const void *input, size_t length, uint64_t seed) {
   return XXH32(input, length, (uint32_t)seed);
 }
 
-static uint64_t thunk_HighwayHash64_portable(const void *input, size_t length,
-                                             uint64_t seed) {
+uint64_t thunk_HighwayHash64_pure_c(const void *input, size_t length,
+                                    uint64_t seed) {
   uint64_t key[4] = {seed, seed, seed, seed};
   return HighwayHash64_pure_c(key, input, length);
 }
@@ -82,17 +82,23 @@ void bench_size(const unsigned size, const char *caption) {
   for (unsigned i = 0; i < size; ++i)
     buffer[i] = (char)(rand() + i);
 
+#ifndef T1HA2_DISABLED
   if (is_selected(bench_64 | bench_2)) {
     bench("t1ha2_atonce", t1ha2_atonce, buffer, size, seed);
     bench("t1ha2_atonce128*", thunk_t1ha2_atonce128, buffer, size, seed);
     bench("t1ha2_stream*", thunk_t1ha2_stream, buffer, size, seed);
     bench("t1ha2_stream128*", thunk_t1ha2_stream128, buffer, size, seed);
   }
+#endif
 
+#ifndef T1HA1_DISABLED
   if (is_selected(bench_64 | bench_le | bench_1))
     bench("t1ha1_64le", t1ha1_le, buffer, size, seed);
   if (is_selected(bench_64 | bench_be | bench_1))
     bench("t1ha1_64be", t1ha1_be, buffer, size, seed);
+#endif
+
+#ifndef T1HA0_DISABLED
   if (is_selected(bench_0))
     bench("t1ha0", t1ha0, buffer, size, seed);
   if (is_selected(bench_32 | bench_le | bench_0))
@@ -119,13 +125,14 @@ void bench_size(const unsigned size, const char *caption) {
 #endif /* !__e2k__ */
   }
 #endif /* T1HA0_AESNI_AVAILABLE */
+#endif /* T1HA0_DISABLED */
 
   if (is_selected(bench_xxhash)) {
     bench("xxhash32", thunk_XXH32, buffer, size, seed);
     bench("xxhash64", XXH64, buffer, size, (uint32_t)seed);
   }
   if (is_selected(bench_highwayhash)) {
-    bench("HighwayHash64_pure_c", thunk_HighwayHash64_portable, buffer, size,
+    bench("HighwayHash64_pure_c", thunk_HighwayHash64_pure_c, buffer, size,
           seed);
     bench("HighwayHash64_portable", thunk_HighwayHash64_Portable, buffer, size,
           seed);
@@ -135,6 +142,9 @@ void bench_size(const unsigned size, const char *caption) {
             seed);
     if (ia32_cpu_features.extended_7.ebx & 32)
       bench("HighwayHash64_avx2", thunk_HighwayHash64_AVX2, buffer, size, seed);
+#endif
+#ifdef __e2k__
+    bench("HighwayHash64_sse41", thunk_HighwayHash64_SSE41, buffer, size, seed);
 #endif
     /* TODO: thunk_HighwayHash64_VSX() */
   }

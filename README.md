@@ -62,11 +62,11 @@ Please, feel free to fill an issue or make pull request.
 
  | Implementation          | Platform/CPU                           |
  | :---------------------- | :------------------------------------- |
- | `t1ha_ia32aes_avx()`    | x86 with AES-NI and AVX extensions     |
- | `t1ha_ia32aes_avx2()`   | x86 with AES-NI and AVX2 extensions    |
- | `t1ha_ia32aes_noavx()`  | x86 with AES-NI without AVX extensions |
- | `t1ha_32le()`           | 32-bit little-endian                   |
- | `t1ha_32be()`           | 32-bit big-endian                      |
+ | `t1ha0_ia32aes_avx()`   | x86 with AES-NI and AVX extensions     |
+ | `t1ha0_ia32aes_avx2()`  | x86 with AES-NI and AVX2 extensions    |
+ | `t1ha0_ia32aes_noavx()` | x86 with AES-NI without AVX extensions |
+ | `t1ha0_32le()`          | 32-bit little-endian                   |
+ | `t1h0a_32be()`          | 32-bit big-endian                      |
  | `t1ha1_le()`            | 64-bit little-endian                   |
  | `t1ha1_be()`            | 64-bit big-endian                      |
 
@@ -134,7 +134,8 @@ Please, feel free to fill an issue or make pull request.
        - but unfortunately _t1ha_ could be dramatically slowly
          on architectures without native 64-bit operations.
   2. This implementation of _t1ha_ requires **modern GNU C compatible compiler**,
-     including Clang/LLVM, or **Visual Studio 2015**.
+     including Clang/LLVM, or **Visual Studio 2013/2015/2017**.
+     For proper performance please use one of: GNU C 5.5 or later, CLANG 5.0 or later, Microsoft Visual Studio 2017 15.6 or later.
 
 #### Acknowledgement:
 The _t1ha_ was originally developed by Leonid Yuriev (Леонид Юрьев)
@@ -151,7 +152,7 @@ Just try `make check` from t1ha directory.
 To comparison benchmark also includes 32- and 64-bit versions of `xxhash()` function.
 For example:
 ```
-$ CC=clang-5.0 make all && sudo make check
+$ CC=gcc-7 CXX=g++-7 make all && sudo make check
 ...
 Preparing to benchmarking...
  - suggest enable rdpmc for usermode (echo 2 | sudo tee /sys/devices/cpu/rdpmc)
@@ -160,17 +161,33 @@ Preparing to benchmarking...
  - assume it cheap and stable
  - measure granularity and overhead: 53 cycle, 0.0188679 iteration/cycle
 
-Bench for tiny keys (5 bytes):
-t1ha2_atonce            :     13.070 cycle/hash,  2.614 cycle/byte,  0.383 byte/cycle,  1.148 Gb/s @3GHz
-t1ha1_64le              :     14.055 cycle/hash,  2.811 cycle/byte,  0.356 byte/cycle,  1.067 Gb/s @3GHz
-t1ha0                   :     14.070 cycle/hash,  2.814 cycle/byte,  0.355 byte/cycle,  1.066 Gb/s @3GHz
-xxhash64                :     17.203 cycle/hash,  3.441 cycle/byte,  0.291 byte/cycle,  0.872 Gb/s @3GHz
+Bench for tiny keys (7 bytes):
+t1ha2_atonce            :     18.109 cycle/hash,  2.587 cycle/byte,  0.387 byte/cycle,  1.160 Gb/s @3GHz
+t1ha2_atonce128*        :     36.406 cycle/hash,  5.201 cycle/byte,  0.192 byte/cycle,  0.577 Gb/s @3GHz
+t1ha2_stream*           :     84.938 cycle/hash, 12.134 cycle/byte,  0.082 byte/cycle,  0.247 Gb/s @3GHz
+t1ha2_stream128*        :    104.062 cycle/hash, 14.866 cycle/byte,  0.067 byte/cycle,  0.202 Gb/s @3GHz
+t1ha1_64le              :     19.109 cycle/hash,  2.730 cycle/byte,  0.366 byte/cycle,  1.099 Gb/s @3GHz
+t1ha0                   :     15.039 cycle/hash,  2.148 cycle/byte,  0.465 byte/cycle,  1.396 Gb/s @3GHz
+xxhash32                :     18.016 cycle/hash,  2.574 cycle/byte,  0.389 byte/cycle,  1.166 Gb/s @3GHz
+xxhash64                :     26.094 cycle/hash,  3.728 cycle/byte,  0.268 byte/cycle,  0.805 Gb/s @3GHz
+HighwayHash64_pure_c    :    513.000 cycle/hash, 73.286 cycle/byte,  0.014 byte/cycle,  0.041 Gb/s @3GHz
+HighwayHash64_portable  :    498.771 cycle/hash, 71.253 cycle/byte,  0.014 byte/cycle,  0.042 Gb/s @3GHz
+HighwayHash64_sse41     :     67.062 cycle/hash,  9.580 cycle/byte,  0.104 byte/cycle,  0.313 Gb/s @3GHz
+HighwayHash64_avx2      :     59.375 cycle/hash,  8.482 cycle/byte,  0.118 byte/cycle,  0.354 Gb/s @3GHz
 
-Bench for medium keys (1024 bytes):
-t1ha2_atonce            :    266.500 cycle/hash,  0.260 cycle/byte,  3.842 byte/cycle, 11.527 Gb/s @3GHz
-t1ha1_64le              :    245.750 cycle/hash,  0.240 cycle/byte,  4.167 byte/cycle, 12.501 Gb/s @3GHz
-t1ha0                   :     86.625 cycle/hash,  0.085 cycle/byte, 11.821 byte/cycle, 35.463 Gb/s @3GHz
-xxhash64                :    283.000 cycle/hash,  0.276 cycle/byte,  3.618 byte/cycle, 10.855 Gb/s @3GHz
+Bench for large keys (16384 bytes):
+t1ha2_atonce            :   3555.000 cycle/hash,  0.217 cycle/byte,  4.609 byte/cycle, 13.826 Gb/s @3GHz
+t1ha2_atonce128*        :   3577.000 cycle/hash,  0.218 cycle/byte,  4.580 byte/cycle, 13.741 Gb/s @3GHz
+t1ha2_stream*           :   3716.000 cycle/hash,  0.227 cycle/byte,  4.409 byte/cycle, 13.227 Gb/s @3GHz
+t1ha2_stream128*        :   3731.000 cycle/hash,  0.228 cycle/byte,  4.391 byte/cycle, 13.174 Gb/s @3GHz
+t1ha1_64le              :   3542.000 cycle/hash,  0.216 cycle/byte,  4.626 byte/cycle, 13.877 Gb/s @3GHz
+t1ha0                   :   1306.000 cycle/hash,  0.080 cycle/byte, 12.545 byte/cycle, 37.636 Gb/s @3GHz
+xxhash32                :   8201.000 cycle/hash,  0.501 cycle/byte,  1.998 byte/cycle,  5.993 Gb/s @3GHz
+xxhash64                :   4118.000 cycle/hash,  0.251 cycle/byte,  3.979 byte/cycle, 11.936 Gb/s @3GHz
+HighwayHash64_pure_c    :  49079.201 cycle/hash,  2.996 cycle/byte,  0.334 byte/cycle,  1.001 Gb/s @3GHz
+HighwayHash64_portable  :  44486.000 cycle/hash,  2.715 cycle/byte,  0.368 byte/cycle,  1.105 Gb/s @3GHz
+HighwayHash64_sse41     :   6419.000 cycle/hash,  0.392 cycle/byte,  2.552 byte/cycle,  7.657 Gb/s @3GHz
+HighwayHash64_avx2      :   4265.000 cycle/hash,  0.260 cycle/byte,  3.842 byte/cycle, 11.525 Gb/s @3GHz
 ```
 
 The `test` tool support a set of command line options to selecting functions and size of keys for benchmarking.
@@ -222,7 +239,7 @@ at the worst Visual Studio 2015 (MSVC 19).
 ### Scores
 
 Please take in account that the results is significantly depend on actual CPU, compiler version and CFLAGS.
-The results below were obtained on:
+The results below were obtained in 2016 on:
  - CPU: `Intel(R) Core(TM) i7-6700K CPU`;
  - Compiler: `gcc version 5.4.0 20160609 (Ubuntu 5.4.0-6ubuntu1~16.04.4)`;
  - CFLAGS: `-march=native -O3 -fPIC`;

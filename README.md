@@ -57,7 +57,7 @@ Please, feel free to fill an issue or make pull request.
   especially on 32-bit targets, but then much faster.
   However, guaranteed that it passes all SMHasher tests.
 
-  Internally t1ha0() selects most faster implementation for current CPU,
+  Internally `t1ha0()` selects most faster implementation for current CPU,
   for now these are includes:
 
  | Implementation          | Platform/CPU                           |
@@ -89,7 +89,7 @@ Please, feel free to fill an issue or make pull request.
   However, nowadays this issue has resolved in the next `t1ha2()` function,
   that was initially planned to providing a bit more quality.
 
-  The basic version of 't1ha1()' intends for little-endian systems and will run
+  The basic version of `t1ha1()` intends for little-endian systems and will run
   slowly on big-endian. Therefore a dedicated big-endian version is also
   provided, but returns the different result than the basic version.
 
@@ -114,14 +114,13 @@ Please, feel free to fill an issue or make pull request.
   but not yet finished and therefore not available.
 
 
-#### Planned: `t1ha4` = 128 bits, fast alternative for SipHash
+#### Planned: `t1ha4` = 128 bits, fast insecure fingerprinting
 
-#### Planned: `t1ha5` = 256 bits, fast insecure fingerprinting
+#### Planned: `t1ha5` = 256 bits, fast Cryptographic, but with some limitations
 
-#### Planned: `t1ha6` = 256 bits, Cryptographic
+#### Planned: `t1ha6` = 256 and 512 bits, Cryptographic with reasonable resistance to acceleration on GPU and FPGA.
 
-#### Planned: `t1ha7` = 256 bits, Cryptographic with reasonable resistance to acceleration on GPU and FPGA.
-
+#### Planned: `t1ha7` = 256, 512 and 1024 bits, Cryptographic, Strong Post-Quantum
 
 ********************************************************************************
 
@@ -193,7 +192,7 @@ HighwayHash64_avx2      :   4265.000 cycle/hash,  0.260 cycle/byte,  3.842 byte/
 The `test` tool support a set of command line options to selecting functions and size of keys for benchmarking.
 For more info please run `./test --help`.
 
-
+### The `--hash-stdin-strings` option
 One noteable option is `--hash-stdin-strings`, it intended to estimate hash collisions on your custom data.
 With this option `test` tool will hash each line from standard input and print its hash to standard output.
 
@@ -233,8 +232,7 @@ make
 ./SMHasher t1ha
 ```
 
-For properly performance please use at least GCC 5.4 or Clang 3.8,
-at the worst Visual Studio 2015 (MSVC 19).
+For properly performance please use at least GCC 5.5, Clang 6.0 or Visual Studio 2017.
 
 ### Scores
 

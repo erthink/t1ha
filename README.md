@@ -192,7 +192,7 @@ HighwayHash64_avx2      :   4265.000 cycle/hash,  0.260 cycle/byte,  3.842 byte/
 The `test` tool support a set of command line options to selecting functions and size of keys for benchmarking.
 For more info please run `./test --help`.
 
-
+### The `--hash-stdin-strings` option
 One noteable option is `--hash-stdin-strings`, it intended to estimate hash collisions on your custom data.
 With this option `test` tool will hash each line from standard input and print its hash to standard output.
 
@@ -232,8 +232,7 @@ make
 ./SMHasher t1ha
 ```
 
-For properly performance please use at least GCC 5.4 or Clang 3.8,
-at the worst Visual Studio 2015 (MSVC 19).
+For properly performance please use at least GCC 5.5, Clang 6.0 or Visual Studio 2017.
 
 ### Scores
 

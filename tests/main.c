@@ -221,7 +221,9 @@ int main(int argc, const char *argv[]) {
       }
     }
     if ((option_flags & bench_funcs_flags) == 0)
-      option_flags |= default_option_flags & bench_funcs_flags;
+      option_flags |= (option_flags & hash_stdin_strings)
+                          ? bench_2
+                          : default_option_flags & bench_funcs_flags;
     if ((option_flags & bench_size_flags) == 0)
       option_flags |= default_option_flags & bench_size_flags;
   } else {

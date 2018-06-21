@@ -73,8 +73,8 @@ extern "C" {
 #endif
 
 /* ****************************
-*  Definitions
-******************************/
+ *  Definitions
+ ******************************/
 #include <stddef.h> /* size_t */
 typedef enum { XXH_OK = 0, XXH_ERROR } XXH_errorcode;
 
@@ -154,8 +154,8 @@ typedef enum { XXH_OK = 0, XXH_ERROR } XXH_errorcode;
 #endif
 
 /* *************************************
-*  Version
-***************************************/
+ *  Version
+ ***************************************/
 #define XXH_VERSION_MAJOR 0
 #define XXH_VERSION_MINOR 6
 #define XXH_VERSION_RELEASE 5
@@ -165,8 +165,8 @@ typedef enum { XXH_OK = 0, XXH_ERROR } XXH_errorcode;
 XXH_PUBLIC_API unsigned XXH_versionNumber(void);
 
 /*-**********************************************************************
-*  32-bit hash
-************************************************************************/
+ *  32-bit hash
+ ************************************************************************/
 typedef unsigned int XXH32_hash_t;
 
 /*! XXH32() :
@@ -221,7 +221,9 @@ XXH_PUBLIC_API XXH32_hash_t XXH32_digest(const XXH32_state_t *statePtr);
 
 /*======   Canonical representation   ======*/
 
-typedef struct { unsigned char digest[4]; } XXH32_canonical_t;
+typedef struct {
+  unsigned char digest[4];
+} XXH32_canonical_t;
 XXH_PUBLIC_API void XXH32_canonicalFromHash(XXH32_canonical_t *dst,
                                             XXH32_hash_t hash);
 XXH_PUBLIC_API XXH32_hash_t
@@ -238,8 +240,8 @@ XXH32_hashFromCanonical(const XXH32_canonical_t *src);
 
 #ifndef XXH_NO_LONG_LONG
 /*-**********************************************************************
-*  64-bit hash
-************************************************************************/
+ *  64-bit hash
+ ************************************************************************/
 typedef unsigned long long XXH64_hash_t;
 
 /*! XXH64() :
@@ -266,7 +268,9 @@ XXH_PUBLIC_API XXH_errorcode XXH64_update(XXH64_state_t *statePtr,
 XXH_PUBLIC_API XXH64_hash_t XXH64_digest(const XXH64_state_t *statePtr);
 
 /*======   Canonical representation   ======*/
-typedef struct { unsigned char digest[8]; } XXH64_canonical_t;
+typedef struct {
+  unsigned char digest[8];
+} XXH64_canonical_t;
 XXH_PUBLIC_API void XXH64_canonicalFromHash(XXH64_canonical_t *dst,
                                             XXH64_hash_t hash);
 XXH_PUBLIC_API XXH64_hash_t

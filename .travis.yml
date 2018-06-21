@@ -5,6 +5,12 @@ dist: trusty
 addons:
   apt:
     update: true
+    sources:
+      - ubuntu-toolchain-r-test
+    packages:
+      - cmake
+      - libgtest-dev
+#      - clang-format-6.0
 
 compiler:
   - gcc
@@ -30,4 +36,13 @@ before_script: >
     fi
   fi
 
-script: if [ "${COVERITY_SCAN_BRANCH}" != 1 ]; then make all check; fi
+script: >
+  if [ "${COVERITY_SCAN_BRANCH}" != 1 ]; then
+    if which clang-format-6.0 > /dev/null && make reformat && [[ -n $(git diff) ]]; then
+      echo "You must run 'make reformat' before submitting a pull request";
+      echo "";
+      git diff;
+      exit -1;
+    fi;
+    make all check;
+  fi

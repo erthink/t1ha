@@ -2,7 +2,7 @@ version: 2
 jobs:
   build:
     docker:
-      - image: circleci/buildpack-deps:xenial
+      - image: circleci/buildpack-deps:bionic
     steps:
       - checkout
       - run: make all
@@ -12,6 +12,15 @@ jobs:
             mkdir -p /tmp/artifacts
             mv -t /tmp/artifacts core.*
           when: on_fail
+      - run:
+          command: >
+            if which clang-format-6.0 > /dev/null && make reformat && [[ -n $(git diff) ]];
+              then
+                echo "You must run 'make reformat' before submitting a pull request";
+                echo "";
+                git diff;
+                exit -1;
+            fi
       - store_artifacts:
           path: /tmp/artifacts
           destination: artifacts

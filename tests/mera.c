@@ -94,7 +94,6 @@
 #include <errno.h>
 #include <fcntl.h>
 #include <setjmp.h>
-#include <setjmp.h>
 #include <signal.h>
 #include <sys/ioctl.h>
 #include <sys/mman.h>
@@ -1160,7 +1159,7 @@ bool mera_init(void) {
         "gettimeofday()", "ns");
 #endif /* Windows */
 
-/***************************************************************************/
+  /***************************************************************************/
 
 #ifndef __native_client__
 #if defined(__elbrus__) || defined(__e2k__)

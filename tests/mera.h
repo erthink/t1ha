@@ -91,13 +91,19 @@ typedef struct _ia32_cpu_features {
     uint32_t ebx;
     uint32_t ecx;
     uint32_t edx;
-  } basic /* https://en.wikipedia.org/wiki/CPUID#EAX=1:_Processor_Info_and_Feature_Bits */,
-      extended_7 /* https://en.wikipedia.org/wiki/CPUID#EAX=7,_ECX=0:_Extended_Features */;
+  } basic /* https://en.wikipedia.org/wiki/CPUID#EAX=1:_Processor_Info_and_Feature_Bits
+           */
+      ,
+      extended_7 /* https://en.wikipedia.org/wiki/CPUID#EAX=7,_ECX=0:_Extended_Features
+                  */
+      ;
 
   struct {
     uint32_t ecx;
     uint32_t edx;
-  } extended_80000001 /* https://en.wikipedia.org/wiki/CPUID#EAX=80000001h:_Extended_Processor_Info_and_Feature_Bits */;
+  } extended_80000001 /* https://en.wikipedia.org/wiki/CPUID#EAX=80000001h:_Extended_Processor_Info_and_Feature_Bits
+                       */
+      ;
 
   struct {
     uint32_t ecx;

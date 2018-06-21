@@ -39,6 +39,9 @@ all: test libt1ha.a libt1ha.so
 clean:
 	rm -f test test32 test64 *.i *.bc *.s *.o *.a *.so
 
+reformat:
+	git ls-files | grep -E '\.(c|cxx|cc|cpp|h|hxx|hpp)(\.in)?$$' | xargs -r clang-format-6.0 -i --style=file
+
 t1ha0.o: t1ha.h src/t1ha_bits.h src/t1ha0.c Makefile
 	$(CC) $(CFLAGS_LIB) -c -o $@ src/t1ha0.c
 

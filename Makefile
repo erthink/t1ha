@@ -148,6 +148,10 @@ endif
 		 tests/highwayhash/verifier.c Makefile
 	$(CC) $(CFLAGS_TEST) -Wno-error -c -o $@ tests/highwayhash/verifier.c
 
+BENCH_EXTRA += 4bench_stadtx.o
+4bench_stadtx.o: tests/common.h tests/stadtx/stadtx_hash.h \
+		tests/stadtx/stadtx_thunk.c Makefile
+	$(CC) $(CFLAGS_TEST) -Wno-error -c -o $@ tests/stadtx/stadtx_thunk.c
 
 test: $(OBJ_LIST) $(BENCH_EXTRA) tests/main.c Makefile \
 		t1ha.h tests/common.h tests/mera.h \

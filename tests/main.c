@@ -29,7 +29,7 @@
 
 const unsigned default_option_flags = bench_0 | bench_1 | bench_2 |
                                       bench_xxhash | bench_highwayhash |
-                                      bench_tiny | bench_large;
+                                      bench_stadtx | bench_tiny | bench_large;
 
 const unsigned available_eas_flags =
 #if T1HA0_AESNI_AVAILABLE
@@ -180,6 +180,9 @@ int main(int argc, const char *argv[]) {
           option(argv[i], "highway", bench_highwayhash))
         continue;
 
+      if (option(argv[i], "stadtx", bench_stadtx))
+        continue;
+
 #ifndef T1HA0_DISABLED
       if (option(argv[i], "0", bench_0))
         continue;
@@ -313,6 +316,9 @@ int main(int argc, const char *argv[]) {
     } else if (is_selected(bench_32 | bench_xxhash)) {
       hash_function = thunk_XXH32;
       hash_name = "xxhash32";
+    } else if (is_selected(bench_64 | bench_stadtx)) {
+      hash_function = thunk_StadtX;
+      hash_name = "StadtX";
 #ifndef T1HA2_DISABLED
     } else if (is_selected(bench_64 | bench_2)) {
       hash_function = t1ha2_atonce;

@@ -7,84 +7,10 @@
 #ifndef STADTX_HASH_H
 #define STADTX_HASH_H
 
-#ifndef DEBUG_STADTX_HASH
-#define DEBUG_STADTX_HASH 0
-#endif
-
-#ifndef ROTL64
-#define _ROTL_SIZED(x, r, s) (((x) << (r)) | ((x) >> ((s) - (r))))
-#define _ROTR_SIZED(x, r, s) (((x) << ((s) - (r))) | ((x) >> (r)))
-#define ROTL64(x, r) _ROTL_SIZED(x, r, 64)
-#define ROTR64(x, r) _ROTR_SIZED(x, r, 64)
-#endif
-
-#ifndef PERL_SEEN_HV_FUNC_H
-
-#if !defined(U64)
-#include <stdint.h>
-#define U64 uint64_t
-#endif
-
-#if !defined(U32)
-#define U32 uint32_t
-#endif
-
-#if !defined(U8)
-#define U8 unsigned char
-#endif
-
-#if !defined(U16)
-#define U16 uint16_t
-#endif
-
-#ifndef STRLEN
-#define STRLEN int
-#endif
-#endif
-
-#ifndef STADTX_STATIC_INLINE
-#ifdef PERL_STATIC_INLINE
-#define STADTX_STATIC_INLINE PERL_STATIC_INLINE
-#else
-#define STADTX_STATIC_INLINE static inline
-#endif
-#endif
-
-#ifndef STMT_START
-#define STMT_START do
-#define STMT_END while (0)
-#endif
-
-#ifndef STADTX_UNALIGNED_AND_LITTLE_ENDIAN
-#define STADTX_UNALIGNED_AND_LITTLE_ENDIAN 1
-#endif
-
-#if STADTX_ALLOW_UNALIGNED_AND_LITTLE_ENDIAN
-#ifndef U8TO64_LE
-#define U8TO64_LE(ptr) (*((const U64 *)(ptr)))
-#endif
-#ifndef U8TO32_LE
-#define U8TO32_LE(ptr) (*((const U32 *)(ptr)))
-#endif
-#ifndef U8TO16_LE
-#define U8TO16_LE(ptr) (*((const U16 *)(ptr)))
-#endif
-#else
-#ifndef U8TO64_LE
-#define U8TO64_LE(ptr)                                                         \
-  ((U64)(ptr)[7] << 56 | (U64)(ptr)[6] << 48 | (U64)(ptr)[5] << 40 |           \
-   (U64)(ptr)[4] << 32 | (U64)(ptr)[3] << 24 | (U64)(ptr)[2] << 16 |           \
-   (U64)(ptr)[1] << 8 | (U64)(ptr)[0])
-#endif
-#ifndef U8TO32_LE
-#define U8TO32_LE(ptr)                                                         \
-  ((U32)(ptr)[3] << 24 | (U32)(ptr)[2] << 16 | (U32)(ptr)[1] << 8 |            \
-   (U32)(ptr)[0])
-#endif
-#ifndef U8TO16_LE
-#define U8TO16_LE(ptr) ((U16)(ptr)[1] << 8 | (U16)(ptr)[0])
-#endif
-#endif
+/* LY: simple way to fix endianess and provide portable marcos */
+#include "../../src/t1ha_bits.h"
+#define ROTL64(x, r) rot64(x, 64 - r)
+#define ROTR64(x, r) rot64(x, r)
 
 /* do a marsaglia xor-shift permutation followed by a
  * multiply by a prime (presumably large) and another
@@ -97,7 +23,7 @@
  * was zero in the first place.
  */
 #define STADTX_SCRAMBLE64(v, prime)                                            \
-  STMT_START {                                                                 \
+  do {                                                                         \
     v ^= (v >> 13);                                                            \
     v ^= (v << 35);                                                            \
     v ^= (v >> 30);                                                            \
@@ -105,12 +31,9 @@
     v ^= (v >> 19);                                                            \
     v ^= (v << 15);                                                            \
     v ^= (v >> 46);                                                            \
-  }                                                                            \
-  STMT_END
+  } while (0)
 
-STADTX_STATIC_INLINE void stadtx_seed_state(const U8 *seed_ch, U8 *state_ch) {
-  U64 *seed = (U64 *)seed_ch;
-  U64 *state = (U64 *)state_ch;
+static __inline void stadtx_seed_state(const uint64_t *seed, uint64_t *state) {
   /* first we apply two masks to each word of the seed, this means that
    * a) at least one of state[0] and state[2] is nonzero,
    * b) at least one of state[1] and state[3] is nonzero
@@ -149,61 +72,69 @@ STADTX_STATIC_INLINE void stadtx_seed_state(const U8 *seed_ch, U8 *state_ch) {
   STADTX_SCRAMBLE64(state[3], 0xaab8b6b05abfc6cdUL);
 }
 
-#define STADTX_K0_U64 0xb89b0f8e1655514fUL
-#define STADTX_K1_U64 0x8c6f736011bd5127UL
-#define STADTX_K2_U64 0x8f29bd94edce7b39UL
-#define STADTX_K3_U64 0x9c1b8e1e9628323fUL
+#define STADTX_K0_uint64_t 0xb89b0f8e1655514fUL
+#define STADTX_K1_uint64_t 0x8c6f736011bd5127UL
+#define STADTX_K2_uint64_t 0x8f29bd94edce7b39UL
+#define STADTX_K3_uint64_t 0x9c1b8e1e9628323fUL
 
-#define STADTX_K2_U32 0x802910e3
-#define STADTX_K3_U32 0x819b13af
-#define STADTX_K4_U32 0x91cb27e5
-#define STADTX_K5_U32 0xc1a269c1
+#define STADTX_K2_uint32_t 0x802910e3
+#define STADTX_K3_uint32_t 0x819b13af
+#define STADTX_K4_uint32_t 0x91cb27e5
+#define STADTX_K5_uint32_t 0xc1a269c1
 
-STADTX_STATIC_INLINE U64 stadtx_hash_with_state(const U8 *state_ch,
-                                                const U8 *key,
-                                                const STRLEN key_len) {
-  U64 *state = (U64 *)state_ch;
-  U64 len = key_len;
-  U64 v0 = state[0] ^ ((key_len + 1) * STADTX_K0_U64);
-  U64 v1 = state[1] ^ ((key_len + 2) * STADTX_K1_U64);
+static __inline uint64_t stadtx_hash_with_state(const uint64_t *state_ch,
+                                                const uint8_t *key,
+                                                const size_t key_len) {
+  uint64_t *state = (uint64_t *)state_ch;
+  uint64_t len = key_len;
+  uint64_t v0 = state[0] ^ ((key_len + 1) * STADTX_K0_uint64_t);
+  uint64_t v1 = state[1] ^ ((key_len + 2) * STADTX_K1_uint64_t);
   if (len < 32) {
     switch (len >> 3) {
     case 3:
-      v0 += U8TO64_LE(key) * STADTX_K3_U64;
+      v0 += fetch64_le_unaligned(key) * STADTX_K3_uint64_t;
       v0 = ROTR64(v0, 17) ^ v1;
       v1 = ROTR64(v1, 53) + v0;
       key += 8;
+      /* fallthrough */
     case 2:
-      v0 += U8TO64_LE(key) * STADTX_K3_U64;
+      v0 += fetch64_le_unaligned(key) * STADTX_K3_uint64_t;
       v0 = ROTR64(v0, 17) ^ v1;
       v1 = ROTR64(v1, 53) + v0;
       key += 8;
+      /* fallthrough */
     case 1:
-      v0 += U8TO64_LE(key) * STADTX_K3_U64;
+      v0 += fetch64_le_unaligned(key) * STADTX_K3_uint64_t;
       v0 = ROTR64(v0, 17) ^ v1;
       v1 = ROTR64(v1, 53) + v0;
       key += 8;
+      /* fallthrough */
     case 0:
     default:
       break;
     }
     switch (len & 0x7) {
     case 7:
-      v0 += (U64)key[6] << 32;
+      v0 += (uint64_t)key[6] << 32;
+      /* fallthrough */
     case 6:
-      v1 += (U64)key[5] << 48;
+      v1 += (uint64_t)key[5] << 48;
+      /* fallthrough */
     case 5:
-      v0 += (U64)key[4] << 16;
+      v0 += (uint64_t)key[4] << 16;
+      /* fallthrough */
     case 4:
-      v1 += (U64)U8TO32_LE(key);
+      v1 += (uint64_t)fetch32_le_unaligned(key);
       break;
     case 3:
-      v0 += (U64)key[2] << 48;
+      v0 += (uint64_t)key[2] << 48;
+      /* fallthrough */
     case 2:
-      v1 += (U64)U8TO16_LE(key);
+      v1 += (uint64_t)fetch16_le_unaligned(key);
       break;
     case 1:
-      v0 += (U64)key[0];
+      v0 += (uint64_t)key[0];
+      /* fallthrough */
     case 0:
       v1 = ROTL64(v1, 32) ^ 0xFF;
       break;
@@ -223,17 +154,17 @@ STADTX_STATIC_INLINE U64 stadtx_hash_with_state(const U8 *state_ch,
     v1 = ROTR64(v1, 5);
     return v0 ^ v1;
   } else {
-    U64 v2 = state[2] ^ ((key_len + 3) * STADTX_K2_U64);
-    U64 v3 = state[3] ^ ((key_len + 4) * STADTX_K3_U64);
+    uint64_t v2 = state[2] ^ ((key_len + 3) * STADTX_K2_uint64_t);
+    uint64_t v3 = state[3] ^ ((key_len + 4) * STADTX_K3_uint64_t);
 
     do {
-      v0 += (U64)U8TO64_LE(key + 0) * STADTX_K2_U32;
+      v0 += (uint64_t)fetch64_le_unaligned(key + 0) * STADTX_K2_uint32_t;
       v0 = ROTL64(v0, 57) ^ v3;
-      v1 += (U64)U8TO64_LE(key + 8) * STADTX_K3_U32;
+      v1 += (uint64_t)fetch64_le_unaligned(key + 8) * STADTX_K3_uint32_t;
       v1 = ROTL64(v1, 63) ^ v2;
-      v2 += (U64)U8TO64_LE(key + 16) * STADTX_K4_U32;
+      v2 += (uint64_t)fetch64_le_unaligned(key + 16) * STADTX_K4_uint32_t;
       v2 = ROTR64(v2, 47) + v0;
-      v3 += (U64)U8TO64_LE(key + 24) * STADTX_K5_U32;
+      v3 += (uint64_t)fetch64_le_unaligned(key + 24) * STADTX_K5_uint32_t;
       v3 = ROTR64(v3, 11) - v1;
       key += 32;
       len -= 32;
@@ -241,40 +172,47 @@ STADTX_STATIC_INLINE U64 stadtx_hash_with_state(const U8 *state_ch,
 
     switch (len >> 3) {
     case 3:
-      v0 += ((U64)U8TO64_LE(key) * STADTX_K2_U32);
+      v0 += ((uint64_t)fetch64_le_unaligned(key) * STADTX_K2_uint32_t);
       key += 8;
       v0 = ROTL64(v0, 57) ^ v3;
+      /* fallthrough */
     case 2:
-      v1 += ((U64)U8TO64_LE(key) * STADTX_K3_U32);
+      v1 += ((uint64_t)fetch64_le_unaligned(key) * STADTX_K3_uint32_t);
       key += 8;
       v1 = ROTL64(v1, 63) ^ v2;
+      /* fallthrough */
     case 1:
-      v2 += ((U64)U8TO64_LE(key) * STADTX_K4_U32);
+      v2 += ((uint64_t)fetch64_le_unaligned(key) * STADTX_K4_uint32_t);
       key += 8;
       v2 = ROTR64(v2, 47) + v0;
+      /* fallthrough */
     case 0:
       v3 = ROTR64(v3, 11) - v1;
     }
-    v0 ^= (len + 1) * STADTX_K3_U64;
+    v0 ^= (len + 1) * STADTX_K3_uint64_t;
     switch (len & 0x7) {
     case 7:
-      v1 += (U64)key[6];
+      v1 += (uint64_t)key[6];
+      /* fallthrough */
     case 6:
-      v2 += (U64)U8TO16_LE(key + 4);
-      v3 += (U64)U8TO32_LE(key);
+      v2 += (uint64_t)fetch16_le_unaligned(key + 4);
+      v3 += (uint64_t)fetch32_le_unaligned(key);
       break;
     case 5:
-      v1 += (U64)key[4];
+      v1 += (uint64_t)key[4];
+      /* fallthrough */
     case 4:
-      v2 += (U64)U8TO32_LE(key);
+      v2 += (uint64_t)fetch32_le_unaligned(key);
       break;
     case 3:
-      v3 += (U64)key[2];
+      v3 += (uint64_t)key[2];
+      /* fallthrough */
     case 2:
-      v1 += (U64)U8TO16_LE(key);
+      v1 += (uint64_t)fetch16_le_unaligned(key);
       break;
     case 1:
-      v2 += (U64)key[0];
+      v2 += (uint64_t)key[0];
+      /* fallthrough */
     case 0:
       v3 = ROTL64(v3, 32) ^ 0xFF;
       break;
@@ -312,11 +250,11 @@ STADTX_STATIC_INLINE U64 stadtx_hash_with_state(const U8 *state_ch,
   }
 }
 
-STADTX_STATIC_INLINE U64 stadtx_hash(const U8 *seed_ch, const U8 *key,
-                                     const STRLEN key_len) {
-  U64 state[4];
-  stadtx_seed_state(seed_ch, (U8 *)state);
-  return stadtx_hash_with_state((U8 *)state, key, key_len);
+static __inline uint64_t stadtx_hash(const uint64_t *seed_ch, const void *key,
+                                     const size_t key_len) {
+  uint64_t state[4];
+  stadtx_seed_state(seed_ch, state);
+  return stadtx_hash_with_state(state, key, key_len);
 }
 
 #endif

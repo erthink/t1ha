@@ -26,8 +26,8 @@
 #include "stadtx_hash.h"
 
 uint64_t thunk_StadtX(const void *input, size_t length, uint64_t seed) {
-  U64 state[4] = {seed, seed, seed, seed};
-  return stadtx_hash_with_state((U8 *)state, input, (int)length);
+  uint64_t state[4] = {seed, seed, seed, seed};
+  return stadtx_hash_with_state(state, input, length);
 }
 
 /* *INDENT-OFF* */

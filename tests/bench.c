@@ -77,7 +77,7 @@ uint64_t thunk_HighwayHash64_pure_c(const void *input, size_t length,
 
 void bench_size(const unsigned size, const char *caption) {
   printf("\nBench for %s keys (%u bytes):\n", caption, size);
-  const uint64_t seed = 42;
+  const uint64_t seed = ~UINT64_C(42);
   char *buffer = malloc(size);
   for (unsigned i = 0; i < size; ++i)
     buffer[i] = (char)(rand() + i);

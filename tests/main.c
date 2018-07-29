@@ -297,6 +297,8 @@ int main(int argc, const char *argv[]) {
   HighwayHash64_verify(HighwayHash64_SSE41, "HighwayHash64_sse41");
 #endif
 
+  failed |= verify("StadtX", thunk_StadtX, refval_StadtX);
+
   if (failed)
     return EXIT_FAILURE;
 

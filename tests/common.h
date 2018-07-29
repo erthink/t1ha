@@ -147,6 +147,7 @@ uint64_t thunk_XXH32(const void *input, size_t length, uint64_t seed);
 
 /* StadtX hash */
 uint64_t thunk_StadtX(const void *input, size_t length, uint64_t seed);
+extern const uint64_t refval_StadtX[];
 
 /* HighwayHash */
 typedef uint64_t (*HighwayHash64_t)(const uint64_t key[4], const uint8_t *data,

@@ -1,4 +1,4 @@
-t1ha
+﻿t1ha
 ========================================
 Fast Positive Hash, aka "Позитивный Хэш"
 by [Positive Technologies](https://www.ptsecurity.com).
@@ -13,7 +13,7 @@ by [Positive Technologies](https://www.ptsecurity.com).
 ## Briefly, it is a portable 64-bit hash function:
   1. Intended for 64-bit little-endian platforms, predominantly for Elbrus and x86_64,
      but portable and without penalties it can run on any 64-bit CPU.
-  2. In most cases up to 15% faster than City, xxHash, mum-hash, metro-hash, etc.
+  2. In most cases up to 15% faster than StadtX hash, xxHash, mum-hash, metro-hash, etc.
      and all others portable hash-functions (which do not use specific hardware tricks).
   3. Provides a set of _terraced_ hash functions.
   4. Currently not suitable for cryptography.
@@ -69,6 +69,7 @@ Please, feel free to fill an issue or make pull request.
  | `t1h0a_32be()`          | 32-bit big-endian                      |
  | `t1ha1_le()`            | 64-bit little-endian                   |
  | `t1ha1_be()`            | 64-bit big-endian                      |
+ | `t1ha2_atonce()`        | 64-bit little-endian                   |
 
 
 `t1ha1` = 64 bits, baseline fast portable hash
@@ -83,7 +84,7 @@ Please, feel free to fill an issue or make pull request.
   3. Strong as possible, until no penalties on performance.
 
   Unfortunatelly, [Yves Orton](https://github.com/demerphq/smhasher) discovered
-  that `t1ha1()` fails the strict avalanche criteria in some cases.
+  that `t1ha1()` family fails the strict avalanche criteria in some cases.
   This flaw is insignificant for the `t1ha1()` purposes and imperceptible
   from a practical point of view.
   However, nowadays this issue has resolved in the next `t1ha2()` function,
@@ -114,7 +115,7 @@ Please, feel free to fill an issue or make pull request.
   but not yet finished and therefore not available.
 
 
-#### Planned: `t1ha4` = 128 bits, fast insecure fingerprinting
+#### Planned: `t1ha4` = 128 and 256 bits, fast insecure fingerprinting
 
 #### Planned: `t1ha5` = 256 bits, fast Cryptographic, but with some limitations
 
@@ -148,11 +149,28 @@ for _The 1Hippeus project - zerocopy messaging in the spirit of Sparta!_
 Current version of t1ha library includes tool for basic testing and benchmarking.
 Just try `make check` from t1ha directory.
 
-To comparison benchmark also includes 32- and 64-bit versions of `xxhash()` function.
-For example:
+To comparison benchmark also includes `xxHash`, `StadtX` and `HighwayHash` functions.
+For example actual results for `Intel(R) Core(TM) i7-4600U CPU`:
 ```
-$ CC=gcc-7 CXX=g++-7 make all && sudo make check
+$ CC=gcc-8 CXX=g++-8 make all && sudo make check
 ...
+Testing t1ha2_atonce... Ok
+Testing t1ha2_atonce128... Ok
+Testing t1ha2_stream... Ok
+Testing t1ha2_stream128... Ok
+Testing t1ha1_64le... Ok
+Testing t1ha1_64be... Ok
+Testing t1ha0_32le... Ok
+Testing t1ha0_32be... Ok
+Testing t1ha0_ia32aes_noavx... Ok
+Testing t1ha0_ia32aes_avx... Ok
+Testing t1ha0_ia32aes_avx2... Ok
+Testing HighwayHash64_pure_c... Ok
+Testing HighwayHash64_portable_cxx... Ok
+Testing HighwayHash64_sse41... Ok
+Testing HighwayHash64_avx2... Ok
+Testing StadtX... Ok
+
 Preparing to benchmarking...
  - suggest enable rdpmc for usermode (echo 2 | sudo tee /sys/devices/cpu/rdpmc)
  - running on CPU#3
@@ -161,32 +179,34 @@ Preparing to benchmarking...
  - measure granularity and overhead: 53 cycle, 0.0188679 iteration/cycle
 
 Bench for tiny keys (7 bytes):
-t1ha2_atonce            :     18.109 cycle/hash,  2.587 cycle/byte,  0.387 byte/cycle,  1.160 Gb/s @3GHz
-t1ha2_atonce128*        :     36.406 cycle/hash,  5.201 cycle/byte,  0.192 byte/cycle,  0.577 Gb/s @3GHz
-t1ha2_stream*           :     84.938 cycle/hash, 12.134 cycle/byte,  0.082 byte/cycle,  0.247 Gb/s @3GHz
-t1ha2_stream128*        :    104.062 cycle/hash, 14.866 cycle/byte,  0.067 byte/cycle,  0.202 Gb/s @3GHz
-t1ha1_64le              :     19.109 cycle/hash,  2.730 cycle/byte,  0.366 byte/cycle,  1.099 Gb/s @3GHz
-t1ha0                   :     15.039 cycle/hash,  2.148 cycle/byte,  0.465 byte/cycle,  1.396 Gb/s @3GHz
-xxhash32                :     18.016 cycle/hash,  2.574 cycle/byte,  0.389 byte/cycle,  1.166 Gb/s @3GHz
-xxhash64                :     26.094 cycle/hash,  3.728 cycle/byte,  0.268 byte/cycle,  0.805 Gb/s @3GHz
-HighwayHash64_pure_c    :    513.000 cycle/hash, 73.286 cycle/byte,  0.014 byte/cycle,  0.041 Gb/s @3GHz
-HighwayHash64_portable  :    498.771 cycle/hash, 71.253 cycle/byte,  0.014 byte/cycle,  0.042 Gb/s @3GHz
-HighwayHash64_sse41     :     67.062 cycle/hash,  9.580 cycle/byte,  0.104 byte/cycle,  0.313 Gb/s @3GHz
-HighwayHash64_avx2      :     59.375 cycle/hash,  8.482 cycle/byte,  0.118 byte/cycle,  0.354 Gb/s @3GHz
+t1ha2_atonce            :     18.188 cycle/hash,  2.598 cycle/byte,  0.385 byte/cycle,  1.155 Gb/s @3GHz
+t1ha2_atonce128*        :     36.969 cycle/hash,  5.281 cycle/byte,  0.189 byte/cycle,  0.568 Gb/s @3GHz
+t1ha2_stream*           :     84.237 cycle/hash, 12.034 cycle/byte,  0.083 byte/cycle,  0.249 Gb/s @3GHz
+t1ha2_stream128*        :    101.812 cycle/hash, 14.545 cycle/byte,  0.069 byte/cycle,  0.206 Gb/s @3GHz
+t1ha1_64le              :     19.188 cycle/hash,  2.741 cycle/byte,  0.365 byte/cycle,  1.094 Gb/s @3GHz
+t1ha0                   :     14.102 cycle/hash,  2.015 cycle/byte,  0.496 byte/cycle,  1.489 Gb/s @3GHz
+xxhash32                :     18.859 cycle/hash,  2.694 cycle/byte,  0.371 byte/cycle,  1.114 Gb/s @3GHz
+xxhash64                :     27.188 cycle/hash,  3.884 cycle/byte,  0.257 byte/cycle,  0.772 Gb/s @3GHz
+StadtX                  :     19.188 cycle/hash,  2.741 cycle/byte,  0.365 byte/cycle,  1.094 Gb/s @3GHz
+HighwayHash64_pure_c    :    630.000 cycle/hash, 90.000 cycle/byte,  0.011 byte/cycle,  0.033 Gb/s @3GHz
+HighwayHash64_portable  :    507.500 cycle/hash, 72.500 cycle/byte,  0.014 byte/cycle,  0.041 Gb/s @3GHz
+HighwayHash64_sse41     :     69.625 cycle/hash,  9.946 cycle/byte,  0.101 byte/cycle,  0.302 Gb/s @3GHz
+HighwayHash64_avx2      :     57.500 cycle/hash,  8.214 cycle/byte,  0.122 byte/cycle,  0.365 Gb/s @3GHz
 
 Bench for large keys (16384 bytes):
-t1ha2_atonce            :   3555.000 cycle/hash,  0.217 cycle/byte,  4.609 byte/cycle, 13.826 Gb/s @3GHz
-t1ha2_atonce128*        :   3577.000 cycle/hash,  0.218 cycle/byte,  4.580 byte/cycle, 13.741 Gb/s @3GHz
-t1ha2_stream*           :   3716.000 cycle/hash,  0.227 cycle/byte,  4.409 byte/cycle, 13.227 Gb/s @3GHz
-t1ha2_stream128*        :   3731.000 cycle/hash,  0.228 cycle/byte,  4.391 byte/cycle, 13.174 Gb/s @3GHz
-t1ha1_64le              :   3542.000 cycle/hash,  0.216 cycle/byte,  4.626 byte/cycle, 13.877 Gb/s @3GHz
-t1ha0                   :   1306.000 cycle/hash,  0.080 cycle/byte, 12.545 byte/cycle, 37.636 Gb/s @3GHz
-xxhash32                :   8201.000 cycle/hash,  0.501 cycle/byte,  1.998 byte/cycle,  5.993 Gb/s @3GHz
-xxhash64                :   4118.000 cycle/hash,  0.251 cycle/byte,  3.979 byte/cycle, 11.936 Gb/s @3GHz
-HighwayHash64_pure_c    :  49079.201 cycle/hash,  2.996 cycle/byte,  0.334 byte/cycle,  1.001 Gb/s @3GHz
-HighwayHash64_portable  :  44486.000 cycle/hash,  2.715 cycle/byte,  0.368 byte/cycle,  1.105 Gb/s @3GHz
-HighwayHash64_sse41     :   6419.000 cycle/hash,  0.392 cycle/byte,  2.552 byte/cycle,  7.657 Gb/s @3GHz
-HighwayHash64_avx2      :   4265.000 cycle/hash,  0.260 cycle/byte,  3.842 byte/cycle, 11.525 Gb/s @3GHz
+t1ha2_atonce            :   3544.000 cycle/hash,  0.216 cycle/byte,  4.623 byte/cycle, 13.869 Gb/s @3GHz
+t1ha2_atonce128*        :   3590.000 cycle/hash,  0.219 cycle/byte,  4.564 byte/cycle, 13.691 Gb/s @3GHz
+t1ha2_stream*           :   3600.000 cycle/hash,  0.220 cycle/byte,  4.551 byte/cycle, 13.653 Gb/s @3GHz
+t1ha2_stream128*        :   3618.000 cycle/hash,  0.221 cycle/byte,  4.528 byte/cycle, 13.585 Gb/s @3GHz
+t1ha1_64le              :   3562.818 cycle/hash,  0.217 cycle/byte,  4.599 byte/cycle, 13.796 Gb/s @3GHz
+t1ha0                   :   1281.203 cycle/hash,  0.078 cycle/byte, 12.788 byte/cycle, 38.364 Gb/s @3GHz
+xxhash32                :   8203.360 cycle/hash,  0.501 cycle/byte,  1.997 byte/cycle,  5.992 Gb/s @3GHz
+xxhash64                :   4128.240 cycle/hash,  0.252 cycle/byte,  3.969 byte/cycle, 11.906 Gb/s @3GHz
+StadtX                  :   3631.000 cycle/hash,  0.222 cycle/byte,  4.512 byte/cycle, 13.537 Gb/s @3GHz
+HighwayHash64_pure_c    :  55309.000 cycle/hash,  3.376 cycle/byte,  0.296 byte/cycle,  0.889 Gb/s @3GHz
+HighwayHash64_portable  :  44433.000 cycle/hash,  2.712 cycle/byte,  0.369 byte/cycle,  1.106 Gb/s @3GHz
+HighwayHash64_sse41     :   6567.000 cycle/hash,  0.401 cycle/byte,  2.495 byte/cycle,  7.485 Gb/s @3GHz
+HighwayHash64_avx2      :   4528.996 cycle/hash,  0.276 cycle/byte,  3.618 byte/cycle, 10.853 Gb/s @3GHz
 ```
 
 The `test` tool support a set of command line options to selecting functions and size of keys for benchmarking.
@@ -237,7 +257,7 @@ For properly performance please use at least GCC 5.5, Clang 6.0 or Visual Studio
 ### Scores
 
 Please take in account that the results is significantly depend on actual CPU, compiler version and CFLAGS.
-The results below were obtained in 2016 on:
+The results below were obtained in **2016** with:
  - CPU: `Intel(R) Core(TM) i7-6700K CPU`;
  - Compiler: `gcc version 5.4.0 20160609 (Ubuntu 5.4.0-6ubuntu1~16.04.4)`;
  - CFLAGS: `-march=native -O3 -fPIC`;

@@ -128,8 +128,8 @@ void bench_size(const unsigned size, const char *caption) {
 #endif /* T1HA0_DISABLED */
 
   if (is_selected(bench_xxhash)) {
-    bench("xxhash32", thunk_XXH32, buffer, size, seed);
-    bench("xxhash64", XXH64, buffer, size, (uint32_t)seed);
+    bench("xxhash32", thunk_XXH32, buffer, size, (uint32_t)seed);
+    bench("xxhash64", XXH64, buffer, size, seed);
   }
   if (is_selected(bench_highwayhash)) {
     bench("HighwayHash64_pure_c", thunk_HighwayHash64_pure_c, buffer, size,

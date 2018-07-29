@@ -1,4 +1,4 @@
-﻿/*
+/*
  *  Copyright (c) 2016-2018 Positive Technologies, https://www.ptsecurity.com,
  *  Fast Positive Hash.
  *

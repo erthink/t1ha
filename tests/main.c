@@ -93,9 +93,11 @@ void usage(void) {
       "  --aes, --no-aes           - include/exclude AES-NI accelerated,\n"
       "                              i.e. t1ha0_ia32aes_avx(), etc...\n"
 #endif /* T1HA0_AESNI_AVAILABLE */
-      "  --xxhash, --no-xxhash     - include/exclude xxhash32() and xxhash64(),"
       "\n"
-      "                              just for comparison.\n");
+      "Just for comparison:\n"
+      "  --xxhash, --no-xxhash     - include/exclude xxHash32 and xxHash64\n"
+      "  --stadtx, --no-stadtx     - include/exclude StadtX\n"
+      "  --highway, --no-highway   - include/exclude Google's HighwayHash.\n");
 }
 
 static bool option(const char *arg, const char *opt, unsigned flag) {

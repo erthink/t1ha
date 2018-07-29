@@ -1,4 +1,4 @@
-﻿/* StadtX hash implementaion.
+/* StadtX hash implementaion.
  * Author: Yves Orton <demerphq@gmail.com>.
  * License: LGPLv3.
  *

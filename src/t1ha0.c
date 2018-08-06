@@ -387,7 +387,6 @@ static uint64_t x86_cpu_features(void) {
 }
 #endif /* T1HA0_AESNI_AVAILABLE && __ia32__ */
 
-static
 #if __GNUC_PREREQ(4, 0) || __has_attribute(used)
     __attribute__((used))
 #endif

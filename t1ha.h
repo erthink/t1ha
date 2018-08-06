@@ -558,7 +558,7 @@ uint64_t t1ha0_ia32aes_avx2(const void *data, size_t length, uint64_t seed);
 #if T1HA0_RUNTIME_SELECT
 #if T1HA_USE_INDIRECT_FUNCTIONS
 T1HA_API uint64_t t1ha0(const void *data, size_t length, uint64_t seed);
-#else
+#elif __GNUC_PREREQ(4, 0) || __has_attribute(constructor)
 /* Otherwise function pointer will be used.
  * Unfortunately this may cause some overhead calling. */
 T1HA_API extern uint64_t (*t1ha0_funcptr)(const void *data, size_t length,
@@ -567,6 +567,8 @@ static __force_inline uint64_t t1ha0(const void *data, size_t length,
                                      uint64_t seed) {
   return t1ha0_funcptr(data, length, seed);
 }
+#else /* T1HA_USE_INDIRECT_FUNCTIONS */
+T1HA_API extern uint64_t (*t1ha0_resolve(void))(const void *, size_t, uint64_t);
 #endif /* T1HA_USE_INDIRECT_FUNCTIONS */
 
 #elif __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__

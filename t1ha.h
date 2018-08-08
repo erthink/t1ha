@@ -557,6 +557,8 @@ uint64_t t1ha0_ia32aes_avx2(const void *data, size_t length, uint64_t seed);
 #endif /* __force_inline */
 
 #if T1HA0_RUNTIME_SELECT
+typedef uint64_t (*t1ha0_function_t)(const void *, size_t, uint64_t);
+T1HA_API t1ha0_function_t t1ha0_resolve(void);
 #if T1HA_USE_INDIRECT_FUNCTIONS
 T1HA_API uint64_t t1ha0(const void *data, size_t length, uint64_t seed);
 #else

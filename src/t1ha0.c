@@ -387,11 +387,7 @@ static uint64_t x86_cpu_features(void) {
 }
 #endif /* T1HA0_AESNI_AVAILABLE && __ia32__ */
 
-static
-#if __GNUC_PREREQ(4, 0) || __has_attribute(used)
-    __attribute__((used))
-#endif
-    uint64_t (*t1ha0_resolve(void))(const void *, size_t, uint64_t) {
+t1ha0_function_t t1ha0_resolve(void) {
 
 #if T1HA0_AESNI_AVAILABLE && defined(__ia32__)
   uint64_t features = x86_cpu_features();

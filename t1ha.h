@@ -389,6 +389,10 @@
 #endif
 #endif /* T1HA_USE_INDIRECT_FUNCTIONS */
 
+#if __GNUC_PREREQ(4, 0)
+#pragma GCC visibility push(hidden)
+#endif /* __GNUC_PREREQ(4,0) */
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -661,3 +665,7 @@ static __force_inline uint64_t t1ha0(const void *data, size_t length,
 #ifdef __cplusplus
 }
 #endif
+
+#if __GNUC_PREREQ(4, 0)
+#pragma GCC visibility pop
+#endif /* __GNUC_PREREQ(4,0) */

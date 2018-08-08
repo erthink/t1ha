@@ -104,6 +104,13 @@
  *      // To disable runtime choice of fastest implementation.
  *      #define T1HA0_RUNTIME_SELECT 0
  *
+ *    When T1HA0_RUNTIME_SELECT is nonzero the t1ha0_resolve() function could
+ *    be used to get actual t1ha0() implementation address at runtime. This is
+ *    useful for two cases:
+ *      - calling by local pointer-to-function usually is little
+ *        bit faster (less overhead) than via a PLT thru the DSO boundary.
+ *      - GNU Indirect functions (see below) don't supported by environment
+ *        and calling by t1ha0_funcptr is not available and/or expensive.
  *
  * 4) T1HA_USE_INDIRECT_FUNCTIONS = Controls usage of GNU Indirect functions.
  *
@@ -502,6 +509,15 @@ T1HA_API uint64_t t1ha1_be(const void *data, size_t length, uint64_t seed);
  *      Briefly, such hash-results and their derivatives, should be
  *      used only in runtime, but should not be persist or transferred
  *      over a network.
+ *
+ *
+ *  When T1HA0_RUNTIME_SELECT is nonzero the t1ha0_resolve() function could
+ *  be used to get actual t1ha0() implementation address at runtime. This is
+ *  useful for two cases:
+ *    - calling by local pointer-to-function usually is little
+ *      bit faster (less overhead) than via a PLT thru the DSO boundary.
+ *    - GNU Indirect functions (see below) don't supported by environment
+ *      and calling by t1ha0_funcptr is not available and/or expensive.
  */
 
 #ifndef T1HA0_DISABLED

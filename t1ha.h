@@ -161,7 +161,7 @@
 
 #define T1HA_VERSION_MAJOR 2
 #define T1HA_VERSION_MINOR 0
-#define T1HA_VERSION_RELEASE 2
+#define T1HA_VERSION_RELEASE 3
 
 #ifndef __has_attribute
 #define __has_attribute(x) (0)

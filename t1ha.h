@@ -133,13 +133,14 @@
  *    By default, t1ha engade AES-NI for t1ha0() on the x86 platform, but
  *    you could override this default behavior when build t1ha library itself:
  *
- *      // To enable detection and usage of AES-NI instructions for t1ha0().
- *      #define T1HA0_AESNI_AVAILABLE 1
- *
  *      // To disable detection and usage of AES-NI instructions for t1ha0().
  *      // This may be useful when you unable to build t1ha library properly
  *      // or known that AES-NI will be unavailable at the deploy.
  *      #define T1HA0_AESNI_AVAILABLE 0
+ *
+ *      // To force detection and usage of AES-NI instructions for t1ha0(),
+ *      // but I don't known reasons to anybody would need this.
+ *      #define T1HA0_AESNI_AVAILABLE 1
  *
  * 6) T1HA0_DISABLED, T1HA1_DISABLED, T1HA2_DISABLED = Controls availability of
  *    t1ha functions.

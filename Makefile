@@ -7,7 +7,7 @@ T1HA_USE_FAST_ONESHOT_READ ?=1
 
 CC ?= gcc
 CXX ?= g++
-CFLAGS ?= -std=c99 -O3 -DNDEBUG -D_DEFAULT_SOURCE
+CFLAGS ?= -std=c99 -O3 -DNDEBUG -D_DEFAULT_SOURCE -fno-stack-protector
 CXXFLAGS = -std=c++11 $(filter-out -std=c99,$(CFLAGS))
 
 TARGET_ARCH_e2k = $(shell (export LC_ALL=C; ($(CC) --version 2>&1; $(CC) -v 2>&1) | grep -q -i 'e2k' && echo yes || echo no))
@@ -148,6 +148,10 @@ endif
 		 tests/highwayhash/verifier.c Makefile
 	$(CC) $(CFLAGS_TEST) -Wno-error -c -o $@ tests/highwayhash/verifier.c
 
+BENCH_EXTRA += 4bench_stadtx.o
+4bench_stadtx.o: tests/common.h tests/stadtx/stadtx_hash.h \
+		tests/stadtx/stadtx_thunk.c Makefile
+	$(CC) $(CFLAGS_TEST) -Wno-error -c -o $@ tests/stadtx/stadtx_thunk.c
 
 test: $(OBJ_LIST) $(BENCH_EXTRA) tests/main.c Makefile \
 		t1ha.h tests/common.h tests/mera.h \

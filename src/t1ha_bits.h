@@ -51,6 +51,10 @@
 #endif                          /* MSVC */
 #include "../t1ha.h"
 
+#if __GNUC_PREREQ(4, 0)
+#pragma GCC visibility push(hidden)
+#endif /* __GNUC_PREREQ(4,0) */
+
 #ifndef T1HA_USE_FAST_ONESHOT_READ
 /* Define it to 1 for little bit faster code.
  * Unfortunately this may triggering a false-positive alarms from Valgrind,
@@ -121,6 +125,33 @@
 #if __has_feature(address_sanitizer)
 #define __SANITIZE_ADDRESS__ 1
 #endif
+
+#ifndef __optimize
+#if defined(__clang__) && !__has_attribute(optimize)
+#define __optimize(ops)
+#elif defined(__GNUC__) || __has_attribute(optimize)
+#define __optimize(ops) __attribute__((optimize(ops)))
+#else
+#define __optimize(ops)
+#endif
+#endif /* __optimize */
+
+#ifndef __cold
+#if defined(__OPTIMIZE__)
+#if defined(__e2k__)
+#define __cold __optimize(1) __attribute__((cold))
+#elif defined(__clang__) && !__has_attribute(cold)
+/* just put infrequently used functions in separate section */
+#define __cold __attribute__((section("text.unlikely"))) __optimize("Os")
+#elif defined(__GNUC__) || __has_attribute(cold)
+#define __cold __attribute__((cold)) __optimize("Os")
+#else
+#define __cold __optimize("Os")
+#endif
+#else
+#define __cold
+#endif
+#endif /* __cold */
 
 #if __GNUC_PREREQ(4, 4) || defined(__clang__)
 

@@ -51,10 +51,6 @@
 #endif                          /* MSVC */
 #include "../t1ha.h"
 
-#if __GNUC_PREREQ(4, 0)
-#pragma GCC visibility push(hidden)
-#endif /* __GNUC_PREREQ(4,0) */
-
 #ifndef T1HA_USE_FAST_ONESHOT_READ
 /* Define it to 1 for little bit faster code.
  * Unfortunately this may triggering a false-positive alarms from Valgrind,
@@ -506,6 +502,10 @@ static __always_inline const
 #endif /* -Wtautological-pointer-compare */
 
 /***************************************************************************/
+
+#if __GNUC_PREREQ(4, 0)
+#pragma GCC visibility push(hidden)
+#endif /* __GNUC_PREREQ(4,0) */
 
 /*---------------------------------------------------------- Little Endian */
 

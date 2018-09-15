@@ -5,14 +5,22 @@
 # So, define it to 0 for calmness if doubt.
 T1HA_USE_FAST_ONESHOT_READ ?=1
 
+# To use the Intel compiler you need something like this
+#CC=/opt/intel/compilers_and_libraries/linux/bin/intel64/icc
+#CXX=/opt/intel/compilers_and_libraries/linux/bin/intel64/icc
+#LD=/opt/intel/compilers_and_libraries/linux/bin/intel64/xild
+#AR=/opt/intel/compilers_and_libraries/linux/bin/intel64/xiar
+#TARGET_ARCH_ia32=yes
+
 CC ?= gcc
 CXX ?= g++
+
 CFLAGS ?= -std=c99 -O3 -DNDEBUG -D_DEFAULT_SOURCE -fno-stack-protector
 CXXFLAGS = -std=c++11 $(filter-out -std=c99,$(CFLAGS))
 
-TARGET_ARCH_e2k = $(shell (export LC_ALL=C; ($(CC) --version 2>&1; $(CC) -v 2>&1) | grep -q -i 'e2k' && echo yes || echo no))
-TARGET_ARCH_ia32 = $(shell (export LC_ALL=C; ($(CC) --version 2>&1; $(CC) -v 2>&1) | grep -q -i -e '^Target: \(x86_64\)\|\([iI][3-6]86\)-.*' && echo yes || echo no))
-TARGET_ARCH_ppc = $(shell (export LC_ALL=C; ($(CC) --version 2>&1; $(CC) -v 2>&1) | grep -q -i -e '^Target: powerpc.*' && echo yes || echo no))
+TARGET_ARCH_e2k ?= $(shell (export LC_ALL=C; ($(CC) --version 2>&1; $(CC) -v 2>&1) | grep -q -i 'e2k' && echo yes || echo no))
+TARGET_ARCH_ia32 ?= $(shell (export LC_ALL=C; ($(CC) --version 2>&1; $(CC) -v 2>&1) | grep -q -i -e '^Target: \(x86_64\)\|\([iI][3-6]86\)-.*' && echo yes || echo no))
+TARGET_ARCH_ppc ?= $(shell (export LC_ALL=C; ($(CC) --version 2>&1; $(CC) -v 2>&1) | grep -q -i -e '^Target: powerpc.*' && echo yes || echo no))
 
 OBJ_LIST := t1ha0.o t1ha1.o t1ha2.o
 BENCH_EXTRA := bench.o mera.o test.o 4bench_xxhash.o 4bench_highwayhash_test.o 4bench_highwayhash_pure_c.o 4bench_highwayhash_portable.o

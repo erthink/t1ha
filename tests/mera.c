@@ -112,8 +112,10 @@
 /*****************************************************************************/
 
 /* Compiler's includes for builtins/intrinsics */
-#if defined(_MSC_VER) || defined(__INTEL_COMPILER)
+#if defined(_MSC_VER)
 #include <intrin.h>
+#elif defined(__INTEL_COMPILER)
+#include <ia32intrin.h>
 #elif __GNUC_PREREQ(4, 4) || defined(__clang__)
 #if defined(__ia32__) || defined(__e2k__)
 #include <x86intrin.h>
@@ -929,6 +931,48 @@ static unsigned clock_rdtsc_finish(timestamp_t *now) {
 }
 
 ia32_cpu_features_t ia32_cpu_features;
+
+/* Crutch for Intel Compiler (copy&paste from GCC's cpuid.h file */
+#if defined(__INTEL_COMPILER) && defined(__GNUC__) && !defined(__cpuid)
+#define __cpuid(level, a, b, c, d)                                             \
+  __asm__("cpuid\n\t" : "=a"(a), "=b"(b), "=c"(c), "=d"(d) : "0"(level))
+
+#define __cpuid_count(level, count, a, b, c, d)                                \
+  __asm__("cpuid\n\t"                                                          \
+          : "=a"(a), "=b"(b), "=c"(c), "=d"(d)                                 \
+          : "0"(level), "2"(count))
+static __inline unsigned int __get_cpuid_max(unsigned int __ext,
+                                             unsigned int *__sig) {
+  unsigned int __eax, __ebx, __ecx, __edx;
+
+#ifndef __x86_64__
+  /* See if we can use cpuid.  On AMD64 we always can.  */
+  __asm__("pushf{l|d}\n\t"
+          "pushf{l|d}\n\t"
+          "pop{l}\t%0\n\t"
+          "mov{l}\t{%0, %1|%1, %0}\n\t"
+          "xor{l}\t{%2, %0|%0, %2}\n\t"
+          "push{l}\t%0\n\t"
+          "popf{l|d}\n\t"
+          "pushf{l|d}\n\t"
+          "pop{l}\t%0\n\t"
+          "popf{l|d}\n\t"
+          : "=&r"(__eax), "=&r"(__ebx)
+          : "i"(0x00200000));
+
+  if (!((__eax ^ __ebx) & 0x00200000))
+    return 0;
+#endif /* __x86_64__ */
+
+  /* Host supports cpuid.  Return highest supported cpuid input value.  */
+  __cpuid(__ext, __eax, __ebx, __ecx, __edx);
+
+  if (__sig)
+    *__sig = __ebx;
+
+  return __eax;
+}
+#endif /* Crutch for Intel Compiler (copy&paste from GCC's cpuid.h file */
 
 void ia32_fetch_cpu_features(void) {
   memset(&ia32_cpu_features, 0, sizeof(ia32_cpu_features));

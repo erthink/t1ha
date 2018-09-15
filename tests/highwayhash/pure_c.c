@@ -9,9 +9,7 @@ This code is compatible with C90 with the additional requirement of
 supporting uint64_t.
 */
 
-/*////////////////////////////////////////////////////////////////////////////*/
 /* Internal implementation                                                    */
-/*////////////////////////////////////////////////////////////////////////////*/
 
 void HighwayHashReset_pure_c(const uint64_t key[4], HighwayHashState *state) {
   state->mul0[0] = 0xdbe6d5d5fe4cce2full;
@@ -169,9 +167,7 @@ static void HighwayHashFinalize256_pure_c(HighwayHashState *state,
                    &hash[3], &hash[2]);
 }
 
-/*////////////////////////////////////////////////////////////////////////////*/
 /* Non-cat API: single call on full data                                      */
-/*////////////////////////////////////////////////////////////////////////////*/
 
 static void ProcessAll(const uint8_t *data, size_t size, const uint64_t key[4],
                        HighwayHashState *state) {
@@ -205,9 +201,7 @@ void HighwayHash256_pure_c(const uint64_t key[4], const uint8_t *data,
   HighwayHashFinalize256_pure_c(&state, hash);
 }
 
-/*////////////////////////////////////////////////////////////////////////////*/
 /* Cat API: allows appending with multiple calls                              */
-/*////////////////////////////////////////////////////////////////////////////*/
 
 void HighwayHashCatStart_pure_c(const uint64_t key[4], HighwayHashCat *state) {
   HighwayHashReset_pure_c(key, &state->state);

@@ -8,9 +8,7 @@
 extern "C" {
 #endif
 
-/*////////////////////////////////////////////////////////////////////////////*/
 /* Low-level API, use for implementing streams etc...                         */
-/*////////////////////////////////////////////////////////////////////////////*/
 
 typedef struct {
   uint64_t v0[4];
@@ -36,9 +34,7 @@ static void HighwayHashFinalize128_pure_c(HighwayHashState *state,
 static void HighwayHashFinalize256_pure_c(HighwayHashState *state,
                                           uint64_t hash[4]);
 
-/*////////////////////////////////////////////////////////////////////////////*/
 /* Non-cat API: single call on full data                                      */
-/*////////////////////////////////////////////////////////////////////////////*/
 
 uint64_t HighwayHash64_pure_c(const uint64_t key[4], const uint8_t *data,
                               size_t size);
@@ -49,9 +45,7 @@ void HighwayHash128_pure_c(const uint64_t key[4], const uint8_t *data,
 void HighwayHash256_pure_c(const uint64_t key[4], const uint8_t *data,
                            size_t size, uint64_t hash[4]);
 
-/*////////////////////////////////////////////////////////////////////////////*/
 /* Cat API: allows appending with multiple calls                              */
-/*////////////////////////////////////////////////////////////////////////////*/
 
 typedef struct {
   HighwayHashState state;

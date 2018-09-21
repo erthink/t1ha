@@ -77,7 +77,7 @@ uint64_t thunk_HighwayHash64_pure_c(const void *input, size_t length,
 
 void bench_size(const unsigned size, const char *caption) {
   printf("\nBench for %s keys (%u bytes):\n", caption, size);
-  const uint64_t seed = 42;
+  const uint64_t seed = ~UINT64_C(42);
   char *buffer = malloc(size);
   for (unsigned i = 0; i < size; ++i)
     buffer[i] = (char)(rand() + i);
@@ -128,8 +128,11 @@ void bench_size(const unsigned size, const char *caption) {
 #endif /* T1HA0_DISABLED */
 
   if (is_selected(bench_xxhash)) {
-    bench("xxhash32", thunk_XXH32, buffer, size, seed);
-    bench("xxhash64", XXH64, buffer, size, (uint32_t)seed);
+    bench("xxhash32", thunk_XXH32, buffer, size, (uint32_t)seed);
+    bench("xxhash64", XXH64, buffer, size, seed);
+  }
+  if (is_selected(bench_stadtx)) {
+    bench("StadtX", thunk_StadtX, buffer, size, seed);
   }
   if (is_selected(bench_highwayhash)) {
     bench("HighwayHash64_pure_c", thunk_HighwayHash64_pure_c, buffer, size,

@@ -50,6 +50,8 @@ tests/highwayhash/verifier.c
 tests/main.c
 tests/mera.c
 tests/mera.h
+tests/stadtx/stadtx_hash.h
+tests/stadtx/stadtx_thunk.c
 tests/test.c
 tests/xxhash/xxhash.c
 tests/xxhash/xxhash.h

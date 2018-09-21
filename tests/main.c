@@ -29,7 +29,7 @@
 
 const unsigned default_option_flags = bench_0 | bench_1 | bench_2 |
                                       bench_xxhash | bench_highwayhash |
-                                      bench_tiny | bench_large;
+                                      bench_stadtx | bench_tiny | bench_large;
 
 const unsigned available_eas_flags =
 #if T1HA0_AESNI_AVAILABLE
@@ -93,9 +93,11 @@ void usage(void) {
       "  --aes, --no-aes           - include/exclude AES-NI accelerated,\n"
       "                              i.e. t1ha0_ia32aes_avx(), etc...\n"
 #endif /* T1HA0_AESNI_AVAILABLE */
-      "  --xxhash, --no-xxhash     - include/exclude xxhash32() and xxhash64(),"
       "\n"
-      "                              just for comparison.\n");
+      "Just for comparison:\n"
+      "  --xxhash, --no-xxhash     - include/exclude xxHash32 and xxHash64\n"
+      "  --stadtx, --no-stadtx     - include/exclude StadtX\n"
+      "  --highway, --no-highway   - include/exclude Google's HighwayHash.\n");
 }
 
 static bool option(const char *arg, const char *opt, unsigned flag) {
@@ -178,6 +180,9 @@ int main(int argc, const char *argv[]) {
 
       if (option(argv[i], "highwayhash", bench_highwayhash) ||
           option(argv[i], "highway", bench_highwayhash))
+        continue;
+
+      if (option(argv[i], "stadtx", bench_stadtx))
         continue;
 
 #ifndef T1HA0_DISABLED
@@ -294,6 +299,8 @@ int main(int argc, const char *argv[]) {
   HighwayHash64_verify(HighwayHash64_SSE41, "HighwayHash64_sse41");
 #endif
 
+  failed |= verify("StadtX", thunk_StadtX, refval_StadtX);
+
   if (failed)
     return EXIT_FAILURE;
 
@@ -313,6 +320,9 @@ int main(int argc, const char *argv[]) {
     } else if (is_selected(bench_32 | bench_xxhash)) {
       hash_function = thunk_XXH32;
       hash_name = "xxhash32";
+    } else if (is_selected(bench_64 | bench_stadtx)) {
+      hash_function = thunk_StadtX;
+      hash_name = "StadtX";
 #ifndef T1HA2_DISABLED
     } else if (is_selected(bench_64 | bench_2)) {
       hash_function = t1ha2_atonce;

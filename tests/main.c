@@ -119,8 +119,21 @@ static void print_build_info() {
 #elseif defined(__INTEL_COMPILER)
          "Intel C/C++ compiler"
 #elif defined(_MSC_VER)
-         "Microsoft Visual C/C++ %lu compiler",
-         (unsigned long)_MSC_FULL_VER
+         "Microsoft Visual C/C++ %lu compiler for %s",
+         (unsigned long)_MSC_FULL_VER,
+#if defined(_M_X64) || defined(_M_ARM64)
+         "x86-64"
+#elif defined(_M_IX86)
+         "x86-32"
+#elif defined(_M_ARM64)
+         "Arm8-64"
+#elif defined(_M_ARM)
+         "Arm7-32"
+#elif defined(_M_IA64)
+         "Itanium"
+#else
+#error FIXME
+#endif
 #elif defined(__e2k__)
          "Elbrus C/C++ compiler"
 #elif defined(__SUNPRO_C) || defined(__sun) || defined(sun)

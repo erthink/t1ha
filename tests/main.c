@@ -272,7 +272,7 @@ int main(int argc, const char *argv[]) {
   if (t1ha_selfcheck__all_enabled() != 0) {
     if (is_option_set(test_quiet))
       print_build_info();
-    puts(" - Self-check failed!\n"
+    puts(" - SELF-CHECK FAILED!\n"
          " - PLEASE report this troubleful compiler version and options\n"
          "   at https://github.com/leo-yuriev/t1ha/issues/26\n");
     return EXIT_FAILURE;
@@ -471,7 +471,9 @@ int main(int argc, const char *argv[]) {
   printf(" - measure granularity and overhead: ");
   fflush(NULL);
   double mats /* MeasurAble TimeSlice */ = bench_mats();
-  printf("%g %s, %g iteration/%s\n", mats, mera.units, 1 / mats, mera.units);
+  printf("%g %s%s, %g iteration%s/%s\n", mats, mera.units,
+         (mats > 1.5) ? "s" : "", 1 / mats, (1 / mats > 1.5) ? "s" : "",
+         mera.units);
 
   if (is_option_set(bench_verbose)) {
     printf(" - convergence: ");

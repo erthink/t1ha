@@ -42,6 +42,7 @@
  */
 
 #include "t1ha_bits.h"
+#include "t1ha_selfcheck.h"
 
 #if T1HA0_AESNI_AVAILABLE
 

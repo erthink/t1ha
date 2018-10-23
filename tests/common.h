@@ -38,6 +38,7 @@
                                    aggregate initializer */
 #endif                          /* MSVC */
 
+#include "../src/t1ha_selfcheck.h"
 #include "../t1ha.h" /* for T1HA0_AESNI_AVAILABLE, __ia32__, etc */
 #include "mera.h"    /* for ia32_cpu_features */
 
@@ -98,29 +99,18 @@ static __inline bool is_selected(unsigned mask) {
   return is_option_set(mask) && (disabled_option_flags & mask) == 0;
 }
 
-extern const uint64_t refval_2atonce[];
-extern const uint64_t refval_2atonce128[];
-extern const uint64_t refval_2stream[];
-extern const uint64_t refval_2stream128[];
-extern const uint64_t refval_64le[];
-extern const uint64_t refval_64be[];
-extern const uint64_t refval_32le[];
-extern const uint64_t refval_32be[];
-
 #if T1HA0_AESNI_AVAILABLE
 uint64_t t1ha0_ia32aes_noavx_a(const void *data, size_t length, uint64_t seed);
 uint64_t t1ha0_ia32aes_avx_a(const void *data, size_t length, uint64_t seed);
 #ifndef __e2k__
 uint64_t t1ha0_ia32aes_avx2_a(const void *data, size_t length, uint64_t seed);
 #endif /* !__e2k__ */
-extern const uint64_t refval_ia32aes_a[];
 
 uint64_t t1ha0_ia32aes_noavx_b(const void *data, size_t length, uint64_t seed);
 uint64_t t1ha0_ia32aes_avx_b(const void *data, size_t length, uint64_t seed);
 #ifndef __e2k__
 uint64_t t1ha0_ia32aes_avx2_b(const void *data, size_t length, uint64_t seed);
 #endif /* !__e2k__ */
-extern const uint64_t refval_ia32aes_b[];
 #endif /* T1HA0_AESNI_AVAILABLE */
 
 bool verify(const char *title, uint64_t (*hash)(const void *, size_t, uint64_t),

@@ -22,7 +22,7 @@ TARGET_ARCH_e2k ?= $(shell (export LC_ALL=C; ($(CC) --version 2>&1; $(CC) -v 2>&
 TARGET_ARCH_ia32 ?= $(shell (export LC_ALL=C; ($(CC) --version 2>&1; $(CC) -v 2>&1) | grep -q -i -e '^Target: \(x86_64\)\|\([iI][3-6]86\)-.*' && echo yes || echo no))
 TARGET_ARCH_ppc ?= $(shell (export LC_ALL=C; ($(CC) --version 2>&1; $(CC) -v 2>&1) | grep -q -i -e '^Target: powerpc.*' && echo yes || echo no))
 
-OBJ_LIST := t1ha0.o t1ha1.o t1ha2.o
+OBJ_LIST := t1ha0.o t1ha1.o t1ha2.o t1ha0_selfcheck.o t1ha1_selfcheck.o t1ha2_selfcheck.o t1ha_selfcheck.o t1ha_selfcheck_all.o
 BENCH_EXTRA := bench.o mera.o test.o 4bench_xxhash.o 4bench_highwayhash_test.o 4bench_highwayhash_pure_c.o 4bench_highwayhash_portable.o
 ifeq ($(TARGET_ARCH_e2k),yes)
 TARGET_ARCH := e2k
@@ -50,8 +50,17 @@ clean:
 reformat:
 	git ls-files | grep -E '\.(c|cxx|cc|cpp|h|hxx|hpp)(\.in)?$$' | xargs -r clang-format-6.0 -i --style=file
 
+t1ha_selfcheck.o: t1ha.h src/t1ha_bits.h src/t1ha_selfcheck.h src/t1ha_selfcheck.c Makefile
+	$(CC) $(CFLAGS_LIB) -c -o $@ src/t1ha_selfcheck.c
+
+t1ha_selfcheck_all.o: t1ha.h src/t1ha_bits.h src/t1ha_selfcheck.h src/t1ha_selfcheck_all.c Makefile
+	$(CC) $(CFLAGS_LIB) -c -o $@ src/t1ha_selfcheck_all.c
+
 t1ha0.o: t1ha.h src/t1ha_bits.h src/t1ha0.c Makefile
 	$(CC) $(CFLAGS_LIB) -c -o $@ src/t1ha0.c
+
+t1ha0_selfcheck.o: t1ha.h src/t1ha_bits.h src/t1ha0_selfcheck.c Makefile
+	$(CC) $(CFLAGS_LIB) -c -o $@ src/t1ha0_selfcheck.c
 
 t1ha0_aes_noavx.o_ARCH_ia32_CFLAGS = -mno-avx2 -mno-avx -maes
 t1ha0_aes_noavx.o: t1ha.h src/t1ha_bits.h src/t1ha0_ia32aes_a.h src/t1ha0_ia32aes_b.h src/t1ha0_ia32aes_noavx.c Makefile
@@ -80,8 +89,14 @@ t1ha0_aes_avx2.o: t1ha.h src/t1ha_bits.h src/t1ha0_ia32aes_a.h src/t1ha0_ia32aes
 t1ha1.o: t1ha.h src/t1ha_bits.h src/t1ha1.c Makefile
 	$(CC) $(CFLAGS_LIB) -c -o $@ src/t1ha1.c
 
+t1ha1_selfcheck.o: t1ha.h src/t1ha_bits.h src/t1ha1_selfcheck.c Makefile
+	$(CC) $(CFLAGS_LIB) -c -o $@ src/t1ha1_selfcheck.c
+
 t1ha2.o: t1ha.h src/t1ha_bits.h src/t1ha2.c Makefile
 	$(CC) $(CFLAGS_LIB) -c -o $@ src/t1ha2.c
+
+t1ha2_selfcheck.o: t1ha.h src/t1ha_bits.h src/t1ha2_selfcheck.c Makefile
+	$(CC) $(CFLAGS_LIB) -c -o $@ src/t1ha2_selfcheck.c
 
 libt1ha.a: $(OBJ_LIST) Makefile
 	$(AR) rs $@ $(OBJ_LIST)

@@ -43,6 +43,7 @@
 
 #ifndef T1HA1_DISABLED
 #include "t1ha_bits.h"
+#include "t1ha_selfcheck.h"
 
 /* xor-mul-xor mixer */
 static __inline uint64_t mix64(uint64_t v, uint64_t p) {

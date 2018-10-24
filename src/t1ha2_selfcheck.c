@@ -1,4 +1,4 @@
-﻿/*
+/*
  *  Copyright (c) 2016-2018 Positive Technologies, https://www.ptsecurity.com,
  *  Fast Positive Hash.
  *
@@ -143,7 +143,7 @@ const uint64_t t1ha_refval_2stream128[81] = { 0xCD2801D3B92237D6,
 /* *INDENT-ON* */
 /* clang-format on */
 
-__cold int t1ha_selfcheck__t1ha2_atonce() {
+__cold int t1ha_selfcheck__t1ha2_atonce(void) {
   return t1ha_selfcheck(t1ha2_atonce, t1ha_refval_2atonce);
 }
 
@@ -153,7 +153,7 @@ __cold static uint64_t thunk_atonce128(const void *data, size_t len,
   return t1ha2_atonce128(&unused, data, len, seed);
 }
 
-__cold int t1ha_selfcheck__t1ha2_atonce128() {
+__cold int t1ha_selfcheck__t1ha2_atonce128(void) {
   return t1ha_selfcheck(thunk_atonce128, t1ha_refval_2atonce128);
 }
 
@@ -174,12 +174,12 @@ __cold static uint64_t thunk_stream128(const void *data, size_t len,
   return t1ha2_final(&ctx, &unused);
 }
 
-__cold int t1ha_selfcheck__t1ha2_stream() {
+__cold int t1ha_selfcheck__t1ha2_stream(void) {
   return t1ha_selfcheck(thunk_stream, t1ha_refval_2stream) |
          t1ha_selfcheck(thunk_stream128, t1ha_refval_2stream128);
 }
 
-__cold int t1ha_selfcheck__t1ha2() {
+__cold int t1ha_selfcheck__t1ha2(void) {
   return t1ha_selfcheck__t1ha2_atonce() | t1ha_selfcheck__t1ha2_atonce128() |
          t1ha_selfcheck__t1ha2_stream();
 }

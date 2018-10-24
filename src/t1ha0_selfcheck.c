@@ -1,4 +1,4 @@
-﻿/*
+/*
  *  Copyright (c) 2016-2018 Positive Technologies, https://www.ptsecurity.com,
  *  Fast Positive Hash.
  *
@@ -145,31 +145,31 @@ const uint64_t t1ha_refval_ia32aes_b[81] = { 0,
 /* *INDENT-ON* */
 /* clang-format on */
 
-__cold int t1ha_selfcheck__t1ha0_32le() {
+__cold int t1ha_selfcheck__t1ha0_32le(void) {
   return t1ha_selfcheck(t1ha0_32le, t1ha_refval_32le);
 }
 
-__cold int t1ha_selfcheck__t1ha0_32be() {
+__cold int t1ha_selfcheck__t1ha0_32be(void) {
   return t1ha_selfcheck(t1ha0_32be, t1ha_refval_32be);
 }
 
 #if T1HA0_AESNI_AVAILABLE
-__cold int t1ha_selfcheck__t1ha0_ia32aes_noavx() {
+__cold int t1ha_selfcheck__t1ha0_ia32aes_noavx(void) {
   return t1ha_selfcheck(t1ha0_ia32aes_noavx, t1ha_refval_ia32aes_a);
 }
 
-__cold int t1ha_selfcheck__t1ha0_ia32aes_avx() {
+__cold int t1ha_selfcheck__t1ha0_ia32aes_avx(void) {
   return t1ha_selfcheck(t1ha0_ia32aes_avx, t1ha_refval_ia32aes_a);
 }
 
 #ifndef __e2k__
-__cold int t1ha_selfcheck__t1ha0_ia32aes_avx2() {
+__cold int t1ha_selfcheck__t1ha0_ia32aes_avx2(void) {
   return t1ha_selfcheck(t1ha0_ia32aes_avx2, t1ha_refval_ia32aes_b);
 }
 #endif /* ! __e2k__ */
 #endif /* if T1HA0_AESNI_AVAILABLE */
 
-__cold int t1ha_selfcheck__t1ha0() {
+__cold int t1ha_selfcheck__t1ha0(void) {
   int rc = t1ha_selfcheck__t1ha0_32le() | t1ha_selfcheck__t1ha0_32be();
 
 #if (UINTPTR_MAX > 0xffffFFFFul || ULONG_MAX > 0xffffFFFFul) &&                \

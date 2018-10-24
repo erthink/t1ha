@@ -1,4 +1,4 @@
-﻿/*
+/*
  *  Copyright (c) 2016-2018 Positive Technologies, https://www.ptsecurity.com,
  *  Fast Positive Hash.
  *
@@ -44,7 +44,7 @@
 #include "t1ha_bits.h"
 #include "t1ha_selfcheck.h"
 
-__cold int t1ha_selfcheck__all_enabled() {
+__cold int t1ha_selfcheck__all_enabled(void) {
   int rc = 0;
 
 #ifndef T1HA2_DISABLED

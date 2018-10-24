@@ -1,4 +1,4 @@
-﻿/*
+/*
  *  Copyright (c) 2016-2018 Positive Technologies, https://www.ptsecurity.com,
  *  Fast Positive Hash.
  *
@@ -97,15 +97,15 @@ const uint64_t t1ha_refval_64be[81] = { 0,
 /* *INDENT-ON* */
 /* clang-format on */
 
-__cold int t1ha_selfcheck__t1ha1_le() {
+__cold int t1ha_selfcheck__t1ha1_le(void) {
   return t1ha_selfcheck(t1ha1_le, t1ha_refval_64le);
 }
 
-__cold int t1ha_selfcheck__t1ha1_be() {
+__cold int t1ha_selfcheck__t1ha1_be(void) {
   return t1ha_selfcheck(t1ha1_be, t1ha_refval_64be);
 }
 
-__cold int t1ha_selfcheck__t1ha1() {
+__cold int t1ha_selfcheck__t1ha1(void) {
   return t1ha_selfcheck__t1ha1_le() | t1ha_selfcheck__t1ha1_be();
 }
 

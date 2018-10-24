@@ -112,7 +112,7 @@ static bool option(const char *arg, const char *opt, unsigned flag) {
   return false;
 }
 
-static void print_build_info() {
+static void print_build_info(void) {
   printf("Build by "
 #if defined(EMSCRIPTEN)
          "Emscripten/LLVM compiler"

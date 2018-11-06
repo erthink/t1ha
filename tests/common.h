@@ -168,3 +168,6 @@ uint64_t thunk_HighwayHash64_SSE41(const void *input, size_t length,
                                    uint64_t seed);
 uint64_t thunk_HighwayHash64_VSX(const void *input, size_t length,
                                  uint64_t seed);
+
+/* MeowHash */
+uint64_t thunk_MeowHash1(const void *input, size_t length, uint64_t seed);

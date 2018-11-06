@@ -54,6 +54,10 @@ tests/highwayhash/vector128.h
 tests/highwayhash/vector256.h
 tests/highwayhash/verifier.c
 tests/main.c
+tests/meowhash/LICENSE
+tests/meowhash/meow1_thunk.c
+tests/meowhash/meow_hash.h
+tests/meowhash/meow_intrinsics.h
 tests/mera.c
 tests/mera.h
 tests/stadtx/stadtx_hash.h

@@ -656,14 +656,15 @@ static __always_inline uint64_t tail64_le_aligned(const void *v, size_t tail) {
     T1HA_SYS_UNALIGNED_ACCESS != T1HA_UNALIGNED_ACCESS__UNABLE &&              \
     defined(PAGESIZE) && PAGESIZE > 42 && !defined(__SANITIZE_ADDRESS__)
 #define can_read_underside(ptr, size)                                          \
-  ((size) <= sizeof(uintptr_t) && ((PAGESIZE - (size)) & (uintptr_t)(ptr)) != 0)
+  (((PAGESIZE - (size)) & (uintptr_t)(ptr)) != 0)
 #endif /* T1HA_USE_FAST_ONESHOT_READ */
 
 static __always_inline uint64_t tail64_le_unaligned(const void *v,
                                                     size_t tail) {
   const uint8_t *p = (const uint8_t *)v;
-#ifdef can_read_underside
-  /* On some systems (e.g. x86) we can perform a 'oneshot' read, which
+#if defined(can_read_underside) &&                                             \
+    (UINTPTR_MAX > 0xffffFFFFul || ULONG_MAX > 0xffffFFFFul)
+  /* On some systems (e.g. x86_64) we can perform a 'oneshot' read, which
    * is little bit faster. Thanks Marcin Żukowski <marcin.zukowski@gmail.com>
    * for the reminder. */
   const unsigned offset = (8 - tail) & 7;
@@ -885,10 +886,11 @@ static __maybe_unused __always_inline uint64_t tail64_be_aligned(const void *v,
 static __maybe_unused __always_inline uint64_t
 tail64_be_unaligned(const void *v, size_t tail) {
   const uint8_t *p = (const uint8_t *)v;
-#ifdef can_read_underside
-  /* On some systems we can perform a 'oneshot' read, which is little bit
-   * faster. Thanks Marcin Żukowski <marcin.zukowski@gmail.com> for the
-   * reminder. */
+#if defined(can_read_underside) &&                                             \
+    (UINTPTR_MAX > 0xffffFFFFul || ULONG_MAX > 0xffffFFFFul)
+  /* On some systems (e.g. x86_64) we can perform a 'oneshot' read, which
+   * is little bit faster. Thanks Marcin Żukowski <marcin.zukowski@gmail.com>
+   * for the reminder. */
   const unsigned offset = (8 - tail) & 7;
   const unsigned shift = offset << 3;
   if (likely(can_read_underside(p, 8))) {

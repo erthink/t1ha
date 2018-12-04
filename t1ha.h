@@ -124,7 +124,7 @@
  *    t1ha library itself:
  *
  *      // To enable use of GNU ELF Indirect functions.
- *      #define T1T1HA_USE_INDIRECT_FUNCTIONS 1
+ *      #define T1HA_USE_INDIRECT_FUNCTIONS 1
  *
  *      // To disable use of GNU ELF Indirect functions. This may be useful
  *      // if the actual toolchain or the system's loader don't support ones.

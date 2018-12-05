@@ -15,7 +15,9 @@ T1HA_USE_FAST_ONESHOT_READ ?=1
 CC ?= gcc
 CXX ?= g++
 
-CFLAGS ?= -std=c99 -O3 -DNDEBUG -D_DEFAULT_SOURCE -fno-stack-protector
+# T1HA_EXTRA_CFLAGS ?= -DT1HA_USE_INDIRECT_FUNCTIONS=0 -m32
+
+CFLAGS ?= $(T1HA_EXTRA_CFLAGS) -std=c99 -O3 -DNDEBUG -D_DEFAULT_SOURCE -fno-stack-protector
 CXXFLAGS = -std=c++11 $(filter-out -std=c99,$(CFLAGS))
 
 TARGET_ARCH_e2k ?= $(shell (export LC_ALL=C; ($(CC) --version 2>&1; $(CC) -v 2>&1) | grep -q -i 'e2k' && echo yes || echo no))

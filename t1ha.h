@@ -320,10 +320,8 @@
 #if defined(_WIN32) || defined(_WIN64) || defined(__CYGWIN__)
 #if defined(__GNUC__) || __has_attribute(dllexport)
 #define __dll_export __attribute__((dllexport))
-#elif defined(_MSC_VER)
-#define __dll_export __declspec(dllexport)
 #else
-#define __dll_export
+#define __dll_export __declspec(dllexport)
 #endif
 #elif defined(__GNUC__) || __has_attribute(visibility)
 #define __dll_export __attribute__((visibility("default")))
@@ -336,11 +334,11 @@
 #if defined(_WIN32) || defined(_WIN64) || defined(__CYGWIN__)
 #if defined(__GNUC__) || __has_attribute(dllimport)
 #define __dll_import __attribute__((dllimport))
-#elif defined(_MSC_VER)
-#define __dll_import __declspec(dllimport)
 #else
-#define __dll_import
+#define __dll_import __declspec(dllimport)
 #endif
+#elif defined(__GNUC__) || __has_attribute(visibility)
+#define __dll_import __attribute__((visibility("default")))
 #else
 #define __dll_import
 #endif

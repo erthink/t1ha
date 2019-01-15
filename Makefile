@@ -207,7 +207,7 @@ CROSS_LIST_NOQEMU = hppa-linux-gnu-gcc s390x-linux-gnu-gcc
 
 cross-gcc:
 	@echo "CORRESPONDING CROSS-COMPILERs ARE REQUIRED."
-	@echo "FOR INSTANCE: apt install gcc-aarch64-linux-gnu gcc-alpha-linux-gnu gcc-arm-linux-gnueabihf gcc-hppa-linux-gnu gcc-mips-linux-gnu gcc-mips64-linux-gnuabi64 gcc-powerpc-linux-gnu gcc-powerpc64-linux-gnu gcc-s390x-linux-gnu gcc-sh4-linux-gnu"
+	@echo "FOR INSTANCE: apt install g++-aarch64-linux-gnu g++-alpha-linux-gnu g++-arm-linux-gnueabihf g++-hppa-linux-gnu g++-mips-linux-gnu g++-mips64-linux-gnuabi64 g++-powerpc-linux-gnu g++-powerpc64-linux-gnu g++-s390x-linux-gnu g++-sh4-linux-gnu g++-sparc64-linux-gnu"
 	@for CC in $(CROSS_LIST_NOQEMU) $(CROSS_LIST); do \
 		echo "===================== $$CC"; \
 		$(MAKE) clean && CC=$$CC CXX=$$(echo "$$CC" | sed 's/gcc/g++/') $(MAKE) all || exit $$?; \
@@ -215,7 +215,9 @@ cross-gcc:
 
 cross-qemu:
 	@echo "CORRESPONDING CROSS-COMPILERs AND QEMUs ARE REQUIRED."
-	@echo "FOR INSTANCE: apt install binfmt-support qemu-user-static qemu-user qemu-system-arm qemu-system-mips qemu-system-misc qemu-system-ppc qemu-system-sparc gcc-aarch64-linux-gnu gcc-alpha-linux-gnu gcc-arm-linux-gnueabihf gcc-hppa-linux-gnu gcc-mips-linux-gnu gcc-mips64-linux-gnuabi64 gcc-powerpc-linux-gnu gcc-powerpc64-linux-gnu gcc-s390x-linux-gnu gcc-sh4-linux-gnu"
+	@echo "FOR INSTANCE: "
+	@echo "	1) apt install g++-aarch64-linux-gnu g++-alpha-linux-gnu g++-arm-linux-gnueabihf g++-hppa-linux-gnu g++-mips-linux-gnu g++-mips64-linux-gnuabi64 g++-powerpc-linux-gnu g++-powerpc64-linux-gnu g++-s390x-linux-gnu g++-sh4-linux-gnu g++-sparc64-linux-gnu"
+	@echo "	2) apt install binfmt-support qemu-user-static qemu-user qemu-system-arm qemu-system-mips qemu-system-misc qemu-system-ppc qemu-system-sparc"
 	@for CC in $(CROSS_LIST); do \
 		echo "===================== $$CC + qemu"; \
 		$(MAKE) clean && CC=$$CC CXX=$$(echo "$$CC" | sed 's/gcc/g++/') CFLAGS_TEST="-std=c99 -static" $(MAKE) bench-verbose || exit $$?; \

@@ -116,8 +116,9 @@ uint64_t T1HA_IA32AES_NAME(const void *data, size_t len, uint64_t seed) {
 #endif
 #endif
 #ifdef __AVX__
-    _mm256_zeroall();
-#elif !(defined(_X86_64_) || defined(__x86_64__) || defined(_M_X64))
+    _mm256_zeroupper();
+#elif !(defined(_X86_64_) || defined(__x86_64__) || defined(_M_X64) ||         \
+        defined(__e2k__))
     _mm_empty();
 #endif
   }

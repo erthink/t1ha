@@ -20,7 +20,8 @@ Included in the [Awesome C](https://github.com/kozross/awesome-c) list of open s
   4. Currently not suitable for cryptography.
   5. Licensed under [zlib License](https://en.wikipedia.org/wiki/Zlib_License).
 
-Also pay attention to [Erlang](https://github.com/lemenkov/erlang-t1ha)
+Also pay attention to [Rust](https://github.com/flier/rust-t1ha),
+[Erlang](https://github.com/lemenkov/erlang-t1ha)
 and [Golang](https://github.com/dgryski/go-t1ha) implementations.
 
 ********************************************************************************

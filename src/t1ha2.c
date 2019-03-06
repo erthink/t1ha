@@ -43,6 +43,7 @@
 
 #ifndef T1HA2_DISABLED
 #include "t1ha_bits.h"
+#include "t1ha_selfcheck.h"
 
 static __always_inline void init_ab(t1ha_state256_t *s, uint64_t x,
                                     uint64_t y) {

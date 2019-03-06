@@ -15,14 +15,16 @@ T1HA_USE_FAST_ONESHOT_READ ?=1
 CC ?= gcc
 CXX ?= g++
 
-CFLAGS ?= -std=c99 -O3 -DNDEBUG -D_DEFAULT_SOURCE -fno-stack-protector
+# T1HA_EXTRA_CFLAGS ?= -DT1HA_USE_INDIRECT_FUNCTIONS=0 -m32
+
+CFLAGS ?= $(T1HA_EXTRA_CFLAGS) -std=c99 -O3 -DNDEBUG -D_DEFAULT_SOURCE -fno-stack-protector
 CXXFLAGS = -std=c++11 $(filter-out -std=c99,$(CFLAGS))
 
 TARGET_ARCH_e2k ?= $(shell (export LC_ALL=C; ($(CC) --version 2>&1; $(CC) -v 2>&1) | grep -q -i 'e2k' && echo yes || echo no))
 TARGET_ARCH_ia32 ?= $(shell (export LC_ALL=C; ($(CC) --version 2>&1; $(CC) -v 2>&1) | grep -q -i -e '^Target: \(x86_64\)\|\([iI][3-6]86\)-.*' && echo yes || echo no))
 TARGET_ARCH_ppc ?= $(shell (export LC_ALL=C; ($(CC) --version 2>&1; $(CC) -v 2>&1) | grep -q -i -e '^Target: powerpc.*' && echo yes || echo no))
 
-OBJ_LIST := t1ha0.o t1ha1.o t1ha2.o
+OBJ_LIST := t1ha0.o t1ha1.o t1ha2.o t1ha0_selfcheck.o t1ha1_selfcheck.o t1ha2_selfcheck.o t1ha_selfcheck.o t1ha_selfcheck_all.o
 BENCH_EXTRA := bench.o mera.o test.o 4bench_xxhash.o 4bench_highwayhash_test.o 4bench_highwayhash_pure_c.o 4bench_highwayhash_portable.o
 ifeq ($(TARGET_ARCH_e2k),yes)
 TARGET_ARCH := e2k
@@ -50,8 +52,17 @@ clean:
 reformat:
 	git ls-files | grep -E '\.(c|cxx|cc|cpp|h|hxx|hpp)(\.in)?$$' | xargs -r clang-format-6.0 -i --style=file
 
+t1ha_selfcheck.o: t1ha.h src/t1ha_bits.h src/t1ha_selfcheck.h src/t1ha_selfcheck.c Makefile
+	$(CC) $(CFLAGS_LIB) -c -o $@ src/t1ha_selfcheck.c
+
+t1ha_selfcheck_all.o: t1ha.h src/t1ha_bits.h src/t1ha_selfcheck.h src/t1ha_selfcheck_all.c Makefile
+	$(CC) $(CFLAGS_LIB) -c -o $@ src/t1ha_selfcheck_all.c
+
 t1ha0.o: t1ha.h src/t1ha_bits.h src/t1ha0.c Makefile
 	$(CC) $(CFLAGS_LIB) -c -o $@ src/t1ha0.c
+
+t1ha0_selfcheck.o: t1ha.h src/t1ha_bits.h src/t1ha0_selfcheck.c Makefile
+	$(CC) $(CFLAGS_LIB) -c -o $@ src/t1ha0_selfcheck.c
 
 t1ha0_aes_noavx.o_ARCH_ia32_CFLAGS = -mno-avx2 -mno-avx -maes
 t1ha0_aes_noavx.o: t1ha.h src/t1ha_bits.h src/t1ha0_ia32aes_a.h src/t1ha0_ia32aes_b.h src/t1ha0_ia32aes_noavx.c Makefile
@@ -80,8 +91,14 @@ t1ha0_aes_avx2.o: t1ha.h src/t1ha_bits.h src/t1ha0_ia32aes_a.h src/t1ha0_ia32aes
 t1ha1.o: t1ha.h src/t1ha_bits.h src/t1ha1.c Makefile
 	$(CC) $(CFLAGS_LIB) -c -o $@ src/t1ha1.c
 
+t1ha1_selfcheck.o: t1ha.h src/t1ha_bits.h src/t1ha1_selfcheck.c Makefile
+	$(CC) $(CFLAGS_LIB) -c -o $@ src/t1ha1_selfcheck.c
+
 t1ha2.o: t1ha.h src/t1ha_bits.h src/t1ha2.c Makefile
 	$(CC) $(CFLAGS_LIB) -c -o $@ src/t1ha2.c
+
+t1ha2_selfcheck.o: t1ha.h src/t1ha_bits.h src/t1ha2_selfcheck.c Makefile
+	$(CC) $(CFLAGS_LIB) -c -o $@ src/t1ha2_selfcheck.c
 
 libt1ha.a: $(OBJ_LIST) Makefile
 	$(AR) rs $@ $(OBJ_LIST)
@@ -190,7 +207,7 @@ CROSS_LIST_NOQEMU = hppa-linux-gnu-gcc s390x-linux-gnu-gcc
 
 cross-gcc:
 	@echo "CORRESPONDING CROSS-COMPILERs ARE REQUIRED."
-	@echo "FOR INSTANCE: apt install gcc-aarch64-linux-gnu gcc-alpha-linux-gnu gcc-arm-linux-gnueabihf gcc-hppa-linux-gnu gcc-mips-linux-gnu gcc-mips64-linux-gnuabi64 gcc-powerpc-linux-gnu gcc-powerpc64-linux-gnu gcc-s390x-linux-gnu gcc-sh4-linux-gnu"
+	@echo "FOR INSTANCE: apt install g++-aarch64-linux-gnu g++-alpha-linux-gnu g++-arm-linux-gnueabihf g++-hppa-linux-gnu g++-mips-linux-gnu g++-mips64-linux-gnuabi64 g++-powerpc-linux-gnu g++-powerpc64-linux-gnu g++-s390x-linux-gnu g++-sh4-linux-gnu g++-sparc64-linux-gnu"
 	@for CC in $(CROSS_LIST_NOQEMU) $(CROSS_LIST); do \
 		echo "===================== $$CC"; \
 		$(MAKE) clean && CC=$$CC CXX=$$(echo "$$CC" | sed 's/gcc/g++/') $(MAKE) all || exit $$?; \
@@ -198,7 +215,9 @@ cross-gcc:
 
 cross-qemu:
 	@echo "CORRESPONDING CROSS-COMPILERs AND QEMUs ARE REQUIRED."
-	@echo "FOR INSTANCE: apt install binfmt-support qemu-user-static qemu-user qemu-system-arm qemu-system-mips qemu-system-misc qemu-system-ppc qemu-system-sparc gcc-aarch64-linux-gnu gcc-alpha-linux-gnu gcc-arm-linux-gnueabihf gcc-hppa-linux-gnu gcc-mips-linux-gnu gcc-mips64-linux-gnuabi64 gcc-powerpc-linux-gnu gcc-powerpc64-linux-gnu gcc-s390x-linux-gnu gcc-sh4-linux-gnu"
+	@echo "FOR INSTANCE: "
+	@echo "	1) apt install g++-aarch64-linux-gnu g++-alpha-linux-gnu g++-arm-linux-gnueabihf g++-hppa-linux-gnu g++-mips-linux-gnu g++-mips64-linux-gnuabi64 g++-powerpc-linux-gnu g++-powerpc64-linux-gnu g++-s390x-linux-gnu g++-sh4-linux-gnu g++-sparc64-linux-gnu"
+	@echo "	2) apt install binfmt-support qemu-user-static qemu-user qemu-system-arm qemu-system-mips qemu-system-misc qemu-system-ppc qemu-system-sparc"
 	@for CC in $(CROSS_LIST); do \
 		echo "===================== $$CC + qemu"; \
 		$(MAKE) clean && CC=$$CC CXX=$$(echo "$$CC" | sed 's/gcc/g++/') CFLAGS_TEST="-std=c99 -static" $(MAKE) bench-verbose || exit $$?; \

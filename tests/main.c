@@ -112,6 +112,47 @@ static bool option(const char *arg, const char *opt, unsigned flag) {
   return false;
 }
 
+static void print_build_info(void) {
+  printf("Build by "
+#if defined(EMSCRIPTEN)
+         "Emscripten/LLVM compiler"
+#elseif defined(__INTEL_COMPILER)
+         "Intel C/C++ compiler"
+#elif defined(_MSC_VER)
+         "Microsoft Visual C/C++ %lu compiler for %s",
+         (unsigned long)_MSC_FULL_VER,
+#if defined(_M_X64) || defined(_M_ARM64)
+         "x86-64"
+#elif defined(_M_IX86)
+         "x86-32"
+#elif defined(_M_ARM64)
+         "Arm8-64"
+#elif defined(_M_ARM)
+         "Arm7-32"
+#elif defined(_M_IA64)
+         "Itanium"
+#else
+#error FIXME
+#endif
+#elif defined(__e2k__)
+         "Elbrus C/C++ compiler"
+#elif defined(__SUNPRO_C) || defined(__sun) || defined(sun)
+         "SUN C/C++ compiler"
+#elif defined(__IBMC__)
+         "IBM C/C++ compiler"
+#elif defined(__clang__)
+         "Clang compiler %d.%d",
+         __clang_major__, __clang_minor__
+#elif defined(__GNUC__)
+         "GNU C/C++ compiler %d.%d",
+         __GNUC__, __GNUC_MINOR__
+#else
+         "'Unknown' compiler"
+#endif
+  );
+  fflush(NULL);
+}
+
 int main(int argc, const char *argv[]) {
   if (argc > 1) {
     for (int i = 1; i < argc; ++i) {
@@ -238,22 +279,37 @@ int main(int argc, const char *argv[]) {
 
   /*************************************************************************/
 
+  if (!is_option_set(test_quiet))
+    print_build_info();
+
+  if (t1ha_selfcheck__all_enabled() != 0) {
+    if (is_option_set(test_quiet))
+      print_build_info();
+    puts(" - SELF-CHECK FAILED!\n"
+         " - PLEASE report this troubleful compiler version and options\n"
+         "   at https://github.com/leo-yuriev/t1ha/issues/26\n");
+    return EXIT_FAILURE;
+  } else if (!is_option_set(test_quiet))
+    puts(" (self-check passed)");
+
   bool failed = false;
 #ifndef T1HA2_DISABLED
   /* Stable t1ha2 */
-  failed |= verify("t1ha2_atonce", t1ha2_atonce, refval_2atonce);
-  failed |= verify("t1ha2_atonce128", thunk_t1ha2_atonce128, refval_2atonce128);
-  failed |= verify("t1ha2_stream", thunk_t1ha2_stream, refval_2stream);
-  failed |= verify("t1ha2_stream128", thunk_t1ha2_stream128, refval_2stream128);
+  failed |= verify("t1ha2_atonce", t1ha2_atonce, t1ha_refval_2atonce);
+  failed |=
+      verify("t1ha2_atonce128", thunk_t1ha2_atonce128, t1ha_refval_2atonce128);
+  failed |= verify("t1ha2_stream", thunk_t1ha2_stream, t1ha_refval_2stream);
+  failed |=
+      verify("t1ha2_stream128", thunk_t1ha2_stream128, t1ha_refval_2stream128);
 #endif
 #ifndef T1HA1_DISABLED
   /* Stable t1ha1 */
-  failed |= verify("t1ha1_64le", t1ha1_le, refval_64le);
-  failed |= verify("t1ha1_64be", t1ha1_be, refval_64be);
+  failed |= verify("t1ha1_64le", t1ha1_le, t1ha_refval_64le);
+  failed |= verify("t1ha1_64be", t1ha1_be, t1ha_refval_64be);
 #endif
 #ifndef T1HA0_DISABLED
-  failed |= verify("t1ha0_32le", t1ha0_32le, refval_32le);
-  failed |= verify("t1ha0_32be", t1ha0_32be, refval_32be);
+  failed |= verify("t1ha0_32le", t1ha0_32le, t1ha_refval_32le);
+  failed |= verify("t1ha0_32be", t1ha0_32be, t1ha_refval_32be);
 #if T1HA0_AESNI_AVAILABLE
 #ifdef __e2k__
   failed |=
@@ -262,15 +318,15 @@ int main(int argc, const char *argv[]) {
 #else
   ia32_fetch_cpu_features();
   if (ia32_cpu_features.basic.ecx & UINT32_C(0x02000000)) {
-    failed |=
-        verify("t1ha0_ia32aes_noavx", t1ha0_ia32aes_noavx, refval_ia32aes_a);
+    failed |= verify("t1ha0_ia32aes_noavx", t1ha0_ia32aes_noavx,
+                     t1ha_refval_ia32aes_a);
     if ((ia32_cpu_features.basic.ecx & UINT32_C(0x1A000000)) ==
         UINT32_C(0x1A000000)) {
       failed |=
-          verify("t1ha0_ia32aes_avx", t1ha0_ia32aes_avx, refval_ia32aes_a);
+          verify("t1ha0_ia32aes_avx", t1ha0_ia32aes_avx, t1ha_refval_ia32aes_a);
       if (ia32_cpu_features.extended_7.ebx & 32)
-        failed |=
-            verify("t1ha0_ia32aes_avx2", t1ha0_ia32aes_avx2, refval_ia32aes_b);
+        failed |= verify("t1ha0_ia32aes_avx2", t1ha0_ia32aes_avx2,
+                         t1ha_refval_ia32aes_b);
     }
   } else {
     if (option_flags & user_wanna_aes)
@@ -428,7 +484,9 @@ int main(int argc, const char *argv[]) {
   printf(" - measure granularity and overhead: ");
   fflush(NULL);
   double mats /* MeasurAble TimeSlice */ = bench_mats();
-  printf("%g %s, %g iteration/%s\n", mats, mera.units, 1 / mats, mera.units);
+  printf("%g %s%s, %g iteration%s/%s\n", mats, mera.units,
+         (mats > 1.5) ? "s" : "", 1 / mats, (1 / mats > 1.5) ? "s" : "",
+         mera.units);
 
   if (is_option_set(bench_verbose)) {
     printf(" - convergence: ");

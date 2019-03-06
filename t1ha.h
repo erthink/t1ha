@@ -168,8 +168,8 @@
  *****************************************************************************/
 
 #define T1HA_VERSION_MAJOR 2
-#define T1HA_VERSION_MINOR 0
-#define T1HA_VERSION_RELEASE 5
+#define T1HA_VERSION_MINOR 1
+#define T1HA_VERSION_RELEASE 0
 
 #ifndef __has_attribute
 #define __has_attribute(x) (0)
@@ -344,6 +344,16 @@
 #endif
 #endif /* __dll_import */
 
+#ifndef __force_inline
+#ifdef _MSC_VER
+#define __force_inline __forceinline
+#elif __GNUC_PREREQ(3, 2) || __has_attribute(always_inline)
+#define __force_inline __inline __attribute__((always_inline))
+#else
+#define __force_inline __inline
+#endif
+#endif /* __force_inline */
+
 #ifndef T1HA_API
 #if defined(t1ha_EXPORTS)
 #define T1HA_API __dll_export
@@ -414,6 +424,58 @@ typedef struct t1ha_context {
 #ifdef _MSC_VER
 #pragma warning(pop)
 #endif
+
+/******************************************************************************
+ *
+ * Self-testing API.
+ *
+ * Unfortunately, some compilers (exactly only Microsoft Visual C/C++) has
+ * a bugs which leads t1ha-functions to produce wrong results. This API allows
+ * check the correctness of the actual code in runtime.
+ *
+ * All check-functions returns 0 on success, or -1 in case the corresponding
+ * hash-function failed verification. PLEASE, always perform such checking at
+ * initialization of your code, if you using MSVC or other troubleful compilers.
+ */
+
+T1HA_API int t1ha_selfcheck__all_enabled(void);
+
+#ifndef T1HA2_DISABLED
+T1HA_API int t1ha_selfcheck__t1ha2_atonce(void);
+T1HA_API int t1ha_selfcheck__t1ha2_atonce128(void);
+T1HA_API int t1ha_selfcheck__t1ha2_stream(void);
+T1HA_API int t1ha_selfcheck__t1ha2(void);
+#endif /* T1HA2_DISABLED */
+
+#ifndef T1HA1_DISABLED
+T1HA_API int t1ha_selfcheck__t1ha1_le(void);
+T1HA_API int t1ha_selfcheck__t1ha1_be(void);
+T1HA_API int t1ha_selfcheck__t1ha1(void);
+#endif /* T1HA1_DISABLED */
+
+#ifndef T1HA0_DISABLED
+T1HA_API int t1ha_selfcheck__t1ha0_32le(void);
+T1HA_API int t1ha_selfcheck__t1ha0_32be(void);
+T1HA_API int t1ha_selfcheck__t1ha0(void);
+
+/* Define T1HA0_AESNI_AVAILABLE to 0 for disable AES-NI support. */
+#ifndef T1HA0_AESNI_AVAILABLE
+#if defined(__e2k__) ||                                                        \
+    (defined(__ia32__) && (!defined(_M_IX86) || _MSC_VER > 1800))
+#define T1HA0_AESNI_AVAILABLE 1
+#else
+#define T1HA0_AESNI_AVAILABLE 0
+#endif
+#endif /* ifndef T1HA0_AESNI_AVAILABLE */
+
+#if T1HA0_AESNI_AVAILABLE
+T1HA_API int t1ha_selfcheck__t1ha0_ia32aes_noavx(void);
+T1HA_API int t1ha_selfcheck__t1ha0_ia32aes_avx(void);
+#ifndef __e2k__
+T1HA_API int t1ha_selfcheck__t1ha0_ia32aes_avx2(void);
+#endif
+#endif /* if T1HA0_AESNI_AVAILABLE */
+#endif /* T1HA0_DISABLED */
 
 /******************************************************************************
  *
@@ -563,16 +625,6 @@ uint64_t t1ha0_ia32aes_avx(const void *data, size_t length, uint64_t seed);
 uint64_t t1ha0_ia32aes_avx2(const void *data, size_t length, uint64_t seed);
 #endif
 #endif /* T1HA0_AESNI_AVAILABLE */
-
-#ifndef __force_inline
-#ifdef _MSC_VER
-#define __force_inline __forceinline
-#elif __GNUC_PREREQ(3, 2) || __has_attribute(always_inline)
-#define __force_inline __inline __attribute__((always_inline))
-#else
-#define __force_inline __inline
-#endif
-#endif /* __force_inline */
 
 #if T1HA0_RUNTIME_SELECT
 typedef uint64_t (*t1ha0_function_t)(const void *, size_t, uint64_t);

@@ -43,6 +43,7 @@
 
 #ifndef T1HA0_DISABLED
 #include "t1ha_bits.h"
+#include "t1ha_selfcheck.h"
 
 static __maybe_unused __always_inline uint32_t tail32_le_aligned(const void *v,
                                                                  size_t tail) {
@@ -356,10 +357,8 @@ uint64_t t1ha0_32be(const void *data, size_t len, uint64_t seed) {
 
 /***************************************************************************/
 
-#if T1HA0_RUNTIME_SELECT
-
 #if T1HA0_AESNI_AVAILABLE && defined(__ia32__)
-static __cold uint64_t x86_cpu_features(void) {
+__cold uint64_t t1ha_ia32cpu_features(void) {
   uint32_t features = 0;
   uint32_t extended = 0;
 #ifdef __GNUC__
@@ -387,15 +386,16 @@ static __cold uint64_t x86_cpu_features(void) {
 }
 #endif /* T1HA0_AESNI_AVAILABLE && __ia32__ */
 
+#if T1HA0_RUNTIME_SELECT
+
 __cold t1ha0_function_t t1ha0_resolve(void) {
 
 #if T1HA0_AESNI_AVAILABLE && defined(__ia32__)
-  uint64_t features = x86_cpu_features();
-  if (features & UINT32_C(0x02000000) /* check for AES-NI */) {
-    if ((features & UINT32_C(0x1A000000)) ==
-        UINT32_C(0x1A000000) /* check for any AVX */)
-      /* check for 'Advanced Vector Extensions 2' */
-      return ((features >> 32) & 32) ? t1ha0_ia32aes_avx2 : t1ha0_ia32aes_avx;
+  uint64_t features = t1ha_ia32cpu_features();
+  if (t1ha_ia32_AESNI_avail(features)) {
+    if (t1ha_ia32_AVX_avail(features))
+      return t1ha_ia32_AVX2_avail(features) ? t1ha0_ia32aes_avx2
+                                            : t1ha0_ia32aes_avx;
     return t1ha0_ia32aes_noavx;
   }
 #endif /* T1HA0_AESNI_AVAILABLE && __ia32__ */

@@ -1202,3 +1202,25 @@ static __always_inline t1ha_uint128_t mul128(t1ha_uint128_t x,
 #endif
   return r;
 }
+
+/***************************************************************************/
+
+#if T1HA0_AESNI_AVAILABLE && defined(__ia32__)
+uint64_t t1ha_ia32cpu_features(void);
+
+static __always_inline bool t1ha_ia32_AESNI_avail(uint64_t ia32cpu_features) {
+  /* check for AES-NI */
+  return (ia32cpu_features & UINT32_C(0x02000000)) != 0;
+}
+
+static __always_inline bool t1ha_ia32_AVX_avail(uint64_t ia32cpu_features) {
+  /* check for any AVX */
+  return (ia32cpu_features & UINT32_C(0x1A000000)) == UINT32_C(0x1A000000);
+}
+
+static __always_inline bool t1ha_ia32_AVX2_avail(uint64_t ia32cpu_features) {
+  /* check for 'Advanced Vector Extensions 2' */
+  return ((ia32cpu_features >> 32) & 32) != 0;
+}
+
+#endif /* T1HA0_AESNI_AVAILABLE && __ia32__ */

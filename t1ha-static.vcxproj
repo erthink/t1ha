@@ -351,6 +351,7 @@
       <EnableEnhancedInstructionSet Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">StreamingSIMDExtensions2</EnableEnhancedInstructionSet>
       <EnableEnhancedInstructionSet Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">StreamingSIMDExtensions2</EnableEnhancedInstructionSet>
     </ClCompile>
+    <ClCompile Include="src\t1ha0_selfcheck.c" />
     <ClCompile Include="src\t1ha1.c">
       <EnableEnhancedInstructionSet Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">NoExtensions</EnableEnhancedInstructionSet>
       <EnableEnhancedInstructionSet Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">NoExtensions</EnableEnhancedInstructionSet>
@@ -359,6 +360,7 @@
       <EnableEnhancedInstructionSet Condition="'$(Configuration)|$(Platform)'=='Release|x64'">NotSet</EnableEnhancedInstructionSet>
       <EnableEnhancedInstructionSet Condition="'$(Configuration)|$(Platform)'=='Release|ARM64'">NotSet</EnableEnhancedInstructionSet>
     </ClCompile>
+    <ClCompile Include="src\t1ha1_selfcheck.c" />
     <ClCompile Include="src\t1ha2.c">
       <EnableEnhancedInstructionSet Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">NoExtensions</EnableEnhancedInstructionSet>
       <EnableEnhancedInstructionSet Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">NoExtensions</EnableEnhancedInstructionSet>
@@ -367,9 +369,13 @@
       <EnableEnhancedInstructionSet Condition="'$(Configuration)|$(Platform)'=='Release|x64'">NotSet</EnableEnhancedInstructionSet>
       <EnableEnhancedInstructionSet Condition="'$(Configuration)|$(Platform)'=='Release|ARM64'">NotSet</EnableEnhancedInstructionSet>
     </ClCompile>
+    <ClCompile Include="src\t1ha2_selfcheck.c" />
+    <ClCompile Include="src\t1ha_selfcheck.c" />
+    <ClCompile Include="src\t1ha_selfcheck_all.c" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\t1ha_bits.h" />
+    <ClInclude Include="src\t1ha_selfcheck.h" />
     <ClInclude Include="t1ha.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

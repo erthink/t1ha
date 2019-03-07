@@ -42,6 +42,8 @@
 #include "../t1ha.h" /* for T1HA0_AESNI_AVAILABLE, __ia32__, etc */
 #include "mera.h"    /* for ia32_cpu_features */
 
+extern double GHz_scale;
+
 enum test_flags {
   test_verbose = 1u << 0,
   test_quiet = 1u << 1,

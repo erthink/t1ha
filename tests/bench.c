@@ -40,7 +40,7 @@ void bench(const char *caption,
          value / len, mera.units, len / value, mera.units);
 
   if (mera.flags & timestamp_cycles) {
-    printf(", %6.3f Gb/s @3GHz", 3.0 * len / value);
+    printf(", %6.3f Gb/s @%.1fGHz", GHz_scale * len / value, GHz_scale);
   } else if ((mera.flags & timestamp_ticks) == 0) {
     printf(", %6.3f Gb/s", len / value);
   }

@@ -40,9 +40,9 @@ void bench(const char *caption,
          value / len, mera.units, len / value, mera.units);
 
   if (mera.flags & timestamp_cycles) {
-    printf(", %6.3f GB/s @%.1fGHz", GHz_scale * len / value, GHz_scale);
+    printf(", %6.3f GiB/s @%.1fGHz", GHz_scale * len / value, GHz_scale);
   } else if ((mera.flags & timestamp_ticks) == 0) {
-    printf(", %6.3f GB/s", len / value);
+    printf(", %6.3f GiB/s", len / value);
   }
   printf(" %s\n", (mera.flags & timestamp_clock_stable) ? "" : "roughly");
 

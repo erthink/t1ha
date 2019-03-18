@@ -131,9 +131,10 @@ void bench_size(const unsigned size, const char *caption);
 /* Other hashes, just for comparison */
 
 /* xxHash */
-uint64_t XXH64(const void *input, size_t length, uint64_t seed);
-uint32_t XXH32(const void *input, size_t length, uint32_t seed);
-uint64_t thunk_XXH32(const void *input, size_t length, uint64_t seed);
+uint64_t XXH_32(const void *input, size_t length, uint64_t seed);
+uint64_t XXH_64(const void *input, size_t length, uint64_t seed);
+uint64_t XXH3_64(const void *input, size_t length, uint64_t seed);
+uint64_t XXH3_128(const void *input, size_t length, uint64_t seed);
 
 /* StadtX hash */
 uint64_t thunk_StadtX(const void *input, size_t length, uint64_t seed);

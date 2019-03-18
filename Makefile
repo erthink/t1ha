@@ -125,8 +125,8 @@ test.o: t1ha.h tests/common.h tests/mera.h tests/test.c \
 	$(CC) $(CFLAGS_TEST) -c -o $@ tests/test.c
 
 4bench_xxhash.o: tests/xxhash/xxhash.h tests/xxhash/xxhash.c \
-		Makefile
-	$(CC) $(CFLAGS_TEST) -Wno-error -c -o $@ tests/xxhash/xxhash.c
+		tests/xxhash/xxh_thunk.c Makefile
+	$(CC) $(CFLAGS_TEST) -Wno-error -c -o $@ tests/xxhash/xxh_thunk.c
 
 4bench_highwayhash_pure_c.o: tests/highwayhash/pure_c.h \
 		tests/highwayhash/pure_c.c \

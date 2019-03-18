@@ -224,7 +224,7 @@ static __maybe_unused __always_inline void e2k_add64carry_last(unsigned carry,
   e2k_add64carry_last(carry, base, addend, sum)
 #endif /* __iset__ >= 5 */
 
-#define fetch64_be_aligned(ptr) ((uint64_t)__builtin_e2k_ld_64s_be(ptr))
+#define fetch64_be_ggned(ptr) ((uint64_t)__builtin_e2k_ld_64s_be(ptr))
 #define fetch32_be_aligned(ptr) ((uint32_t)__builtin_e2k_ld_32u_be(ptr))
 
 #endif /* __e2k__ Elbrus */
@@ -398,6 +398,16 @@ static __always_inline uint32_t bswap32(uint32_t v) {
 static __always_inline uint16_t bswap16(uint16_t v) { return v << 8 | v >> 8; }
 #endif
 #endif /* bswap16 */
+
+#if defined(__ia32__) ||                                                       \
+    T1HA_SYS_UNALIGNED_ACCESS == T1HA_UNALIGNED_ACCESS__EFFICIENT
+/* The __builtin_assume_aligned() leads gcc/clang to load values into the
+ * registers, even when it is possible to directly use an operand from memory.
+ * This can lead to a shortage of registers and a significant slowdown.
+ * Therefore avoid unnecessary use of  __builtin_assume_aligned() for x86. */
+#define read_unaligned(ptr, bits) (*(const uint##bits##_t *__restrict)(ptr))
+#define read_aligned(ptr, bits) (*(const uint##bits##_t *__restrict)(ptr))
+#endif /* __ia32__ */
 
 #ifndef read_unaligned
 #if defined(__GNUC__) || __has_attribute(packed)

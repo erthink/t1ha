@@ -49,6 +49,7 @@ const unsigned default_disabled_option_flags =
     | ((UINTPTR_MAX > 0xffffFFFFul || ULONG_MAX > 0xffffFFFFul) ? bench_32 : 0);
 
 unsigned option_flags, disabled_option_flags;
+double GHz_scale = 3;
 
 void usage(void) {
   printf(
@@ -60,6 +61,7 @@ void usage(void) {
       "  --test-only, --no-bench   - perform tests, but don't benchmarking\n"
       "  --test-verbose            - be verbose while testing\n"
       "  --bench-verbose           - be verbose while benchmarking\n"
+      "  --GHz=value               - set frequency for calculating Gb/s speed\n"
       "  --verbose                 - turn both --test-verbose\n"
       "                              and --bench-verbose\n"
       "Keys size choices:\n"
@@ -180,6 +182,15 @@ int main(int argc, const char *argv[]) {
       }
       if (strcmp("--verbose", argv[i]) == 0 || strcmp("-v", argv[i]) == 0) {
         option_flags |= bench_verbose | test_verbose;
+        continue;
+      }
+      if (strncmp("--GHz=", argv[i], 6) == 0) {
+        char *end = NULL;
+        GHz_scale = strtod(argv[i] + 6, &end);
+        if ((end && *end) || GHz_scale <= 0.001 || GHz_scale >= 1000) {
+          fprintf(stderr, "%s: invalid value for '%s'\n\n", argv[0], argv[i]);
+          return EXIT_FAILURE;
+        }
         continue;
       }
       if (strcmp("--bench-all", argv[i]) == 0) {

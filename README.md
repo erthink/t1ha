@@ -2,6 +2,7 @@
 ========================================
 Fast Positive Hash, aka "Позитивный Хэш"
 by [Positive Technologies](https://www.ptsecurity.com).
+Included in the [Awesome C](https://github.com/kozross/awesome-c) list of open source C software.
 
 *The Future will Positive. Всё будет хорошо.*
 [![License: Zlib](https://img.shields.io/badge/License-Zlib-lightgrey.svg)](https://opensource.org/licenses/Zlib)
@@ -17,9 +18,10 @@ by [Positive Technologies](https://www.ptsecurity.com).
      and all others portable hash-functions (which do not use specific hardware tricks).
   3. Provides a set of _terraced_ hash functions.
   4. Currently not suitable for cryptography.
-  5. Licensed under [Zlib License](https://en.wikipedia.org/wiki/Zlib_License).
+  5. Licensed under [zlib License](https://en.wikipedia.org/wiki/Zlib_License).
 
-Also pay attention to [Erlang](https://github.com/lemenkov/erlang-t1ha)
+Also pay attention to [Rust](https://github.com/flier/rust-t1ha),
+[Erlang](https://github.com/lemenkov/erlang-t1ha)
 and [Golang](https://github.com/dgryski/go-t1ha) implementations.
 
 ********************************************************************************

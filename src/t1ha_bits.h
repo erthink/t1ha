@@ -399,6 +399,16 @@ static __always_inline uint16_t bswap16(uint16_t v) { return v << 8 | v >> 8; }
 #endif
 #endif /* bswap16 */
 
+#if defined(__ia32__) ||                                                       \
+    T1HA_SYS_UNALIGNED_ACCESS == T1HA_UNALIGNED_ACCESS__EFFICIENT
+/* The __builtin_assume_aligned() leads gcc/clang to load values into the
+ * registers, even when it is possible to directly use an operand from memory.
+ * This can lead to a shortage of registers and a significant slowdown.
+ * Therefore avoid unnecessary use of  __builtin_assume_aligned() for x86. */
+#define read_unaligned(ptr, bits) (*(const uint##bits##_t *__restrict)(ptr))
+#define read_aligned(ptr, bits) (*(const uint##bits##_t *__restrict)(ptr))
+#endif /* __ia32__ */
+
 #ifndef read_unaligned
 #if defined(__GNUC__) || __has_attribute(packed)
 typedef struct {
@@ -656,14 +666,15 @@ static __always_inline uint64_t tail64_le_aligned(const void *v, size_t tail) {
     T1HA_SYS_UNALIGNED_ACCESS != T1HA_UNALIGNED_ACCESS__UNABLE &&              \
     defined(PAGESIZE) && PAGESIZE > 42 && !defined(__SANITIZE_ADDRESS__)
 #define can_read_underside(ptr, size)                                          \
-  ((size) <= sizeof(uintptr_t) && ((PAGESIZE - (size)) & (uintptr_t)(ptr)) != 0)
+  (((PAGESIZE - (size)) & (uintptr_t)(ptr)) != 0)
 #endif /* T1HA_USE_FAST_ONESHOT_READ */
 
 static __always_inline uint64_t tail64_le_unaligned(const void *v,
                                                     size_t tail) {
   const uint8_t *p = (const uint8_t *)v;
-#ifdef can_read_underside
-  /* On some systems (e.g. x86) we can perform a 'oneshot' read, which
+#if defined(can_read_underside) &&                                             \
+    (UINTPTR_MAX > 0xffffFFFFul || ULONG_MAX > 0xffffFFFFul)
+  /* On some systems (e.g. x86_64) we can perform a 'oneshot' read, which
    * is little bit faster. Thanks Marcin Żukowski <marcin.zukowski@gmail.com>
    * for the reminder. */
   const unsigned offset = (8 - tail) & 7;
@@ -885,10 +896,11 @@ static __maybe_unused __always_inline uint64_t tail64_be_aligned(const void *v,
 static __maybe_unused __always_inline uint64_t
 tail64_be_unaligned(const void *v, size_t tail) {
   const uint8_t *p = (const uint8_t *)v;
-#ifdef can_read_underside
-  /* On some systems we can perform a 'oneshot' read, which is little bit
-   * faster. Thanks Marcin Żukowski <marcin.zukowski@gmail.com> for the
-   * reminder. */
+#if defined(can_read_underside) &&                                             \
+    (UINTPTR_MAX > 0xffffFFFFul || ULONG_MAX > 0xffffFFFFul)
+  /* On some systems (e.g. x86_64) we can perform a 'oneshot' read, which
+   * is little bit faster. Thanks Marcin Żukowski <marcin.zukowski@gmail.com>
+   * for the reminder. */
   const unsigned offset = (8 - tail) & 7;
   const unsigned shift = offset << 3;
   if (likely(can_read_underside(p, 8))) {

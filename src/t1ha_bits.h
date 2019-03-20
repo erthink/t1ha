@@ -224,7 +224,7 @@ static __maybe_unused __always_inline void e2k_add64carry_last(unsigned carry,
   e2k_add64carry_last(carry, base, addend, sum)
 #endif /* __iset__ >= 5 */
 
-#define fetch64_be_ggned(ptr) ((uint64_t)__builtin_e2k_ld_64s_be(ptr))
+#define fetch64_be_aligned(ptr) ((uint64_t)__builtin_e2k_ld_64s_be(ptr))
 #define fetch32_be_aligned(ptr) ((uint32_t)__builtin_e2k_ld_32u_be(ptr))
 
 #endif /* __e2k__ Elbrus */

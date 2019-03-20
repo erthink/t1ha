@@ -121,6 +121,10 @@ static const U32 kKey[KEYSET_DEFAULT_SIZE] = {
     0x45cb3a8f, 0x95160428, 0xafd7fbca, 0xbb4b407e,
 };
 
+#if defined(_M_X64) || defined(_M_IA64)
+#pragma intrinsic(_umul128)
+#endif
+
 #if defined(__GNUC__) && defined(__i386__)
 /* GCC is stupid and tries to vectorize this.
  * This tells GCC that it is wrong. */
@@ -136,7 +140,6 @@ XXH3_mul128(U64 ll1, U64 ll2) {
 
 #elif defined(_M_X64) || defined(_M_IA64)
 
-#pragma intrinsic(_umul128)
   U64 llhigh;
   U64 const lllow = _umul128(ll1, ll2, &llhigh);
   return lllow + llhigh;
@@ -311,7 +314,7 @@ XXH_FORCE_INLINE XXH64_hash_t XXH3_len_9to16_64b(const void *data, size_t len,
                                                  const void *keyPtr,
                                                  XXH64_hash_t seed) {
   assert(data != NULL);
-  assert(key != NULL);
+  assert(keyPtr != NULL);
   assert(len >= 9 && len <= 16);
   {
     const U64 *const key64 = (const U64 *)keyPtr;
@@ -628,8 +631,10 @@ static XXH64_hash_t XXH3_mergeAccs(const U64 *acc, const U32 *key, U64 start) {
   return XXH3_avalanche(result64);
 }
 
-__attribute__((
-    noinline)) static XXH64_hash_t /* It's important for performance that
+#ifdef __GNUC__
+__attribute__((noinline))
+#endif
+static XXH64_hash_t /* It's important for performance that
                                       XXH3_hashLong is not inlined. Not sure why
                                       (uop cache maybe ?), but difference is
                                       large and easily measurable */
@@ -730,7 +735,7 @@ XXH_FORCE_INLINE XXH128_hash_t XXH3_len_9to16_128b(const void *data, size_t len,
                                                    const void *keyPtr,
                                                    XXH64_hash_t seed) {
   assert(data != NULL);
-  assert(key != NULL);
+  assert(keyPtr != NULL);
   assert(len >= 9 && len <= 16);
   {
     const U64 *const key64 = (const U64 *)keyPtr;
@@ -761,8 +766,10 @@ XXH_FORCE_INLINE XXH128_hash_t XXH3_len_0to16_128b(const void *data, size_t len,
   }
 }
 
-__attribute__((
-    noinline)) static XXH128_hash_t /* It's important for performance that
+#ifdef __GNUC__
+__attribute__((noinline))
+#endif
+static XXH128_hash_t /* It's important for performance that
                                        XXH3_hashLong is not inlined. Not sure
                                        why (uop cache maybe ?), but difference
                                        is large and easily measurable */

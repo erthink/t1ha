@@ -24,6 +24,14 @@ Also pay attention to [Rust](https://github.com/flier/rust-t1ha),
 [Erlang](https://github.com/lemenkov/erlang-t1ha)
 and [Golang](https://github.com/dgryski/go-t1ha) implementations.
 
+### FAQ: Why t1ha don't follow [NH](https://en.wikipedia.org/wiki/UMAC)-approach like [FARSH](https://github.com/Bulat-Ziganshin/FARSH), [XXH3](https://fastcompression.blogspot.com/2019/03/presenting-xxh3.html), HighwayHash and so on?
+
+Okay, just for clarity, we should distinguish functions families: **_MMH_** (_Multilinear-Modular-Hashing_), [**_NMH_**](https://link.springer.com/content/pdf/10.1007/BFb0052345.pdf) (_Non-linear Modular-Hashing_) and the next simplification step UMAC's [**_NH_**](https://web.archive.org/web/20120310090322/http://www.cs.ucdavis.edu/~rogaway/papers/umac-full.pdf).
+
+Now take a look to NH hash-function family definition: ![Wikipedia]( https://wikimedia.org/api/rest_v1/media/math/render/svg/3cafee01ea2f26664503b6725fe859ed5f07b9a3)
+
+It is very SIMD-friendly, since SSE2's `_mm_add_epi32()` and `_mm_mul_epu32()` is enough for ![_W = 32_](https://wikimedia.org/api/rest_v1/media/math/render/svg/8c609e2684eb709b260154fb505321e417037009). On the other hand, the result of the inner multiplication becomes zero when **_(m[2i] + k[2i]) mod 2^32 == 0_** or **_(m[2i+1] + k[2i+1]) mod 2^32 == 0_**, in which case the opposite multiplier will not affect the result of hashing, i.e. NH function just ignores part of the input data. That's all.
+
 ********************************************************************************
 
 # Usage

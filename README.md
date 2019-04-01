@@ -12,13 +12,15 @@ Included in the [Awesome C](https://github.com/kozross/awesome-c) list of open s
 [![Coverity Scan Status](https://scan.coverity.com/projects/12918/badge.svg)](https://scan.coverity.com/projects/leo-yuriev-t1ha)
 
 ## Briefly, it is a portable 64-bit hash function:
-  1. Intended for 64-bit little-endian platforms, predominantly for Elbrus and x86_64,
-     but portable and without penalties it can run on any 64-bit CPU.
-  2. In most cases up to 15% faster than StadtX hash, xxHash, mum-hash, metro-hash, etc.
-     and all others portable hash-functions (which do not use specific hardware tricks).
-  3. Provides a set of _terraced_ hash functions.
-  4. Currently not suitable for cryptography.
-  5. Licensed under [zlib License](https://en.wikipedia.org/wiki/Zlib_License).
+1. Intended for 64-bit little-endian platforms, predominantly for Elbrus and x86_64,
+but portable and without penalties it can run on any 64-bit CPU.
+2. In most cases up to 15% faster than StadtX hash, xxHash, mum-hash, metro-hash, etc.
+ and all others portable hash-functions (which do not use specific hardware tricks).
+ > Currently [wyhash](https://github.com/wangyi-fudan/wyhash) outperforms _t1ha_.
+ > Nevertheless I think the next version of t1ha will be even faster.
+3. Provides a set of _terraced_ hash functions.
+4. Currently not suitable for cryptography.
+5. Licensed under [zlib License](https://en.wikipedia.org/wiki/Zlib_License).
 
 Also pay attention to [Rust](https://github.com/flier/rust-t1ha),
 [Erlang](https://github.com/lemenkov/erlang-t1ha)

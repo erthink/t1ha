@@ -18,6 +18,13 @@ but portable and without penalties it can run on any 64-bit CPU.
  and all others portable hash-functions (which do not use specific hardware tricks).
  > Currently [wyhash](https://github.com/wangyi-fudan/wyhash) outperforms _t1ha_.
  > Nevertheless I think the next version of t1ha will be even faster.
+ >
+ > At the same time, **I do not recommend using _wyhash_**, since
+ > in some cases this function can fatally lose entropy. For
+ > example, completely loses the dependence of the result on the
+ > input data (performs a multiplying by zero) when the internal
+ > state coincides with `0xa0761d6478bd642f` and so on.
+
 3. Provides a set of _terraced_ hash functions.
 4. Currently not suitable for cryptography.
 5. Licensed under [zlib License](https://en.wikipedia.org/wiki/Zlib_License).
@@ -33,16 +40,17 @@ Okay, just for clarity, we should distinguish functions families: **_MMH_** (_Mu
 Now take a look to NH hash-function family definition: ![Wikipedia]( https://wikimedia.org/api/rest_v1/media/math/render/svg/3cafee01ea2f26664503b6725fe859ed5f07b9a3)
 
 It is very SIMD-friendly, since SSE2's `_mm_add_epi32()` and `_mm_mul_epu32()` is enough for ![_W = 32_](https://wikimedia.org/api/rest_v1/media/math/render/svg/8c609e2684eb709b260154fb505321e417037009). On the other hand, the result of the inner multiplication becomes zero when **_(m[2i] + k[2i]) mod 2^32 == 0_** or **_(m[2i+1] + k[2i+1]) mod 2^32 == 0_**, in which case the opposite multiplier will not affect the result of hashing, i.e. NH function just ignores part of the input data. That's all.
+For more related info please google for "[UMAC NH key recovery attack](https://www.google.com/search?q=umac+nh+key+recovery+attack)".
 
 The right NMH/NH code without entropy loss should be looking like this:
 ```
-    uint32_t proper_NH_block(const uint32_t *M /* message data */,
+    uint64_t proper_NH_block(const uint32_t *M /* message data */,
                              const uint64_t *K /* 64-bit primes */,
                              size_t N_even, uint64_t optional_weak_seed) {
       uint64_t H = optional_weak_seed;
       for (size_t i = 0; i < N_even / 2; ++i)
         H += (uint64_t(M[i*2]) + K[i*2]) * (uint64_t(M[i*2+1]) + K[i*2+1]);
-      return H ^ (H >> 32);
+      return H;
     }
 ```
 

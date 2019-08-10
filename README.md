@@ -1,8 +1,8 @@
-## The [repository was moved](https://abf.io/erthink/t1ha) due to illegal discriminatory blocking of access from the territory of the Russian Crimea and for sovereign crimeans.
-
+## The [repository was moved out from Github](https://abf.io/erthink/t1ha) due to illegal discriminatory restrictions for Russian Crimea and for sovereign crimeans.
+<!-- Required extensions: pymdownx.betterem, pymdownx.tilde, pymdownx.emoji, pymdownx.tasklist, pymdownx.superfences -->
 ---
 
-﻿t1ha
+t1ha
 ========================================
 Fast Positive Hash, aka "Позитивный Хэш"
 by [Positive Technologies](https://www.ptsecurity.com).

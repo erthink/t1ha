@@ -430,19 +430,19 @@ __cold t1ha0_function_t t1ha0_resolve(void) {
  * For more info please see
  * https://en.wikipedia.org/wiki/Executable_and_Linkable_Format
  * and https://sourceware.org/glibc/wiki/GNU_IFUNC */
-#if __has_attribute(ifunc)
+#if __has_attribute(__ifunc__)
 uint64_t t1ha0(const void *data, size_t len, uint64_t seed)
-    __attribute__((ifunc("t1ha0_resolve")));
+    __attribute__((__ifunc__("t1ha0_resolve")));
 #else
 __asm("\t.globl\tt1ha0\n\t.type\tt1ha0, "
       "%gnu_indirect_function\n\t.set\tt1ha0,t1ha0_resolve");
-#endif /* __has_attribute(ifunc) */
+#endif /* __has_attribute(__ifunc__) */
 
-#elif __GNUC_PREREQ(4, 0) || __has_attribute(constructor)
+#elif __GNUC_PREREQ(4, 0) || __has_attribute(__constructor__)
 
 uint64_t (*t1ha0_funcptr)(const void *, size_t, uint64_t);
 
-static __cold void __attribute__((constructor)) t1ha0_init(void) {
+static __cold void __attribute__((__constructor__)) t1ha0_init(void) {
   t1ha0_funcptr = t1ha0_resolve();
 }
 

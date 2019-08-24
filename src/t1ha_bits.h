@@ -134,10 +134,10 @@ typedef _Complex float __cfloat128 __attribute__((__mode__(__TC__)));
 #endif
 
 #ifndef __optimize
-#if defined(__clang__) && !__has_attribute(optimize)
+#if defined(__clang__) && !__has_attribute(__optimize__)
 #define __optimize(ops)
-#elif defined(__GNUC__) || __has_attribute(optimize)
-#define __optimize(ops) __attribute__((optimize(ops)))
+#elif defined(__GNUC__) || __has_attribute(__optimize__)
+#define __optimize(ops) __attribute__((__optimize__(ops)))
 #else
 #define __optimize(ops)
 #endif
@@ -146,12 +146,13 @@ typedef _Complex float __cfloat128 __attribute__((__mode__(__TC__)));
 #ifndef __cold
 #if defined(__OPTIMIZE__)
 #if defined(__e2k__)
-#define __cold __optimize(1) __attribute__((cold))
-#elif defined(__clang__) && !__has_attribute(cold)
+#define __cold __optimize(1) __attribute__((__cold__))
+#elif defined(__clang__) && !__has_attribute(__cold__) &&                      \
+    __has_attribute(__section__)
 /* just put infrequently used functions in separate section */
-#define __cold __attribute__((section("text.unlikely"))) __optimize("Os")
-#elif defined(__GNUC__) || __has_attribute(cold)
-#define __cold __attribute__((cold)) __optimize("Os")
+#define __cold __attribute__((__section__("text.unlikely"))) __optimize("Os")
+#elif defined(__GNUC__) || __has_attribute(__cold__)
+#define __cold __attribute__((__cold__)) __optimize("Os")
 #else
 #define __cold __optimize("Os")
 #endif
@@ -192,13 +193,14 @@ typedef _Complex float __cfloat128 __attribute__((__mode__(__TC__)));
 #define bswap16(v) __builtin_bswap16(v)
 #endif
 
-#if !defined(__maybe_unused) && (__GNUC_PREREQ(4, 3) || __has_attribute(unused))
-#define __maybe_unused __attribute__((unused))
+#if !defined(__maybe_unused) &&                                                \
+    (__GNUC_PREREQ(4, 3) || __has_attribute(__unused__))
+#define __maybe_unused __attribute__((__unused__))
 #endif
 
 #if !defined(__always_inline) &&                                               \
-    (__GNUC_PREREQ(3, 2) || __has_attribute(always_inline))
-#define __always_inline __inline __attribute__((always_inline))
+    (__GNUC_PREREQ(3, 2) || __has_attribute(__always_inline__))
+#define __always_inline __inline __attribute__((__always_inline__))
 #endif
 
 #if defined(__e2k__)
@@ -421,13 +423,13 @@ static __always_inline uint16_t bswap16(uint16_t v) { return v << 8 | v >> 8; }
 #endif /* __ia32__ */
 
 #ifndef read_unaligned
-#if defined(__GNUC__) || __has_attribute(packed)
+#if defined(__GNUC__) || __has_attribute(__packed__)
 typedef struct {
   uint8_t unaligned_8;
   uint16_t unaligned_16;
   uint32_t unaligned_32;
   uint64_t unaligned_64;
-} __attribute__((packed)) t1ha_unaligned_proxy;
+} __attribute__((__packed__)) t1ha_unaligned_proxy;
 #define read_unaligned(ptr, bits)                                              \
   (((const t1ha_unaligned_proxy *)((const uint8_t *)(ptr)-offsetof(            \
         t1ha_unaligned_proxy, unaligned_##bits)))                              \
@@ -457,23 +459,25 @@ typedef struct {
 #if __GNUC_PREREQ(4, 8) || __has_builtin(__builtin_assume_aligned)
 #define read_aligned(ptr, bits)                                                \
   (*(const uint##bits##_t *)__builtin_assume_aligned(ptr, ALIGNMENT_##bits))
-#elif (__GNUC_PREREQ(3, 3) || __has_attribute(aligned)) && !defined(__clang__)
+#elif (__GNUC_PREREQ(3, 3) || __has_attribute(__aligned__)) &&                 \
+    !defined(__clang__)
 #define read_aligned(ptr, bits)                                                \
-  (*(const uint##bits##_t __attribute__((aligned(ALIGNMENT_##bits))) *)(ptr))
-#elif __has_attribute(assume_aligned)
+  (*(const uint##bits##_t                                                      \
+     __attribute__((__aligned__(ALIGNMENT_##bits))) *)(ptr))
+#elif __has_attribute(__assume_aligned__)
 
 static __always_inline const
-    uint16_t *__attribute__((assume_aligned(ALIGNMENT_16)))
+    uint16_t *__attribute__((__assume_aligned__(ALIGNMENT_16)))
     cast_aligned_16(const void *ptr) {
   return (const uint16_t *)ptr;
 }
 static __always_inline const
-    uint32_t *__attribute__((assume_aligned(ALIGNMENT_32)))
+    uint32_t *__attribute__((__assume_aligned__(ALIGNMENT_32)))
     cast_aligned_32(const void *ptr) {
   return (const uint32_t *)ptr;
 }
 static __always_inline const
-    uint64_t *__attribute__((assume_aligned(ALIGNMENT_64)))
+    uint64_t *__attribute__((__assume_aligned__(ALIGNMENT_64)))
     cast_aligned_64(const void *ptr) {
   return (const uint64_t *)ptr;
 }

@@ -1,3 +1,7 @@
+# GNU Makefile for t1ha, https://abf.io/erthink/t1ha
+
+########################################################################
+
 # T1HA_USE_FAST_ONESHOT_READ:
 # Define it to 1 for little bit faster code.
 # Unfortunately this may triggering a false-positive alarms from Valgrind,

@@ -26,18 +26,6 @@
 #define NOMINMAX
 #endif
 
-#ifndef _ISOC99_SOURCE
-#define _ISOC99_SOURCE 1
-#endif
-
-#ifndef _ISOC11_SOURCE
-#define _ISOC11_SOURCE 1
-#endif
-
-#ifndef _POSIX_C_SOURCE
-#define _POSIX_C_SOURCE 200809L
-#endif
-
 #ifndef _GNU_SOURCE
 #define _GNU_SOURCE 1
 #endif
@@ -53,6 +41,26 @@
 #ifndef _REENTRANT
 #define _REENTRANT 1
 #endif
+
+#if defined(__FreeBSD__) || defined(__NetBSD__) || defined(__OpenBSD__) ||     \
+    defined(__BSD__) || defined(__NETBSD__) || defined(__bsdi__) ||            \
+    defined(__DragonFly__)
+#include </usr/include/sys/cdefs.h>
+#else /* BSD */
+
+#ifndef _ISOC99_SOURCE
+#define _ISOC99_SOURCE 1
+#endif
+
+#ifndef _ISOC11_SOURCE
+#define _ISOC11_SOURCE 1
+#endif
+
+#ifndef _POSIX_C_SOURCE
+#define _POSIX_C_SOURCE 200809L
+#endif
+
+#endif /* !BSD */
 
 #if defined(_MSC_VER)
 #pragma warning(disable : 4711) /* function 'xyz' selected for                 \

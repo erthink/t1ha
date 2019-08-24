@@ -34,7 +34,7 @@
  *     hardware tricks).
  *  3. Not suitable for cryptography.
  *
- * The Future will Positive. Всё будет хорошо.
+ * The Future will (be) Positive. Всё будет хорошо.
  *
  * ACKNOWLEDGEMENT:
  * The t1ha was originally developed by Leonid Yuriev (Леонид Юрьев)

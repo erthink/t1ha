@@ -38,6 +38,10 @@
 #define _POSIX_C_SOURCE 200809L
 #endif
 
+#ifndef _XOPEN_SOURCE
+#define _XOPEN_SOURCE 700
+#endif
+
 #ifndef _GNU_SOURCE
 #define _GNU_SOURCE 1
 #endif
@@ -77,6 +81,11 @@
 #include <sys/prctl.h>
 #include <sys/syscall.h>
 #endif /* Linux */
+
+#if defined(__FreeBSD__)
+#include <sys/time.h>
+#include <unistd.h>
+#endif /* FreeBSD */
 
 #if defined(EMSCRIPTEN)
 #include <emscripten.h>
@@ -213,6 +222,17 @@ static void sigaction_handler(int signum, siginfo_t *info, void *context) {
 }
 #endif
 
+static void minimal_sleep(void) {
+#if defined(_WIN64) || defined(_WIN32) || defined(__TOS_WIN__)
+  Sleep(1);
+#else
+  struct timespec ts;
+  ts.tv_sec = 0;
+  ts.tv_nsec = 54321;
+  nanosleep(&ts, 0);
+#endif
+}
+
 /* LY: dedicated function to avoid clobber args by ‘longjmp’ */
 static int do_probe(unsigned (*start)(timestamp_t *),
                     unsigned (*finish)(timestamp_t *)) {
@@ -247,12 +267,7 @@ static int do_probe(unsigned (*start)(timestamp_t *),
     for (unsigned n = 0; n < 42; ++n) {
       timestamp_t timestamp_start, timestamp_finish;
       unsigned coreid = start(&timestamp_start);
-#if defined(_WIN64) || defined(_WIN32) || defined(__TOS_WIN__) ||              \
-    defined(__WINDOWS__)
-      Sleep(1);
-#else
-    usleep(42);
-#endif
+      minimal_sleep();
       if (coreid != finish(&timestamp_finish))
         continue;
       if (timestamp_finish > timestamp_start)

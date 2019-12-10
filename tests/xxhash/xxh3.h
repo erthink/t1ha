@@ -1,4 +1,4 @@
-﻿/*
+/*
    xxHash - Extremely Fast Hash algorithm
    Development source file for `xxh3`
    Copyright (C) 2019-present, Yann Collet.

@@ -1,4 +1,4 @@
-﻿/* ========================================================================
+/* ========================================================================
 
    meow_example.cpp - basic usage example of the Meow hash
    (C) Copyright 2018 by Molly Rocket, Inc. (https://mollyrocket.com)

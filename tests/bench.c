@@ -121,10 +121,6 @@ void bench_size(const unsigned size, const char *caption) {
 #endif /* !__e2k__ */
   }
 
-#if !defined(_MSC_VER) || _MSC_VER > 1910 || defined(_M_X64)
-  bench("meow1_aes", thunk_MeowHash1, buffer, size, seed);
-#endif
-
 #endif /* T1HA0_AESNI_AVAILABLE */
 #endif /* T1HA0_DISABLED */
 

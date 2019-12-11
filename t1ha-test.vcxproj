@@ -356,10 +356,6 @@
     <ClCompile Include="tests\highwayhash\pure_c.c" />
     <ClCompile Include="tests\highwayhash\verifier.c" />
     <ClCompile Include="tests\stadtx\stadtx_thunk.c" />
-    <ClCompile Include="tests\meowhash\meow1_thunk.c">
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|ARM'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|ARM'">true</ExcludedFromBuild>
-    </ClCompile>
     <ClCompile Include="tests\xxhash\xxh_thunk.c">
       <TreatWarningAsError Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">false</TreatWarningAsError>
       <TreatWarningAsError Condition="'$(Configuration)|$(Platform)'=='Debug|ARM64'">false</TreatWarningAsError>
@@ -393,7 +389,6 @@
     <ClInclude Include="tests\highwayhash\vector128.h" />
     <ClInclude Include="tests\highwayhash\vector256.h" />
     <ClInclude Include="tests\stadtx\stadtx_hash.h" />
-    <ClInclude Include="tests\meowhash\meow_hash.h" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="t1ha-static.vcxproj">

@@ -324,8 +324,9 @@ int main(int argc, const char *argv[]) {
 #if T1HA0_AESNI_AVAILABLE
 #ifdef __e2k__
   failed |=
-      verify("t1ha0_ia32aes_noavx", t1ha0_ia32aes_noavx, refval_ia32aes_a);
-  failed |= verify("t1ha0_ia32aes_avx", t1ha0_ia32aes_avx, refval_ia32aes_a);
+      verify("t1ha0_ia32aes_noavx", t1ha0_ia32aes_noavx, t1ha_refval_ia32aes_a);
+  failed |=
+      verify("t1ha0_ia32aes_avx", t1ha0_ia32aes_avx, t1ha_refval_ia32aes_a);
 #else
   ia32_fetch_cpu_features();
   if (ia32_cpu_features.basic.ecx & UINT32_C(0x02000000)) {

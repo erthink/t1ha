@@ -65,10 +65,6 @@ void bench(const char *caption,
   fflush(NULL);
 }
 
-uint64_t thunk_XXH32(const void *input, size_t length, uint64_t seed) {
-  return XXH32(input, length, (uint32_t)seed);
-}
-
 uint64_t thunk_HighwayHash64_pure_c(const void *input, size_t length,
                                     uint64_t seed) {
   uint64_t key[4] = {seed, seed, seed, seed};
@@ -124,12 +120,15 @@ void bench_size(const unsigned size, const char *caption) {
     }
 #endif /* !__e2k__ */
   }
+
 #endif /* T1HA0_AESNI_AVAILABLE */
 #endif /* T1HA0_DISABLED */
 
   if (is_selected(bench_xxhash)) {
-    bench("xxhash32", thunk_XXH32, buffer, size, (uint32_t)seed);
-    bench("xxhash64", XXH64, buffer, size, seed);
+    bench("xxhash32", XXH_32, buffer, size, (uint32_t)seed);
+    bench("xxhash64", XXH_64, buffer, size, seed);
+    bench("xxh3_64", XXH3_64, buffer, size, seed);
+    bench("xxh3_128", XXH3_128, buffer, size, seed);
   }
   if (is_selected(bench_stadtx)) {
     bench("StadtX", thunk_StadtX, buffer, size, seed);

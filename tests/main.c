@@ -324,8 +324,9 @@ int main(int argc, const char *argv[]) {
 #if T1HA0_AESNI_AVAILABLE
 #ifdef __e2k__
   failed |=
-      verify("t1ha0_ia32aes_noavx", t1ha0_ia32aes_noavx, refval_ia32aes_a);
-  failed |= verify("t1ha0_ia32aes_avx", t1ha0_ia32aes_avx, refval_ia32aes_a);
+      verify("t1ha0_ia32aes_noavx", t1ha0_ia32aes_noavx, t1ha_refval_ia32aes_a);
+  failed |=
+      verify("t1ha0_ia32aes_avx", t1ha0_ia32aes_avx, t1ha_refval_ia32aes_a);
 #else
   ia32_fetch_cpu_features();
   if (ia32_cpu_features.basic.ecx & UINT32_C(0x02000000)) {
@@ -382,10 +383,10 @@ int main(int argc, const char *argv[]) {
       hash_function = thunk_HighwayHash64_pure_c;
       hash_name = "HighwayHash64";
     } else if (is_selected(bench_64 | bench_xxhash)) {
-      hash_function = XXH64;
+      hash_function = XXH_64;
       hash_name = "xxhash64";
     } else if (is_selected(bench_32 | bench_xxhash)) {
-      hash_function = thunk_XXH32;
+      hash_function = XXH_32;
       hash_name = "xxhash32";
     } else if (is_selected(bench_64 | bench_stadtx)) {
       hash_function = thunk_StadtX;
@@ -415,8 +416,8 @@ int main(int argc, const char *argv[]) {
       hash_name = "t1ha0";
 #endif
     } else if (is_selected(bench_xxhash)) {
-      hash_function = XXH64;
-      hash_name = "xxhash64";
+      hash_function = XXH3_64;
+      hash_name = "xxh3_64";
     } else {
       fprintf(stderr, "hash-function should be selected explicitly\n");
       return EXIT_FAILURE;

@@ -7,13 +7,15 @@
 #include <intrin.h>
 #pragma intrinsic(_umul128)
 #endif
-const uint64_t _wyp0 = 0xa0761d6478bd642full, _wyp1 = 0xe7037ed1a0b428dbull,
-               _wyp2 = 0x8ebc6af09c88c6e3ull, _wyp3 = 0x589965cc75374cc3ull,
-               _wyp4 = 0x1d8e4e27c47d124full;
-static inline uint64_t _wyrotr(uint64_t v, unsigned k) {
+const uint64_t _wyp0 = UINT64_C(0xa0761d6478bd642f),
+               _wyp1 = UINT64_C(0xe7037ed1a0b428db),
+               _wyp2 = UINT64_C(0x8ebc6af09c88c6e3),
+               _wyp3 = UINT64_C(0x589965cc75374cc3),
+               _wyp4 = UINT64_C(0x1d8e4e27c47d124f);
+static __inline uint64_t _wyrotr(uint64_t v, unsigned k) {
   return (v >> k) | (v << (64 - k));
 }
-static inline uint64_t _wymum(uint64_t A, uint64_t B) {
+static __inline uint64_t _wymum(uint64_t A, uint64_t B) {
 #ifdef WYHASH32
   uint64_t hh = (A >> 32) * (B >> 32), hl = (A >> 32) * (unsigned)B,
            lh = (unsigned)A * (B >> 32),
@@ -49,45 +51,45 @@ static inline uint64_t _wymum(uint64_t A, uint64_t B) {
 #endif
 #endif
 #if (WYHASH_LITTLE_ENDIAN)
-static inline uint64_t _wyr8(const uint8_t *p) {
+static __inline uint64_t _wyr8(const uint8_t *p) {
   uint64_t v;
   memcpy(&v, p, 8);
   return v;
 }
-static inline uint64_t _wyr4(const uint8_t *p) {
+static __inline uint64_t _wyr4(const uint8_t *p) {
   unsigned v;
   memcpy(&v, p, 4);
   return v;
 }
 #else
 #if defined(__GNUC__) || defined(__INTEL_COMPILER)
-static inline uint64_t _wyr8(const uint8_t *p) {
+static __inline uint64_t _wyr8(const uint8_t *p) {
   uint64_t v;
   memcpy(&v, p, 8);
   return __builtin_bswap64(v);
 }
-static inline uint64_t _wyr4(const uint8_t *p) {
+static __inline uint64_t _wyr4(const uint8_t *p) {
   unsigned v;
   memcpy(&v, p, 4);
   return __builtin_bswap32(v);
 }
 #elif defined(_MSC_VER)
-static inline uint64_t _wyr8(const uint8_t *p) {
+static __inline uint64_t _wyr8(const uint8_t *p) {
   uint64_t v;
   memcpy(&v, p, 8);
   return _byteswap_uint64(v);
 }
-static inline uint64_t _wyr4(const uint8_t *p) {
+static __inline uint64_t _wyr4(const uint8_t *p) {
   unsigned v;
   memcpy(&v, p, 4);
   return _byteswap_ulong(v);
 }
 #endif
 #endif
-static inline uint64_t _wyr3(const uint8_t *p, unsigned k) {
+static __inline uint64_t _wyr3(const uint8_t *p, unsigned k) {
   return (((uint64_t)p[0]) << 16) | (((uint64_t)p[k >> 1]) << 8) | p[k - 1];
 }
-static inline uint64_t wyhash(const void *key, uint64_t len, uint64_t seed) {
+static __inline uint64_t wyhash(const void *key, uint64_t len, uint64_t seed) {
   const uint8_t *p = (const uint8_t *)key;
   uint64_t i = len & 63;
 #if defined(__GNUC__) || defined(__INTEL_COMPILER)
@@ -129,18 +131,18 @@ static inline uint64_t wyhash(const void *key, uint64_t len, uint64_t seed) {
   }
   return _wymum(seed ^ see1 ^ see2, see3 ^ len ^ _wyp4);
 }
-static inline uint64_t wyhash64(uint64_t A, uint64_t B) {
+static __inline uint64_t wyhash64(uint64_t A, uint64_t B) {
   return _wymum(_wymum(A ^ _wyp0, B ^ _wyp1), _wyp2);
 }
-static inline uint64_t wyrand(uint64_t *seed) {
+static __inline uint64_t wyrand(uint64_t *seed) {
   *seed += _wyp0;
   return _wymum(*seed ^ _wyp1, *seed);
 }
-static inline double wy2u01(uint64_t r) {
+static __inline double wy2u01(uint64_t r) {
   const double _wynorm = 1.0 / (1ull << 52);
   return (r >> 11) * _wynorm;
 }
-static inline double wy2gau(uint64_t r) {
+static __inline double wy2gau(uint64_t r) {
   const double _wynorm = 1.0 / (1ull << 20);
   return ((r & 0x1fffff) + ((r >> 21) & 0x1fffff) + ((r >> 42) & 0x1fffff)) *
              _wynorm -

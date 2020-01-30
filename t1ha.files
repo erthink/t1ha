@@ -59,6 +59,10 @@ tests/mera.h
 tests/stadtx/stadtx_hash.h
 tests/stadtx/stadtx_thunk.c
 tests/test.c
+tests/wyhash/LICENSE
+tests/wyhash/README.md
+tests/wyhash/wyhash.h
+tests/wyhash/wyhash_thunk.c
 tests/xxhash/xxh3.h
 tests/xxhash/xxh_thunk.c
 tests/xxhash/xxhash.c

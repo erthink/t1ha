@@ -12,36 +12,53 @@ Included in the [Awesome C](https://github.com/kozross/awesome-c) list of open s
 [![CircleCI](https://circleci.com/gh/leo-yuriev/t1ha/tree/master.svg?style=svg)](https://circleci.com/gh/leo-yuriev/t1ha/tree/master)
 [![Coverity Scan Status](https://scan.coverity.com/projects/12918/badge.svg)](https://scan.coverity.com/projects/leo-yuriev-t1ha)
 
-## Briefly, it is a portable 64-bit hash function:
+## Briefly, it is a portable non-cryptographic 64-bit hash function:
 1. Intended for 64-bit little-endian platforms, predominantly for Elbrus and x86_64,
 but portable and without penalties it can run on any 64-bit CPU.
-2. In most cases up to 15% faster than StadtX hash, xxHash, mum-hash, metro-hash, etc.
- and all others portable hash-functions (which do not use specific hardware tricks).
- > Currently [wyhash](https://github.com/wangyi-fudan/wyhash) outperforms _t1ha_.
- > Nevertheless I think the next version of t1ha will be even faster.
- >
- > At the same time, **I do not recommend using _wyhash_**, since
- > in some cases this function can fatally lose entropy. For
- > example, completely loses the dependence of the result on the
- > input data (performs a multiplying by zero) when the internal
- > state coincides with `0xa0761d6478bd642f` and so on.
 
-3. Provides a set of _terraced_ hash functions.
-4. Currently not suitable for cryptography.
-5. Licensed under [zlib License](https://en.wikipedia.org/wiki/Zlib_License).
+2. In most cases up to 15% faster than
+[xxHash](https://cyan4973.github.io/xxHash/),
+[StadtX](https://github.com/demerphq/BeagleHash/blob/master/stadtx_hash.h),
+[MUM](https://github.com/vnmakarov/mum-hash) and others portable
+hash-functions (which do not use specific hardware tricks).
+
+    Currently [wyhash v4](https://github.com/wangyi-fudan/wyhash)
+    outperforms _t1ha_ on `x86_64`. However **next version `t1ha3_atonce()` will be even
+    faster** on all platforms, especially on
+    [E2K](https://en.wikipedia.org/wiki/Elbrus_2000), architectures with
+    [SIMD](https://en.wikipedia.org/wiki/SIMD) and most
+    [RISC-V](https://en.wikipedia.org/wiki/RISC-V) implementations.
+    In addition, it should be noted that wyhash can lose entropy (similarly
+    as described below). For instance, when data could be correlated with
+    the `seed ^ _wypN` values or equal to it.
+
+3. Licensed under [zlib License](https://en.wikipedia.org/wiki/Zlib_License).
 
 Also pay attention to [Rust](https://github.com/flier/rust-t1ha),
-[Erlang](https://github.com/lemenkov/erlang-t1ha)
-and [Golang](https://github.com/dgryski/go-t1ha) implementations.
+[Erlang](https://github.com/lemenkov/erlang-t1ha) and
+[Golang](https://github.com/dgryski/go-t1ha) implementations.
 
 ### FAQ: Why _t1ha_ don't follow [NH](https://en.wikipedia.org/wiki/UMAC)-approach like [FARSH](https://github.com/Bulat-Ziganshin/FARSH), [XXH3](https://fastcompression.blogspot.com/2019/03/presenting-xxh3.html), HighwayHash and so on?
 
-Okay, just for clarity, we should distinguish functions families: **_MMH_** (_Multilinear-Modular-Hashing_), [**_NMH_**](https://link.springer.com/content/pdf/10.1007/BFb0052345.pdf) (_Non-linear Modular-Hashing_) and the next simplification step UMAC's [**_NH_**](https://web.archive.org/web/20120310090322/http://www.cs.ucdavis.edu/~rogaway/papers/umac-full.pdf).
+Okay, just for clarity, we should distinguish functions families:
+**_MMH_** (_Multilinear-Modular-Hashing_),
+[**_NMH_**](https://link.springer.com/content/pdf/10.1007/BFb0052345.pdf)
+(_Non-linear Modular-Hashing_) and the next simplification step UMAC's
+[**_NH_**](https://web.archive.org/web/20120310090322/http://www.cs.ucdavis.edu/~rogaway/papers/umac-full.pdf).
 
-Now take a look to NH hash-function family definition: ![Wikipedia]( https://wikimedia.org/api/rest_v1/media/math/render/svg/3cafee01ea2f26664503b6725fe859ed5f07b9a3)
+Now take a look to NH hash-function family definition: ![Wikipedia](
+https://wikimedia.org/api/rest_v1/media/math/render/svg/3cafee01ea2f26664503b6725fe859ed5f07b9a3)
 
-It is very SIMD-friendly, since SSE2's `_mm_add_epi32()` and `_mm_mul_epu32()` is enough for ![_W = 32_](https://wikimedia.org/api/rest_v1/media/math/render/svg/8c609e2684eb709b260154fb505321e417037009). On the other hand, the result of the inner multiplication becomes zero when **_(m[2i] + k[2i]) mod 2^32 == 0_** or **_(m[2i+1] + k[2i+1]) mod 2^32 == 0_**, in which case the opposite multiplier will not affect the result of hashing, i.e. NH function just ignores part of the input data. That's all.
-For more related info please google for "[UMAC NH key recovery attack](https://www.google.com/search?q=umac+nh+key+recovery+attack)".
+It is very SIMD-friendly, since SSE2's `_mm_add_epi32()` and
+`_mm_mul_epu32()` is enough for ![_W =
+32_](https://wikimedia.org/api/rest_v1/media/math/render/svg/8c609e2684eb709b260154fb505321e417037009).
+On the other hand, the result of the inner multiplication becomes zero
+when **_(m[2i] + k[2i]) mod 2^32 == 0_** or **_(m[2i+1] + k[2i+1]) mod
+2^32 == 0_**, in which case the opposite multiplier will not affect the
+result of hashing, i.e. NH function just ignores part of the input data.
+That's all. For more related info please google for "[UMAC NH key
+recovery
+attack](https://www.google.com/search?q=umac+nh+key+recovery+attack)".
 
 The right NMH/NH code without entropy loss should be looking like this:
 ```
@@ -182,11 +199,12 @@ for _The 1Hippeus project - zerocopy messaging in the spirit of Sparta!_
 Current version of t1ha library includes tool for basic testing and benchmarking.
 Just try `make check` from t1ha directory.
 
-To comparison benchmark also includes `xxHash`, `StadtX` and `HighwayHash` functions.
-For example actual results for `Intel(R) Core(TM) i7-4600U CPU`:
+To comparison benchmark also includes `wyhash`, `xxHash`, `StadtX` and
+`HighwayHash` functions. For example actual results for `Intel(R)
+Core(TM) i7-4600U CPU`:
 ```
-$ CC=gcc-8 CXX=g++-8 make all && sudo make check
-...
+$ make all && sudo make check
+Build by GNU C/C++ compiler 8.3 (self-check passed)
 Testing t1ha2_atonce... Ok
 Testing t1ha2_atonce128... Ok
 Testing t1ha2_stream... Ok
@@ -203,43 +221,49 @@ Testing HighwayHash64_portable_cxx... Ok
 Testing HighwayHash64_sse41... Ok
 Testing HighwayHash64_avx2... Ok
 Testing StadtX... Ok
+Testing wyhash_v4... Ok
 
 Preparing to benchmarking...
- - suggest enable rdpmc for usermode (echo 2 | sudo tee /sys/devices/cpu/rdpmc)
- - running on CPU#3
- - use RDPMC_perf as clock source for benchmarking
+ - running on CPU#1
+ - use RDPMC_40000001 as clock source for benchmarking
  - assume it cheap and stable
- - measure granularity and overhead: 53 cycle, 0.0188679 iteration/cycle
+ - measure granularity and overhead: 54 cycles, 0.0185185 iteration/cycle
 
 Bench for tiny keys (7 bytes):
-t1ha2_atonce            :     18.188 cycle/hash,  2.598 cycle/byte,  0.385 byte/cycle,  1.155 Gb/s @3GHz
-t1ha2_atonce128*        :     36.969 cycle/hash,  5.281 cycle/byte,  0.189 byte/cycle,  0.568 Gb/s @3GHz
-t1ha2_stream*           :     84.237 cycle/hash, 12.034 cycle/byte,  0.083 byte/cycle,  0.249 Gb/s @3GHz
-t1ha2_stream128*        :    101.812 cycle/hash, 14.545 cycle/byte,  0.069 byte/cycle,  0.206 Gb/s @3GHz
-t1ha1_64le              :     19.188 cycle/hash,  2.741 cycle/byte,  0.365 byte/cycle,  1.094 Gb/s @3GHz
-t1ha0                   :     14.102 cycle/hash,  2.015 cycle/byte,  0.496 byte/cycle,  1.489 Gb/s @3GHz
-xxhash32                :     18.859 cycle/hash,  2.694 cycle/byte,  0.371 byte/cycle,  1.114 Gb/s @3GHz
-xxhash64                :     27.188 cycle/hash,  3.884 cycle/byte,  0.257 byte/cycle,  0.772 Gb/s @3GHz
-StadtX                  :     19.188 cycle/hash,  2.741 cycle/byte,  0.365 byte/cycle,  1.094 Gb/s @3GHz
-HighwayHash64_pure_c    :    630.000 cycle/hash, 90.000 cycle/byte,  0.011 byte/cycle,  0.033 Gb/s @3GHz
-HighwayHash64_portable  :    507.500 cycle/hash, 72.500 cycle/byte,  0.014 byte/cycle,  0.041 Gb/s @3GHz
-HighwayHash64_sse41     :     69.625 cycle/hash,  9.946 cycle/byte,  0.101 byte/cycle,  0.302 Gb/s @3GHz
-HighwayHash64_avx2      :     57.500 cycle/hash,  8.214 cycle/byte,  0.122 byte/cycle,  0.365 Gb/s @3GHz
+t1ha2_atonce            :     17.234 cycle/hash,  2.462 cycle/byte,  0.406 byte/cycle,  1.218 GiB/s @3GHz
+t1ha2_atonce128*        :     34.719 cycle/hash,  4.960 cycle/byte,  0.202 byte/cycle,  0.605 GiB/s @3GHz
+t1ha2_stream*           :     77.794 cycle/hash, 11.113 cycle/byte,  0.090 byte/cycle,  0.270 GiB/s @3GHz
+t1ha2_stream128*        :     99.250 cycle/hash, 14.179 cycle/byte,  0.071 byte/cycle,  0.212 GiB/s @3GHz
+t1ha1_64le              :     19.219 cycle/hash,  2.746 cycle/byte,  0.364 byte/cycle,  1.093 GiB/s @3GHz
+t1ha0                   :     16.117 cycle/hash,  2.302 cycle/byte,  0.434 byte/cycle,  1.303 GiB/s @3GHz
+xxhash32                :     16.438 cycle/hash,  2.348 cycle/byte,  0.426 byte/cycle,  1.278 GiB/s @3GHz
+xxhash64                :     27.219 cycle/hash,  3.888 cycle/byte,  0.257 byte/cycle,  0.772 GiB/s @3GHz
+xxh3_64                 :     11.109 cycle/hash,  1.587 cycle/byte,  0.630 byte/cycle,  1.890 GiB/s @3GHz
+xxh3_128                :     12.109 cycle/hash,  1.730 cycle/byte,  0.578 byte/cycle,  1.734 GiB/s @3GHz
+StadtX                  :     19.219 cycle/hash,  2.746 cycle/byte,  0.364 byte/cycle,  1.093 GiB/s @3GHz
+HighwayHash64_pure_c    :    615.500 cycle/hash, 87.929 cycle/byte,  0.011 byte/cycle,  0.034 GiB/s @3GHz
+HighwayHash64_portable  :    507.500 cycle/hash, 72.500 cycle/byte,  0.014 byte/cycle,  0.041 GiB/s @3GHz
+HighwayHash64_sse41     :     70.625 cycle/hash, 10.089 cycle/byte,  0.099 byte/cycle,  0.297 GiB/s @3GHz
+HighwayHash64_avx2      :     55.281 cycle/hash,  7.897 cycle/byte,  0.127 byte/cycle,  0.380 GiB/s @3GHz
+wyhash_v4               :     15.141 cycle/hash,  2.163 cycle/byte,  0.462 byte/cycle,  1.387 GiB/s @3GHz
 
 Bench for large keys (16384 bytes):
-t1ha2_atonce            :   3544.000 cycle/hash,  0.216 cycle/byte,  4.623 byte/cycle, 13.869 Gb/s @3GHz
-t1ha2_atonce128*        :   3590.000 cycle/hash,  0.219 cycle/byte,  4.564 byte/cycle, 13.691 Gb/s @3GHz
-t1ha2_stream*           :   3600.000 cycle/hash,  0.220 cycle/byte,  4.551 byte/cycle, 13.653 Gb/s @3GHz
-t1ha2_stream128*        :   3618.000 cycle/hash,  0.221 cycle/byte,  4.528 byte/cycle, 13.585 Gb/s @3GHz
-t1ha1_64le              :   3562.818 cycle/hash,  0.217 cycle/byte,  4.599 byte/cycle, 13.796 Gb/s @3GHz
-t1ha0                   :   1281.203 cycle/hash,  0.078 cycle/byte, 12.788 byte/cycle, 38.364 Gb/s @3GHz
-xxhash32                :   8203.360 cycle/hash,  0.501 cycle/byte,  1.997 byte/cycle,  5.992 Gb/s @3GHz
-xxhash64                :   4128.240 cycle/hash,  0.252 cycle/byte,  3.969 byte/cycle, 11.906 Gb/s @3GHz
-StadtX                  :   3631.000 cycle/hash,  0.222 cycle/byte,  4.512 byte/cycle, 13.537 Gb/s @3GHz
-HighwayHash64_pure_c    :  55309.000 cycle/hash,  3.376 cycle/byte,  0.296 byte/cycle,  0.889 Gb/s @3GHz
-HighwayHash64_portable  :  44433.000 cycle/hash,  2.712 cycle/byte,  0.369 byte/cycle,  1.106 Gb/s @3GHz
-HighwayHash64_sse41     :   6567.000 cycle/hash,  0.401 cycle/byte,  2.495 byte/cycle,  7.485 Gb/s @3GHz
-HighwayHash64_avx2      :   4528.996 cycle/hash,  0.276 cycle/byte,  3.618 byte/cycle, 10.853 Gb/s @3GHz
+t1ha2_atonce            :   3564.000 cycle/hash,  0.218 cycle/byte,  4.597 byte/cycle, 13.791 GiB/s @3GHz
+t1ha2_atonce128*        :   3582.120 cycle/hash,  0.219 cycle/byte,  4.574 byte/cycle, 13.721 GiB/s @3GHz
+t1ha2_stream*           :   3709.000 cycle/hash,  0.226 cycle/byte,  4.417 byte/cycle, 13.252 GiB/s @3GHz
+t1ha2_stream128*        :   3721.000 cycle/hash,  0.227 cycle/byte,  4.403 byte/cycle, 13.209 GiB/s @3GHz
+t1ha1_64le              :   3536.000 cycle/hash,  0.216 cycle/byte,  4.633 byte/cycle, 13.900 GiB/s @3GHz
+t1ha0                   :   1304.000 cycle/hash,  0.080 cycle/byte, 12.564 byte/cycle, 37.693 GiB/s @3GHz
+xxhash32                :   8197.000 cycle/hash,  0.500 cycle/byte,  1.999 byte/cycle,  5.996 GiB/s @3GHz
+xxhash64                :   4125.926 cycle/hash,  0.252 cycle/byte,  3.971 byte/cycle, 11.913 GiB/s @3GHz
+xxh3_64                 :   8837.169 cycle/hash,  0.539 cycle/byte,  1.854 byte/cycle,  5.562 GiB/s @3GHz
+xxh3_128                :   8875.000 cycle/hash,  0.542 cycle/byte,  1.846 byte/cycle,  5.538 GiB/s @3GHz
+StadtX                  :   3617.000 cycle/hash,  0.221 cycle/byte,  4.530 byte/cycle, 13.589 GiB/s @3GHz
+HighwayHash64_pure_c    :  55298.000 cycle/hash,  3.375 cycle/byte,  0.296 byte/cycle,  0.889 GiB/s @3GHz
+HighwayHash64_portable  :  44451.000 cycle/hash,  2.713 cycle/byte,  0.369 byte/cycle,  1.106 GiB/s @3GHz
+HighwayHash64_sse41     :   7037.450 cycle/hash,  0.430 cycle/byte,  2.328 byte/cycle,  6.984 GiB/s @3GHz
+HighwayHash64_avx2      :   4475.000 cycle/hash,  0.273 cycle/byte,  3.661 byte/cycle, 10.984 GiB/s @3GHz
+wyhash_v4               :   2888.000 cycle/hash,  0.176 cycle/byte,  5.673 byte/cycle, 17.019 GiB/s @3GHz
 ```
 
 The `test` tool support a set of command line options to selecting functions and size of keys for benchmarking.

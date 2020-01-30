@@ -1,9 +1,6 @@
 /*
- *  Copyright (c) 2016-2018 Positive Technologies, https://www.ptsecurity.com,
+ *  Copyright (c) 2016-2020 Leonid Yuriev <leo@yuriev.ru>,
  *  Fast Positive Hash.
- *
- *  Portions Copyright (c) 2010-2018 Leonid Yuriev <leo@yuriev.ru>,
- *  The 1Hippeus project (t1h).
  *
  *  This software is provided 'as-is', without any express or implied
  *  warranty. In no event will the authors be held liable for any damages

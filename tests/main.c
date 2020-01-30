@@ -369,6 +369,9 @@ int main(int argc, const char *argv[]) {
 #endif
 
   failed |= verify("StadtX", thunk_StadtX, refval_StadtX);
+
+  if (wyhash_v4_selftest())
+    puts("wyhash SELF-CHECK FAILED!\n");
   failed |= verify("wyhash_v4", thunk_wyhash_v4, refval_wyhash_v4);
 
   if (failed)

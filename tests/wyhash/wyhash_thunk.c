@@ -26,6 +26,22 @@ uint64_t thunk_wyhash_v4(const void *input, size_t length, uint64_t seed) {
   return wyhash(input, length, seed);
 }
 
+bool wyhash_v4_selftest(void) {
+  bool failed = wyhash(NULL, 0, 0) != 0;
+  failed |= wyhash("a", 1, 1) != UINT64_C(0x99782e84a7cee30);
+  failed |= wyhash("abc", 3, 2) != UINT64_C(0x973ed17dfbe006d7);
+  failed |= wyhash("message digest", 14, 3) != UINT64_C(0xc0189aa4012331f5);
+  failed |= wyhash("abcdefghijklmnopqrstuvwxyz", 26, 4) !=
+            UINT64_C(0x6db0e773d1503fac);
+  failed |=
+      wyhash("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789",
+             62, 5) != UINT64_C(0xe062dfda99413626);
+  failed |= wyhash("12345678901234567890123456789012345678901234567890123456789"
+                   "012345678901234567890",
+                   80, 6) != UINT64_C(0xdb3d8aa1be49f6c7);
+  return failed;
+}
+
 /* *INDENT-OFF* */
 /* clang-format off */
 const uint64_t refval_wyhash_v4[81] = { 0,

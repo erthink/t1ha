@@ -173,3 +173,4 @@ uint64_t thunk_HighwayHash64_VSX(const void *input, size_t length,
 /* wyhash v4 */
 uint64_t thunk_wyhash_v4(const void *input, size_t length, uint64_t seed);
 extern const uint64_t refval_wyhash_v4[];
+bool wyhash_v4_selftest(void);

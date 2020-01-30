@@ -188,7 +188,7 @@ test: $(OBJ_LIST) $(BENCH_EXTRA) tests/main.c Makefile \
 		t1ha.h tests/common.h tests/mera.h \
 		mera.o bench.o test.o
 	@echo "Target-ARCH: $(TARGET_ARCH)" || true
-	$(CC) $(CFLAGS_TEST) -o $@ tests/main.c $(OBJ_LIST) $(BENCH_EXTRA)
+	$(CC) $(CFLAGS_TEST) -o $@ tests/main.c $(OBJ_LIST) $(BENCH_EXTRA) -lm
 
 check: test
 	./test

@@ -28,9 +28,11 @@ hash-functions (which do not use specific hardware tricks).
     [E2K](https://en.wikipedia.org/wiki/Elbrus_2000), architectures with
     [SIMD](https://en.wikipedia.org/wiki/SIMD) and most
     [RISC-V](https://en.wikipedia.org/wiki/RISC-V) implementations.
-    In addition, it should be noted that wyhash can lose entropy (similarly
-    as described below). For instance, when data could be correlated with
-    the `seed ^ _wypN` values or equal to it.
+    In addition, it should be noted that _wyhash_ have a "blinding multiplication"
+    flaw and can lose entropy (similarly as described below).
+    For instance, when data could be correlated with the `seed ^ _wypN` values or equal to it.
+    Another case is where one of `_wymum()` multipliers becomes zero. In result of such blinding all
+    previous data will not be influence to the hash value.
 
 3. Licensed under [zlib License](https://en.wikipedia.org/wiki/Zlib_License).
 
@@ -56,7 +58,8 @@ On the other hand, the result of the inner multiplication becomes zero
 when **_(m[2i] + k[2i]) mod 2^32 == 0_** or **_(m[2i+1] + k[2i+1]) mod
 2^32 == 0_**, in which case the opposite multiplier will not affect the
 result of hashing, i.e. NH function just ignores part of the input data.
-That's all. For more related info please google for "[UMAC NH key
+I called this an "blinding multiplication". That's all.
+More useful related information can be googled by "[UMAC NH key
 recovery
 attack](https://www.google.com/search?q=umac+nh+key+recovery+attack)".
 

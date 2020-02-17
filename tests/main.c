@@ -299,7 +299,7 @@ int main(int argc, const char *argv[]) {
       print_build_info();
     puts(" - SELF-CHECK FAILED!\n"
          " - PLEASE report this troubleful compiler version and options\n"
-         "   at https://github.com/leo-yuriev/t1ha/issues/26\n");
+         "   at https://github.com/erthink/t1ha/issues/26\n");
     return EXIT_FAILURE;
   } else if (!is_option_set(test_quiet))
     puts(" (self-check passed)");

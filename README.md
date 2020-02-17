@@ -9,10 +9,10 @@ Included in the [Awesome C](https://github.com/kozross/awesome-c) list of open s
 *The Future will (be) [Positive](https://www.ptsecurity.com). Всё будет хорошо.*
 
 [![License: Zlib](https://img.shields.io/badge/License-Zlib-lightgrey.svg)](https://opensource.org/licenses/Zlib)
-[![Build Status](https://travis-ci.org/leo-yuriev/t1ha.svg?branch=master)](https://travis-ci.org/leo-yuriev/t1ha)
-[![Build status](https://ci.appveyor.com/api/projects/status/ptug5fl2ouxdo68h/branch/master?svg=true)](https://ci.appveyor.com/project/leo-yuriev/t1ha/branch/master)
-[![CircleCI](https://circleci.com/gh/leo-yuriev/t1ha/tree/master.svg?style=svg)](https://circleci.com/gh/leo-yuriev/t1ha/tree/master)
-[![Coverity Scan Status](https://scan.coverity.com/projects/12918/badge.svg)](https://scan.coverity.com/projects/leo-yuriev-t1ha)
+[![Build Status](https://travis-ci.org/erthink/t1ha.svg?branch=master)](https://travis-ci.org/erthink/t1ha)
+[![Build status](https://ci.appveyor.com/api/projects/status/ptug5fl2ouxdo68h/branch/master?svg=true)](https://ci.appveyor.com/project/erthink/t1ha/branch/master)
+[![CircleCI](https://circleci.com/gh/erthink/t1ha/tree/master.svg?style=svg)](https://circleci.com/gh/erthink/t1ha/tree/master)
+[![Coverity Scan Status](https://scan.coverity.com/projects/12918/badge.svg)](https://scan.coverity.com/projects/erthink-t1ha)
 
 ## Briefly, it is a portable non-cryptographic 64-bit hash function:
 1. Intended for 64-bit little-endian platforms, predominantly for Elbrus and x86_64,

@@ -2,11 +2,13 @@ version: 2
 jobs:
   build:
     docker:
-      - image: circleci/buildpack-deps:bionic
+      - image: circleci/buildpack-deps:20.04
     steps:
       - checkout
-      - run: make all
-      - run: ulimit -c unlimited && make check
+      - run:
+          command: |
+            ulimit -c unlimited
+            make all check
       - run:
           command: |
             mkdir -p /tmp/artifacts
@@ -14,7 +16,7 @@ jobs:
           when: on_fail
       - run:
           command: >
-            if which clang-format-6.0 > /dev/null && make reformat && [[ -n $(git diff) ]];
+            if make reformat && [[ -n $(git diff) ]];
               then
                 echo "You must run 'make reformat' before submitting a pull request";
                 echo "";

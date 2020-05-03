@@ -53,8 +53,14 @@ all: test libt1ha.a libt1ha.so
 clean:
 	rm -f test test32 test64 *.i *.bc *.s *.o *.a *.so
 
+CLANG_FORMAT ?= $(shell (which clang-format || which clang-format-10 || which clang-format-11 || which clang-format-12) 2>/dev/null)
+
 reformat:
-	git ls-files | grep -E '\.(c|cxx|cc|cpp|h|hxx|hpp)(\.in)?$$' | xargs -r clang-format-6.0 -i --style=file
+	@if [ -n "$(CLANG_FORMAT)" ]; then \
+		git ls-files | grep -E '\.(c|cxx|cc|cpp|h|hxx|hpp)(\.in)?$$' | xargs -r $(CLANG_FORMAT) -i --style=file; \
+	else \
+		echo "clang-format version 8..12 not found for 'reformat'"; \
+	fi
 
 t1ha_selfcheck.o: t1ha.h src/t1ha_bits.h src/t1ha_selfcheck.h src/t1ha_selfcheck.c Makefile
 	$(CC) $(CFLAGS_LIB) -c -o $@ src/t1ha_selfcheck.c

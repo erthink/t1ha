@@ -45,33 +45,37 @@ uint64_t HH_ADD_TARGET_SUFFIX(thunk_HighwayHash64_)(const void *input,
 } // extern "C"
 
 template <TargetBits Target>
-void HighwayHash<Target>::
-operator()(const HHKey &key, const char *HH_RESTRICT bytes, const size_t size,
-           HHResult64 *HH_RESTRICT hash) const {
+void HighwayHash<Target>::operator()(const HHKey &key,
+                                     const char *HH_RESTRICT bytes,
+                                     const size_t size,
+                                     HHResult64 *HH_RESTRICT hash) const {
   HHStateT<Target> state(key);
   HighwayHashT(&state, bytes, size, hash);
 }
 
 template <TargetBits Target>
-void HighwayHash<Target>::
-operator()(const HHKey &key, const char *HH_RESTRICT bytes, const size_t size,
-           HHResult128 *HH_RESTRICT hash) const {
+void HighwayHash<Target>::operator()(const HHKey &key,
+                                     const char *HH_RESTRICT bytes,
+                                     const size_t size,
+                                     HHResult128 *HH_RESTRICT hash) const {
   HHStateT<Target> state(key);
   HighwayHashT(&state, bytes, size, hash);
 }
 
 template <TargetBits Target>
-void HighwayHash<Target>::
-operator()(const HHKey &key, const char *HH_RESTRICT bytes, const size_t size,
-           HHResult256 *HH_RESTRICT hash) const {
+void HighwayHash<Target>::operator()(const HHKey &key,
+                                     const char *HH_RESTRICT bytes,
+                                     const size_t size,
+                                     HHResult256 *HH_RESTRICT hash) const {
   HHStateT<Target> state(key);
   HighwayHashT(&state, bytes, size, hash);
 }
 
 template <TargetBits Target>
-void HighwayHashCat<Target>::
-operator()(const HHKey &key, const StringView *HH_RESTRICT fragments,
-           const size_t num_fragments, HHResult64 *HH_RESTRICT hash) const {
+void HighwayHashCat<Target>::operator()(const HHKey &key,
+                                        const StringView *HH_RESTRICT fragments,
+                                        const size_t num_fragments,
+                                        HHResult64 *HH_RESTRICT hash) const {
   HighwayHashCatT<Target> cat(key);
   for (size_t i = 0; i < num_fragments; ++i) {
     cat.Append(fragments[i].data, fragments[i].num_bytes);
@@ -80,9 +84,10 @@ operator()(const HHKey &key, const StringView *HH_RESTRICT fragments,
 }
 
 template <TargetBits Target>
-void HighwayHashCat<Target>::
-operator()(const HHKey &key, const StringView *HH_RESTRICT fragments,
-           const size_t num_fragments, HHResult128 *HH_RESTRICT hash) const {
+void HighwayHashCat<Target>::operator()(const HHKey &key,
+                                        const StringView *HH_RESTRICT fragments,
+                                        const size_t num_fragments,
+                                        HHResult128 *HH_RESTRICT hash) const {
   HighwayHashCatT<Target> cat(key);
   for (size_t i = 0; i < num_fragments; ++i) {
     cat.Append(fragments[i].data, fragments[i].num_bytes);
@@ -91,9 +96,10 @@ operator()(const HHKey &key, const StringView *HH_RESTRICT fragments,
 }
 
 template <TargetBits Target>
-void HighwayHashCat<Target>::
-operator()(const HHKey &key, const StringView *HH_RESTRICT fragments,
-           const size_t num_fragments, HHResult256 *HH_RESTRICT hash) const {
+void HighwayHashCat<Target>::operator()(const HHKey &key,
+                                        const StringView *HH_RESTRICT fragments,
+                                        const size_t num_fragments,
+                                        HHResult256 *HH_RESTRICT hash) const {
   HighwayHashCatT<Target> cat(key);
   for (size_t i = 0; i < num_fragments; ++i) {
     cat.Append(fragments[i].data, fragments[i].num_bytes);

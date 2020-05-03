@@ -381,16 +381,14 @@
 /* GNU ELF indirect functions usage control. For more info please see
  * https://en.wikipedia.org/wiki/Executable_and_Linkable_Format
  * and https://sourceware.org/glibc/wiki/GNU_IFUNC */
-#if __has_attribute(__ifunc__) &&                                              \
-    defined(__ELF__) /* ifunc is broken on Darwin/OSX */
-/* Use ifunc/gnu_indirect_function if corresponding attribute is available,
- * Assuming compiler will generate properly code even when
- * the -fstack-protector-all and/or the -fsanitize=address are enabled. */
-#define T1HA_USE_INDIRECT_FUNCTIONS 1
-#elif defined(__ELF__) && !defined(__SANITIZE_ADDRESS__) &&                    \
-    !defined(__SSP_ALL__)
-/* ifunc/gnu_indirect_function will be used on ELF, but only if both
- * -fstack-protector-all and -fsanitize=address are NOT enabled. */
+#if defined(__ELF__) && defined(__amd64__) &&                                  \
+    (__has_attribute(__ifunc__) ||                                             \
+     (!defined(__clang__) && defined(__GNUC__) && __GNUC__ >= 4 &&             \
+      !defined(__SANITIZE_ADDRESS__) && !defined(__SSP_ALL__)))
+/* Enable gnu_indirect_function by default if :
+ *  - ELF AND x86_64
+ *  - attribute(__ifunc__) is available OR
+ *    GCC >= 4 WITHOUT -fsanitize=address NOR -fstack-protector-all */
 #define T1HA_USE_INDIRECT_FUNCTIONS 1
 #else
 #define T1HA_USE_INDIRECT_FUNCTIONS 0

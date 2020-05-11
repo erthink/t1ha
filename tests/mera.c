@@ -380,6 +380,17 @@ union timestamp {
   } u32;
 };
 
+#ifndef __has_builtin
+#define __has_builtin(x) (0)
+#endif
+
+#if __has_builtin(__builtin_readcyclecounter)
+static unsigned clock_readcyclecounter(timestamp_t *now) {
+  *now = __builtin_readcyclecounter();
+  return 0;
+}
+#endif /* __builtin_readcyclecounter */
+
 #if defined(EMSCRIPTEN)
 static unsigned clock_emscripten(timestamp_t *now) {
   compiler_barrier();
@@ -1441,6 +1452,18 @@ bool mera_init(void) {
 #endif /* __NR_perf_event_open */
 
 #endif /* ! __native_client__ */
+
+#if __has_builtin(__builtin_readcyclecounter)
+  probe(clock_readcyclecounter, clock_readcyclecounter, convert_1to1,
+#if defined(__ia32__)
+        timestamp_clock_cheap | timestamp_cycles |
+            (mera.flags & timestamp_clock_stable),
+#else
+        timestamp_clock_cheap | timestamp_cycles | timestamp_clock_stable,
+#endif
+        "__builtin_readcyclecounter()", "cycle");
+#endif
+
   return (mera.flags & timestamp_clock_have) ? true : false;
 }
 

@@ -24,7 +24,7 @@ but portable and without penalties it can run on any 64-bit CPU.
 [MUM](https://github.com/vnmakarov/mum-hash) and others portable
 hash-functions (which do not use specific hardware tricks).
 
-    Currently [wyhash v4](https://github.com/wangyi-fudan/wyhash)
+    Currently [wyhash](https://github.com/wangyi-fudan/wyhash)
     outperforms _t1ha_ on `x86_64`. However **next version `t1ha3_atonce()` will be even
     faster** on all platforms, especially on
     [E2K](https://en.wikipedia.org/wiki/Elbrus_2000), architectures with
@@ -209,7 +209,7 @@ To comparison benchmark also includes `wyhash`, `xxHash`, `StadtX` and
 Core(TM) i7-4600U CPU`:
 ```
 $ make all && sudo make check
-Build by GNU C/C++ compiler 8.3 (self-check passed)
+Build by GNU C/C++ compiler 9.3 (self-check passed)
 Testing t1ha2_atonce... Ok
 Testing t1ha2_atonce128... Ok
 Testing t1ha2_stream... Ok
@@ -226,49 +226,49 @@ Testing HighwayHash64_portable_cxx... Ok
 Testing HighwayHash64_sse41... Ok
 Testing HighwayHash64_avx2... Ok
 Testing StadtX... Ok
-Testing wyhash_v4... Ok
+Testing wyhash_v7... Ok
 
 Preparing to benchmarking...
- - running on CPU#1
+ - running on CPU#0
  - use RDPMC_40000001 as clock source for benchmarking
  - assume it cheap and stable
  - measure granularity and overhead: 54 cycles, 0.0185185 iteration/cycle
 
 Bench for tiny keys (7 bytes):
-t1ha2_atonce            :     17.234 cycle/hash,  2.462 cycle/byte,  0.406 byte/cycle,  1.218 GiB/s @3GHz
-t1ha2_atonce128*        :     34.719 cycle/hash,  4.960 cycle/byte,  0.202 byte/cycle,  0.605 GiB/s @3GHz
-t1ha2_stream*           :     77.794 cycle/hash, 11.113 cycle/byte,  0.090 byte/cycle,  0.270 GiB/s @3GHz
-t1ha2_stream128*        :     99.250 cycle/hash, 14.179 cycle/byte,  0.071 byte/cycle,  0.212 GiB/s @3GHz
-t1ha1_64le              :     19.219 cycle/hash,  2.746 cycle/byte,  0.364 byte/cycle,  1.093 GiB/s @3GHz
-t1ha0                   :     16.117 cycle/hash,  2.302 cycle/byte,  0.434 byte/cycle,  1.303 GiB/s @3GHz
-xxhash32                :     16.438 cycle/hash,  2.348 cycle/byte,  0.426 byte/cycle,  1.278 GiB/s @3GHz
-xxhash64                :     27.219 cycle/hash,  3.888 cycle/byte,  0.257 byte/cycle,  0.772 GiB/s @3GHz
-xxh3_64                 :     11.109 cycle/hash,  1.587 cycle/byte,  0.630 byte/cycle,  1.890 GiB/s @3GHz
-xxh3_128                :     12.109 cycle/hash,  1.730 cycle/byte,  0.578 byte/cycle,  1.734 GiB/s @3GHz
-StadtX                  :     19.219 cycle/hash,  2.746 cycle/byte,  0.364 byte/cycle,  1.093 GiB/s @3GHz
-HighwayHash64_pure_c    :    615.500 cycle/hash, 87.929 cycle/byte,  0.011 byte/cycle,  0.034 GiB/s @3GHz
-HighwayHash64_portable  :    507.500 cycle/hash, 72.500 cycle/byte,  0.014 byte/cycle,  0.041 GiB/s @3GHz
-HighwayHash64_sse41     :     70.625 cycle/hash, 10.089 cycle/byte,  0.099 byte/cycle,  0.297 GiB/s @3GHz
-HighwayHash64_avx2      :     55.281 cycle/hash,  7.897 cycle/byte,  0.127 byte/cycle,  0.380 GiB/s @3GHz
-wyhash_v4               :     15.141 cycle/hash,  2.163 cycle/byte,  0.462 byte/cycle,  1.387 GiB/s @3GHz
+t1ha2_atonce          :     17.250 cycle/hash,  2.464 cycle/byte,  0.406 byte/cycle,  1.217 GiB/s @3GHz
+t1ha2_atonce128*      :     33.281 cycle/hash,  4.754 cycle/byte,  0.210 byte/cycle,  0.631 GiB/s @3GHz
+t1ha2_stream*         :     77.500 cycle/hash, 11.071 cycle/byte,  0.090 byte/cycle,  0.271 GiB/s @3GHz
+t1ha2_stream128*      :     99.125 cycle/hash, 14.161 cycle/byte,  0.071 byte/cycle,  0.212 GiB/s @3GHz
+t1ha1_64le            :     18.219 cycle/hash,  2.603 cycle/byte,  0.384 byte/cycle,  1.153 GiB/s @3GHz
+t1ha0                 :     15.102 cycle/hash,  2.157 cycle/byte,  0.464 byte/cycle,  1.391 GiB/s @3GHz
+xxhash32              :     16.545 cycle/hash,  2.364 cycle/byte,  0.423 byte/cycle,  1.269 GiB/s @3GHz
+xxhash64              :     27.203 cycle/hash,  3.886 cycle/byte,  0.257 byte/cycle,  0.772 GiB/s @3GHz
+xxh3_64               :     15.102 cycle/hash,  2.157 cycle/byte,  0.464 byte/cycle,  1.391 GiB/s @3GHz
+xxh3_128              :     18.219 cycle/hash,  2.603 cycle/byte,  0.384 byte/cycle,  1.153 GiB/s @3GHz
+StadtX                :     20.203 cycle/hash,  2.886 cycle/byte,  0.346 byte/cycle,  1.039 GiB/s @3GHz
+HighwayHash64_pure_c  :    607.000 cycle/hash, 86.714 cycle/byte,  0.012 byte/cycle,  0.035 GiB/s @3GHz
+HighwayHash64_portable:    513.000 cycle/hash, 73.286 cycle/byte,  0.014 byte/cycle,  0.041 GiB/s @3GHz
+HighwayHash64_sse41   :     69.438 cycle/hash,  9.920 cycle/byte,  0.101 byte/cycle,  0.302 GiB/s @3GHz
+HighwayHash64_avx2    :     54.875 cycle/hash,  7.839 cycle/byte,  0.128 byte/cycle,  0.383 GiB/s @3GHz
+wyhash_v7             :     14.102 cycle/hash,  2.015 cycle/byte,  0.496 byte/cycle,  1.489 GiB/s @3GHz
 
 Bench for large keys (16384 bytes):
-t1ha2_atonce            :   3564.000 cycle/hash,  0.218 cycle/byte,  4.597 byte/cycle, 13.791 GiB/s @3GHz
-t1ha2_atonce128*        :   3582.120 cycle/hash,  0.219 cycle/byte,  4.574 byte/cycle, 13.721 GiB/s @3GHz
-t1ha2_stream*           :   3709.000 cycle/hash,  0.226 cycle/byte,  4.417 byte/cycle, 13.252 GiB/s @3GHz
-t1ha2_stream128*        :   3721.000 cycle/hash,  0.227 cycle/byte,  4.403 byte/cycle, 13.209 GiB/s @3GHz
-t1ha1_64le              :   3536.000 cycle/hash,  0.216 cycle/byte,  4.633 byte/cycle, 13.900 GiB/s @3GHz
-t1ha0                   :   1304.000 cycle/hash,  0.080 cycle/byte, 12.564 byte/cycle, 37.693 GiB/s @3GHz
-xxhash32                :   8197.000 cycle/hash,  0.500 cycle/byte,  1.999 byte/cycle,  5.996 GiB/s @3GHz
-xxhash64                :   4125.926 cycle/hash,  0.252 cycle/byte,  3.971 byte/cycle, 11.913 GiB/s @3GHz
-xxh3_64                 :   8837.169 cycle/hash,  0.539 cycle/byte,  1.854 byte/cycle,  5.562 GiB/s @3GHz
-xxh3_128                :   8875.000 cycle/hash,  0.542 cycle/byte,  1.846 byte/cycle,  5.538 GiB/s @3GHz
-StadtX                  :   3617.000 cycle/hash,  0.221 cycle/byte,  4.530 byte/cycle, 13.589 GiB/s @3GHz
-HighwayHash64_pure_c    :  55298.000 cycle/hash,  3.375 cycle/byte,  0.296 byte/cycle,  0.889 GiB/s @3GHz
-HighwayHash64_portable  :  44451.000 cycle/hash,  2.713 cycle/byte,  0.369 byte/cycle,  1.106 GiB/s @3GHz
-HighwayHash64_sse41     :   7037.450 cycle/hash,  0.430 cycle/byte,  2.328 byte/cycle,  6.984 GiB/s @3GHz
-HighwayHash64_avx2      :   4475.000 cycle/hash,  0.273 cycle/byte,  3.661 byte/cycle, 10.984 GiB/s @3GHz
-wyhash_v4               :   2888.000 cycle/hash,  0.176 cycle/byte,  5.673 byte/cycle, 17.019 GiB/s @3GHz
+t1ha2_atonce          :   3493.000 cycle/hash,  0.213 cycle/byte,  4.691 byte/cycle, 14.072 GiB/s @3GHz
+t1ha2_atonce128*      :   3664.000 cycle/hash,  0.224 cycle/byte,  4.472 byte/cycle, 13.415 GiB/s @3GHz
+t1ha2_stream*         :   3684.000 cycle/hash,  0.225 cycle/byte,  4.447 byte/cycle, 13.342 GiB/s @3GHz
+t1ha2_stream128*      :   3709.239 cycle/hash,  0.226 cycle/byte,  4.417 byte/cycle, 13.251 GiB/s @3GHz
+t1ha1_64le            :   3644.000 cycle/hash,  0.222 cycle/byte,  4.496 byte/cycle, 13.488 GiB/s @3GHz
+t1ha0                 :   1289.000 cycle/hash,  0.079 cycle/byte, 12.711 byte/cycle, 38.132 GiB/s @3GHz
+xxhash32              :   8198.000 cycle/hash,  0.500 cycle/byte,  1.999 byte/cycle,  5.996 GiB/s @3GHz
+xxhash64              :   4126.750 cycle/hash,  0.252 cycle/byte,  3.970 byte/cycle, 11.911 GiB/s @3GHz
+xxh3_64               :   4929.000 cycle/hash,  0.301 cycle/byte,  3.324 byte/cycle,  9.972 GiB/s @3GHz
+xxh3_128              :   4887.536 cycle/hash,  0.298 cycle/byte,  3.352 byte/cycle, 10.057 GiB/s @3GHz
+StadtX                :   3667.000 cycle/hash,  0.224 cycle/byte,  4.468 byte/cycle, 13.404 GiB/s @3GHz
+HighwayHash64_pure_c  :  55294.000 cycle/hash,  3.375 cycle/byte,  0.296 byte/cycle,  0.889 GiB/s @3GHz
+HighwayHash64_portable:  44982.321 cycle/hash,  2.746 cycle/byte,  0.364 byte/cycle,  1.093 GiB/s @3GHz
+HighwayHash64_sse41   :   7041.000 cycle/hash,  0.430 cycle/byte,  2.327 byte/cycle,  6.981 GiB/s @3GHz
+HighwayHash64_avx2    :   4542.000 cycle/hash,  0.277 cycle/byte,  3.607 byte/cycle, 10.822 GiB/s @3GHz
+wyhash_v7             :   3383.000 cycle/hash,  0.206 cycle/byte,  4.843 byte/cycle, 14.529 GiB/s @3GHz
 ```
 
 The `test` tool support a set of command line options to selecting functions and size of keys for benchmarking.

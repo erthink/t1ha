@@ -21,8 +21,8 @@
 #define _unlikely_(x) (x)
 #endif
 // mum function
-static inline uint64_t _wyrot(uint64_t x) { return (x >> 32) | (x << 32); }
-static inline void _wymum(uint64_t *A, uint64_t *B) {
+static __inline uint64_t _wyrot(uint64_t x) { return (x >> 32) | (x << 32); }
+static __inline void _wymum(uint64_t *A, uint64_t *B) {
 #if (WYHASH_32BIT_MUM)
   uint64_t hh = (*A >> 32) * (*B >> 32), hl = (*A >> 32) * (unsigned)*B,
            lh = (unsigned)*A * (*B >> 32),
@@ -70,7 +70,7 @@ static inline void _wymum(uint64_t *A, uint64_t *B) {
 #endif
 #endif
 }
-static inline uint64_t _wymix(uint64_t A, uint64_t B) {
+static __inline uint64_t _wymix(uint64_t A, uint64_t B) {
   _wymum(&A, &B);
   return A ^ B;
 }
@@ -85,46 +85,46 @@ static inline uint64_t _wymix(uint64_t A, uint64_t B) {
 #endif
 #endif
 #if (WYHASH_LITTLE_ENDIAN)
-static inline uint64_t _wyr8(const uint8_t *p) {
+static __inline uint64_t _wyr8(const uint8_t *p) {
   uint64_t v;
   memcpy(&v, p, 8);
   return v;
 }
-static inline uint64_t _wyr4(const uint8_t *p) {
+static __inline uint64_t _wyr4(const uint8_t *p) {
   unsigned v;
   memcpy(&v, p, 4);
   return v;
 }
 #elif defined(__GNUC__) || defined(__INTEL_COMPILER) || defined(__clang__)
-static inline uint64_t _wyr8(const uint8_t *p) {
+static __inline uint64_t _wyr8(const uint8_t *p) {
   uint64_t v;
   memcpy(&v, p, 8);
   return __builtin_bswap64(v);
 }
-static inline uint64_t _wyr4(const uint8_t *p) {
+static __inline uint64_t _wyr4(const uint8_t *p) {
   unsigned v;
   memcpy(&v, p, 4);
   return __builtin_bswap32(v);
 }
 #elif defined(_MSC_VER)
-static inline uint64_t _wyr8(const uint8_t *p) {
+static __inline uint64_t _wyr8(const uint8_t *p) {
   uint64_t v;
   memcpy(&v, p, 8);
   return _byteswap_uint64(v);
 }
-static inline uint64_t _wyr4(const uint8_t *p) {
+static __inline uint64_t _wyr4(const uint8_t *p) {
   unsigned v;
   memcpy(&v, p, 4);
   return _byteswap_ulong(v);
 }
 #endif
-static inline uint64_t _wyr3(const uint8_t *p, unsigned k) {
+static __inline uint64_t _wyr3(const uint8_t *p, unsigned k) {
   return (((uint64_t)p[0]) << 16) | (((uint64_t)p[k >> 1]) << 8) | p[k - 1];
 }
 // wyhash function
-static inline uint64_t _wyfinish16(const uint8_t *p, uint64_t len,
-                                   uint64_t seed, const uint64_t *secret,
-                                   uint64_t i) {
+static __inline uint64_t _wyfinish16(const uint8_t *p, uint64_t len,
+                                     uint64_t seed, const uint64_t *secret,
+                                     uint64_t i) {
 #if (WYHASH_CONDOM > 0)
   uint64_t a, b;
   if (_likely_(i <= 8)) {
@@ -132,7 +132,7 @@ static inline uint64_t _wyfinish16(const uint8_t *p, uint64_t len,
       a = _wyr4(p);
       b = _wyr4(p + i - 4);
     } else if (_likely_(i)) {
-      a = _wyr3(p, i);
+      a = _wyr3(p, (unsigned)i);
       b = 0;
     } else
       a = b = 0;
@@ -149,8 +149,9 @@ static inline uint64_t _wyfinish16(const uint8_t *p, uint64_t len,
 #endif
 }
 
-static inline uint64_t _wyfinish(const uint8_t *p, uint64_t len, uint64_t seed,
-                                 const uint64_t *secret, uint64_t i) {
+static __inline uint64_t _wyfinish(const uint8_t *p, uint64_t len,
+                                   uint64_t seed, const uint64_t *secret,
+                                   uint64_t i) {
   if (_likely_(i <= 16))
     return _wyfinish16(p, len, seed, secret, i);
   return _wyfinish(p + 16, len,
@@ -158,8 +159,8 @@ static inline uint64_t _wyfinish(const uint8_t *p, uint64_t len, uint64_t seed,
                    i - 16);
 }
 
-static inline uint64_t wyhash(const void *key, uint64_t len, uint64_t seed,
-                              const uint64_t *secret) {
+static __inline uint64_t wyhash(const void *key, uint64_t len, uint64_t seed,
+                                const uint64_t *secret) {
   const uint8_t *p = (const uint8_t *)key;
   uint64_t i = len;
   seed ^= *secret;
@@ -181,27 +182,39 @@ static inline uint64_t wyhash(const void *key, uint64_t len, uint64_t seed,
 const uint64_t _wyp[5] = {0xa0761d6478bd642full, 0xe7037ed1a0b428dbull,
                           0x8ebc6af09c88c6e3ull, 0x589965cc75374cc3ull,
                           0x1d8e4e27c47d124full};
-static inline uint64_t wyhash64(uint64_t A, uint64_t B) {
+static __inline uint64_t wyhash64(uint64_t A, uint64_t B) {
   A ^= _wyp[0];
   B ^= _wyp[1];
   _wymum(&A, &B);
   return _wymix(A ^ _wyp[0], B ^ _wyp[1]);
 }
-static inline uint64_t wyrand(uint64_t *seed) {
+static __inline uint64_t wyrand(uint64_t *seed) {
   *seed += _wyp[0];
   return _wymix(*seed, *seed ^ _wyp[1]);
 }
-static inline double wy2u01(uint64_t r) {
+static __inline double wy2u01(uint64_t r) {
   const double _wynorm = 1.0 / (1ull << 52);
   return (r >> 12) * _wynorm;
 }
-static inline double wy2gau(uint64_t r) {
+static __inline double wy2gau(uint64_t r) {
   const double _wynorm = 1.0 / (1ull << 20);
   return ((r & 0x1fffff) + ((r >> 21) & 0x1fffff) + ((r >> 42) & 0x1fffff)) *
              _wynorm -
          3.0;
 }
-static inline void make_secret(uint64_t seed, uint64_t *secret) {
+
+static __inline unsigned portable_popcount(uint64_t x) {
+  /* https://en.wikipedia.org/wiki/Hamming_weight */
+  x -= (x >> 1) & 0x5555555555555555ull;
+  x = (x & 0x3333333333333333ull) + ((x >> 2) & 0x3333333333333333ull);
+  x = (x + (x >> 4)) & 0x0f0f0f0f0f0f0f0full;
+  x += x >> 8;
+  x += x >> 16;
+  x += x >> 32;
+  return x & 0x7f;
+}
+
+static __inline void make_secret(uint64_t seed, uint64_t *secret) {
   uint8_t c[] = {15,  23,  27,  29,  30,  39,  43,  45,  46,  51,  53,  54,
                  57,  58,  60,  71,  75,  77,  78,  83,  85,  86,  89,  90,
                  92,  99,  101, 102, 105, 106, 108, 113, 114, 116, 120, 135,
@@ -220,17 +233,10 @@ static inline void make_secret(uint64_t seed, uint64_t *secret) {
         continue;
       }
       for (size_t j = 0; j < i; j++)
-#if defined(__GNUC__) || defined(__INTEL_COMPILER) || defined(__clang__)
-        if (__builtin_popcountll(secret[j] ^ secret[i]) != 32) {
+        if (portable_popcount(secret[j] ^ secret[i]) != 32) {
           ok = 0;
           break;
         }
-#elif defined(_MSC_VER)
-        if (_mm_popcnt_u64(secret[j] ^ secret[i]) != 32) {
-          ok = 0;
-          break;
-        }
-#endif
       if (!ok)
         continue;
       for (uint64_t j = 3; j < 0x100000000ull; j += 2)

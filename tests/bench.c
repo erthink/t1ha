@@ -152,7 +152,7 @@ void bench_size(const unsigned size, const char *caption) {
     /* TODO: thunk_HighwayHash64_VSX() */
   }
   if (is_selected(bench_wyhash)) {
-    bench("wyhash_v4", thunk_wyhash_v4, buffer, size, seed);
+    bench("wyhash_v7", thunk_wyhash_v7, buffer, size, seed);
   }
   free(buffer);
 }

@@ -370,9 +370,9 @@ int main(int argc, const char *argv[]) {
 
   failed |= verify("StadtX", thunk_StadtX, refval_StadtX);
 
-  if (wyhash_v4_selftest())
+  if (wyhash_v7_selftest())
     puts("wyhash SELF-CHECK FAILED!\n");
-  failed |= verify("wyhash_v4", thunk_wyhash_v4, refval_wyhash_v4);
+  failed |= verify("wyhash_v7", thunk_wyhash_v7, refval_wyhash_v7);
 
   if (failed)
     puts("Verification FAILED!\n");
@@ -397,8 +397,8 @@ int main(int argc, const char *argv[]) {
       hash_function = thunk_StadtX;
       hash_name = "StadtX";
     } else if (is_selected(bench_64 | bench_wyhash)) {
-      hash_function = thunk_wyhash_v4;
-      hash_name = "wyhash_v4";
+      hash_function = thunk_wyhash_v7;
+      hash_name = "wyhash_v7";
 #ifndef T1HA2_DISABLED
     } else if (is_selected(bench_64 | bench_2)) {
       hash_function = t1ha2_atonce;

@@ -1,4 +1,4 @@
-Simple Is Best
+No hash function is perfect, but some are useful.
 ====
 
 wyhash and wyrand are the ideal 64-bit hash function and PRNG respectively: 
@@ -7,37 +7,29 @@ wyhash and wyrand are the ideal 64-bit hash function and PRNG respectively:
 
 **portable**: 64-bit/32-bit system, big/little endian.
   
-**fastest**:  Effecient on all machines, exspecially for short keys.
+**fastest**:  Efficient on 64-bit machines, especially for short keys.
   
 **simplest**: In the sense of code size.
 
-Currently wyhash has 13 language ports and is the default hasher for a hash table of the great Zig language.
-
 ----------------------------------------
 
-**Version 4 is ready!**
+g++-9 benchmark.cpp t1ha/src/t1ha2.c -o benchmark -Ofast -s  -Wall -march=native
 
-big endian support. half code size. faster short key hashing, faster bulk key hashing.
+/usr/share/dict/words
 
-![](Clipboard05.png)
-![](Clipboard06.png)
-
-**Good Boy Only Benchmark** 
-
-XXH3 was not included as it fails two tests according to SMHasher.
-
-```C
-#define XXH_INLINE_ALL
-#define XXH_FORCE_MEMORY_ACCESS 0
-```
-![](Clipboard03.png)
-![](Clipboard04.png)
-![](Clipboard01.png)
-![](Clipboard02.png)
+|hash function  |short hash/us  |bulk_256B GB/s |bulk_64KB GB/s |
+|----           |----           |----           |----           |
+|wyhash:safety=0|444.31         |18.86          |24.35          |
+|wyhash:safety=1|195.42         |17.97          |23.44          |
+|wyhash:safety=2|181.56         |14.33          |15.97          |
+|xxh3:avx2      |147.33         |9.73           |45.39          |
+|xxh3:sse2      |154.30         |11.53          |27.15          |
+|xxh3:scalar    |153.61         |8.49           |13.05          |
+|xxHash64       |83.10          |10.89          |14.72          |
+|t1ha2_atonce   |115.12         |12.96          |17.64          |
 
 ----------------------------------------
-
-Language Ports:
+wyhash is the default hasher for a hash table of the great Zig and V language.
 
 **C#**  https://github.com/cocowalla/wyhash-dotnet
 
@@ -61,7 +53,7 @@ Language Ports:
 
 **Swift**  https://github.com/lemire/SwiftWyhashBenchmark
 
-**Swift**  https://github.com/jeudesprits/SwiftWyhash
+**Swift**  https://github.com/jeudesprits/PSWyhash
 
 **V** https://github.com/vlang/v/tree/master/vlib/hash/wyhash (v4)
 
@@ -96,3 +88,10 @@ dumblob
 Yann Collet
 
 ivte-ms
+
+hyb
+
+James Z.M. Gao
+
+easyaspi314 (Devin)
+

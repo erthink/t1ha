@@ -1048,8 +1048,9 @@ add64carry_last(unsigned carry, uint64_t base, uint64_t addend, uint64_t *sum) {
 static __maybe_unused __always_inline uint64_t mul_64x64_128(uint64_t a,
                                                              uint64_t b,
                                                              uint64_t *h) {
-#if defined(__SIZEOF_INT128__) ||                                              \
-    (defined(_INTEGRAL_MAX_BITS) && _INTEGRAL_MAX_BITS >= 128)
+#if (defined(__SIZEOF_INT128__) ||                                             \
+     (defined(_INTEGRAL_MAX_BITS) && _INTEGRAL_MAX_BITS >= 128)) &&            \
+    (!defined(__LCC__) || __LCC__ != 124)
   __uint128_t r = (__uint128_t)a * (__uint128_t)b;
   /* modern GCC could nicely optimize this */
   *h = (uint64_t)(r >> 64);

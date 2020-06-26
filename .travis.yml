@@ -4,7 +4,7 @@ dist: focal
 arch:
   - amd64
   - arm64
-  - ppc64le
+#  - ppc64le ## travis-ci.org 2020-06-25: An error occurred while generating the build script.
   - s390x
 
 compiler:

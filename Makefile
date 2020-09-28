@@ -21,8 +21,8 @@ CXX ?= g++
 
 # T1HA_EXTRA_CFLAGS ?= -DT1HA_USE_INDIRECT_FUNCTIONS=0 -m32
 
-CFLAGS ?= $(T1HA_EXTRA_CFLAGS) -std=c99 -O3 -DNDEBUG -D_DEFAULT_SOURCE -fno-stack-protector
-CXXFLAGS = -std=c++11 $(filter-out -std=c99,$(CFLAGS))
+CFLAGS ?= $(T1HA_EXTRA_CFLAGS) -std=c11 -O3 -DNDEBUG -D_DEFAULT_SOURCE -fno-stack-protector
+CXXFLAGS = -std=c++11 $(filter-out -std=c11,$(CFLAGS))
 
 TARGET_ARCH_e2k ?= $(shell (export LC_ALL=C; ($(CC) --version 2>&1; $(CC) -v 2>&1) | grep -q -i 'e2k' && echo yes || echo no))
 TARGET_ARCH_ia32 ?= $(shell (export LC_ALL=C; ($(CC) --version 2>&1; $(CC) -v 2>&1) | grep -q -i -e '^Target: \(x86_64\)\|\([iI][3-6]86\)-.*' && echo yes || echo no))
@@ -232,5 +232,5 @@ cross-qemu:
 	@echo "	2) apt install binfmt-support qemu-user-static qemu-user qemu-system-arm qemu-system-mips qemu-system-misc qemu-system-ppc qemu-system-sparc"
 	@for CC in $(CROSS_LIST); do \
 		echo "===================== $$CC + qemu"; \
-		$(MAKE) clean && CC=$$CC CXX=$$(echo "$$CC" | sed 's/gcc/g++/') CFLAGS_TEST="-std=c99 -static" $(MAKE) bench-verbose || exit $$?; \
+		$(MAKE) clean && CC=$$CC CXX=$$(echo "$$CC" | sed 's/gcc/g++/') CFLAGS_TEST="-std=c11 -static" $(MAKE) bench-verbose || exit $$?; \
 	done

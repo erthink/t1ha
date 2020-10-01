@@ -60,7 +60,7 @@
  *      // To disable unaligned access at all.
  *      #define T1HA_SYS_UNALIGNED_ACCESS 0
  *
- *      // To enable unaligned access, but indicate that it significally slow.
+ *      // To enable unaligned access, but indicate that it significantly slow.
  *      #define T1HA_SYS_UNALIGNED_ACCESS 1
  *
  *      // To enable unaligned access, and indicate that it effecient.

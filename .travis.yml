@@ -6,6 +6,7 @@ arch:
   - arm64
 #  - ppc64le ## travis-ci.org 2020-06-25: An error occurred while generating the build script.
   - s390x
+  - arm64-graviton2
 
 compiler:
   - gcc

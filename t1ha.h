@@ -591,7 +591,7 @@ uint64_t t1ha0_32be(const void *data, size_t length, uint64_t seed);
 
 /* Define T1HA0_AESNI_AVAILABLE to 0 for disable AES-NI support. */
 #ifndef T1HA0_AESNI_AVAILABLE
-#if defined(__e2k__) ||                                                        \
+#if defined(__aarch64__) || defined(__e2k__) ||                                                        \
     (defined(__ia32__) && (!defined(_M_IX86) || _MSC_VER > 1800))
 #define T1HA0_AESNI_AVAILABLE 1
 #else

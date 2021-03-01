@@ -46,8 +46,8 @@ before_script: |
   fi
 
 script: |
-  git fetch --unshallow --tags --prune
-  git submodule foreach --recursive git fetch --unshallow --tags --prune
+  git fetch --unshallow --tags --prune --force
+  git submodule foreach --recursive git fetch --unshallow --tags --prune --force
   if [ ! -s ./coverity_scan.sh ]; then
     make --keep-going all && \
     MALLOC_CHECK_=7 MALLOC_PERTURB_=42 make check && \

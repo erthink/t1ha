@@ -81,8 +81,6 @@
 #define T1HA_SYS_UNALIGNED_ACCESS T1HA_UNALIGNED_ACCESS__EFFICIENT
 #elif defined(__e2k__)
 #define T1HA_SYS_UNALIGNED_ACCESS T1HA_UNALIGNED_ACCESS__SLOW
-#elif defined(__ARM_FEATURE_UNALIGNED)
-#define T1HA_SYS_UNALIGNED_ACCESS T1HA_UNALIGNED_ACCESS__EFFICIENT
 #else
 #define T1HA_SYS_UNALIGNED_ACCESS T1HA_UNALIGNED_ACCESS__UNABLE
 #endif
@@ -538,7 +536,8 @@ fetch16_le_aligned(const void *v) {
 #ifndef fetch16_le_unaligned
 static __maybe_unused __always_inline uint16_t
 fetch16_le_unaligned(const void *v) {
-#if T1HA_SYS_UNALIGNED_ACCESS == T1HA_UNALIGNED_ACCESS__UNABLE
+#if T1HA_SYS_UNALIGNED_ACCESS == T1HA_UNALIGNED_ACCESS__UNABLE &&              \
+    !defined(__ARM_FEATURE_UNALIGNED)
   const uint8_t *p = (const uint8_t *)v;
   return p[0] | (uint16_t)p[1] << 8;
 #elif __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
@@ -564,7 +563,8 @@ fetch32_le_aligned(const void *v) {
 #ifndef fetch32_le_unaligned
 static __maybe_unused __always_inline uint32_t
 fetch32_le_unaligned(const void *v) {
-#if T1HA_SYS_UNALIGNED_ACCESS == T1HA_UNALIGNED_ACCESS__UNABLE
+#if T1HA_SYS_UNALIGNED_ACCESS == T1HA_UNALIGNED_ACCESS__UNABLE &&              \
+    !defined(__ARM_FEATURE_UNALIGNED)
   return fetch16_le_unaligned(v) |
          (uint32_t)fetch16_le_unaligned((const uint8_t *)v + 2) << 16;
 #elif __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__

@@ -39,8 +39,8 @@ hash-functions (which do not use specific hardware tricks).
 3. Licensed under [zlib License](https://en.wikipedia.org/wiki/Zlib_License).
 
 Also pay attention to [Rust](https://github.com/flier/rust-t1ha),
-[Erlang](https://github.com/lemenkov/erlang-t1ha) and
-[Golang](https://github.com/dgryski/go-t1ha) implementations.
+[Erlang](https://github.com/lemenkov/erlang-t1ha),
+[Golang](https://github.com/dgryski/go-t1ha) and [Kotlin Multiplatform](https://github.com/appmattus/crypto/tree/main/cryptohash) implementations.
 
 ### FAQ: Why _t1ha_ don't follow [NH](https://en.wikipedia.org/wiki/UMAC)-approach like [FARSH](https://github.com/Bulat-Ziganshin/FARSH), [XXH3](https://fastcompression.blogspot.com/2019/03/presenting-xxh3.html), HighwayHash and so on?
 

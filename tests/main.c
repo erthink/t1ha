@@ -116,7 +116,7 @@ static void print_build_info(void) {
   printf("Build by "
 #if defined(EMSCRIPTEN)
          "Emscripten/LLVM compiler"
-#elseif defined(__INTEL_COMPILER)
+#elif defined(__INTEL_COMPILER)
          "Intel C/C++ compiler"
 #elif defined(_MSC_VER)
          "Microsoft Visual C/C++ %lu compiler for %s",

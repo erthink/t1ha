@@ -170,7 +170,7 @@ uint64_t thunk_HighwayHash64_SSE41(const void *input, size_t length,
 uint64_t thunk_HighwayHash64_VSX(const void *input, size_t length,
                                  uint64_t seed);
 
-/* wyhash v4 */
-uint64_t thunk_wyhash_v7(const void *input, size_t length, uint64_t seed);
-extern const uint64_t refval_wyhash_v7[];
-bool wyhash_v7_selftest(void);
+/* wyhash 20221102 */
+uint64_t thunk_wyhash_20221102(const void *input, size_t length, uint64_t seed);
+extern const uint64_t refval_wyhash_20221102[];
+bool wyhash_20221102_selftest(void);

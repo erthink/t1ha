@@ -1,5 +1,22 @@
 <!-- Required extensions: pymdownx.betterem, pymdownx.tilde, pymdownx.emoji, pymdownx.tasklist, pymdownx.superfences -->
 
+### The origin has been migrated to [GitFlic](https://gitflic.ru/project/erthink/t1ha)
+since on 2022-04-15 the Github administration, without any warning
+nor explanation, deleted _t1ha_ along with a lot of other projects,
+simultaneously blocking access for many developers.
+For the same reason ~~Github~~ is blacklisted forever.
+
+GitFlic's developers plan to support other languages,
+including English 和 中文, in the near future.
+
+### Основной репозиторий перемещен на [GitFlic](https://gitflic.ru/project/erthink/t1ha)
+так как 15 апреля 2022 администрация Github без предупреждения и
+объяснения причин удалила _t1ha_ вместе с массой других проектов,
+одновременно заблокировав доступ многим разработчикам.
+По этой же причине ~~Github~~ навсегда занесен в черный список.
+
+--------------------------------------------------------------------------------
+
 t1ha
 =====
 Fast Positive Hash, aka "Позитивный Хэш"
@@ -9,9 +26,6 @@ Included in the [Awesome C](https://github.com/kozross/awesome-c) list of open s
 *The Future will (be) [Positive](https://www.ptsecurity.com). Всё будет хорошо.*
 
 [![License: Zlib](https://img.shields.io/badge/License-Zlib-lightgrey.svg)](https://opensource.org/licenses/Zlib)
-[![Build Status](https://travis-ci.org/erthink/t1ha.svg?branch=master)](https://travis-ci.org/erthink/t1ha)
-[![Build status](https://ci.appveyor.com/api/projects/status/ptug5fl2ouxdo68h/branch/master?svg=true)](https://ci.appveyor.com/project/leo-yuriev/t1ha/branch/master)
-[![CircleCI](https://circleci.com/gh/erthink/t1ha/tree/master.svg?style=svg)](https://circleci.com/gh/erthink/t1ha/tree/master)
 [![Coverity Scan Status](https://scan.coverity.com/projects/12918/badge.svg)](https://scan.coverity.com/projects/leo-yuriev-t1ha)
 
 ## Briefly, it is a portable non-cryptographic 64-bit hash function:

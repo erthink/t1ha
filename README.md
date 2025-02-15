@@ -1,19 +1,46 @@
 <!-- Required extensions: pymdownx.betterem, pymdownx.tilde, pymdownx.emoji, pymdownx.tasklist, pymdownx.superfences -->
 
-### The origin has been migrated to [GitFlic](https://gitflic.ru/project/erthink/t1ha)
-since on 2022-04-15 the Github administration, without any warning
-nor explanation, deleted _t1ha_ along with a lot of other projects,
-simultaneously blocking access for many developers.
-For the same reason ~~Github~~ is blacklisted forever.
-
-GitFlic's developers plan to support other languages,
-including English 和 中文, in the near future.
-
 ### Основной репозиторий перемещен на [GitFlic](https://gitflic.ru/project/erthink/t1ha)
-так как 15 апреля 2022 администрация Github без предупреждения и
-объяснения причин удалила _t1ha_ вместе с массой других проектов,
-одновременно заблокировав доступ многим разработчикам.
-По этой же причине ~~Github~~ навсегда занесен в черный список.
+
+Весной 2022, без каких-либо предупреждений или пояснений, администрация
+Github удалила мой аккаунт и все проекты. Через несколько месяцев, без
+какого-либо моего участия или уведомления, проекты были
+восстановлены/открыты в статусе "public read-only archive" из какой-то
+неполноценной резервной копии. Эти действия Github я расцениваю как
+злонамеренный саботаж, а сам сервис Github считаю навсегда утратившим
+какое-либо доверие.
+
+Вследствие произошедшего, никогда и ни при каких условиях, я не буду
+размещать на Github первоисточники (aka origins) моих проектов, либо
+как-либо полагаться на инфраструктуру Github.
+
+Тем не менее, понимая что пользователям моих проектов удобнее получать к
+ним доступ именно на Github, я не хочу ограничивать их свободу или
+создавать неудобство, и поэтому размещаю на Github зеркала (aka mirrors)
+репозиториев моих проектов. При этом ещё раз акцентирую внимание, что
+это только зеркала, которые могут быть заморожены, заблокированы или
+удалены в любой момент, как это уже было в 2022.
+
+### The origin has been migrated to [GitFlic](https://gitflic.ru/project/erthink/t1ha)
+
+In the spring of 2022, without any warnings or explanations, the Github
+administration deleted my account and all projects. A few months later,
+without any involvement or notification from me, the projects were
+restored/opened in the "public read-only archive" status from some kind
+of incomplete backup. I regard these actions of Github as malicious
+sabotage, and I consider the Github service itself to have lost any
+trust forever.
+
+As a result of what has happened, I will never, under any circumstances,
+post the primary sources (aka origins) of my projects on Github, or rely
+in any way on the Github infrastructure.
+
+Nevertheless, realizing that it is more convenient for users of my
+projects to access them on Github, I do not want to restrict their
+freedom or create inconvenience, and therefore I place mirrors of my
+project repositories on Github. At the same time, I would like to
+emphasize once again that these are only mirrors that can be frozen,
+blocked or deleted at any time, as was the case in 2022.
 
 --------------------------------------------------------------------------------
 
